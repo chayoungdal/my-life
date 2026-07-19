@@ -1,0 +1,14 @@
+{
+  "name": "나의 하루",
+  "short_name": "나의 하루",
+  "description": "개인 라이프 관리 시스템",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F8F9FC",
+  "theme_color": "#4F6AF0",
+  "orientation": "any",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

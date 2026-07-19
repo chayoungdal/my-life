@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="나의 하루">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<title>나의 하루</title>
+<style>
+:root {
+  --primary: #4F6AF0;
+  --primary-light: #E8ECFD;
+  --primary-dark: #3B50C4;
+  --accent: #F08C4F;
+  --accent-light: #FDF0E8;
+  --success: #34A853;
+  --success-light: #E6F4EA;
+  --warning: #FBBC04;
+  --warning-light: #FEF7E0;
+  --danger: #EA4335;
+  --danger-light: #FCE8E6;
+  --text: #1A1A2E;
+  --text-secondary: #6B7280;
+  --bg: #F8F9FC;
+  --surface: #FFFFFF;
+  --border: #E5E7EB;
+  --border-light: #F0F1F4;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --transition: 0.2s ease;
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  padding-top: var(--safe-top);
+  padding-bottom: calc(70px + var(--safe-bottom));
+  overflow-x: hidden;
+}
+
+/* Tab Bar */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  padding-bottom: var(--safe-bottom);
+  z-index: 100;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: color var(--transition);
+  gap: 2px;
+}
+
+.tab-item.active { color: var(--primary); }
+.tab-item .tab-icon { font-size: 22px; }
+.tab-item .tab-label { font-weight: 500; }
+
+/* Main Content */
+.main {
+  padding: 20px 24px 0;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .main { padding: 28px 40px 0; }
+  .stat-row { grid-template-columns: repeat(4, 1fr); }
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-top: 8px;
+}
+
+.page-header h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all var(--transition);
+}
+
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:active { background: var(--primary-dark); transform: scale(0.96); }
+.btn-secondary { background: var(--primary-light); color: var(--primary); }
+.btn-sm { padding: 8px 14px; font-size: 13px; }
+.btn-icon { padding: 10px; border-radius: var(--radius-sm); background: none; border: 1px solid var(--border); cursor: pointer; font-size: 18px; }
+.btn-icon:active { background: var(--primary-light); }
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.card-title { font-size: 15px; font-weight: 600; }
+
+/* Dashboard Grid */
+.stat-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.stat-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+.stat-value { font-size: 22px; font-weight: 700; margin-top: 4px; }
+.stat-value.primary { color: var(--primary); }
+.stat-value.success { color: var(--success); }
+.stat-value.accent { color: var(--accent); }
+
+/* Form */
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+
+.form-input, .form-textarea, .form-select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--surface);
+  -webkit-appearance: none;
+  transition: border-color var(--transition);
+}
+
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.form-textarea { resize: vertical; min-height: 100px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* List Items */
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  transition: all var(--transition);
+}
+
+.list-item:active { background: var(--primary-light); }
+
+.checkbox {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border);
+  border-radius: 7px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition);
+  font-size: 14px;
+}
+
+.checkbox.checked { background: var(--success); border-color: var(--success); color: white; }
+.item-content { flex: 1; min-width: 0; }
+.item-title { font-size: 15px; font-weight: 500; }
+.item-title.completed { text-decoration: line-through; color: var(--text-secondary); }
+.item-meta { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+/* Tags */
+.tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tag-primary { background: var(--primary-light); color: var(--primary); }
+.tag-accent { background: var(--accent-light); color: var(--accent); }
+.tag-success { background: var(--success-light); color: var(--success); }
+
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  justify-content: center;
+  align-items: flex-end;
+  backdrop-filter: blur(4px);
+}
+
+.modal-overlay.active { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 24px 20px calc(20px + var(--safe-bottom));
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.modal-title { font-size: 18px; font-weight: 700; }
+.modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary); padding: 4px 8px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+.modal-actions .btn { flex: 1; justify-content: center; padding: 14px; }
+
+/* Empty State */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state .message { font-size: 14px; line-height: 1.6; }
+
+/* Date Navigation */
+.date-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.date-nav .current-date {
+  flex: 1;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px;
+  background: var(--primary-light);
+  border-radius: var(--radius-sm);
+  color: var(--primary);
+}
+
+/* Scripture */
+.scripture-verse {
+  font-size: 17px;
+  line-height: 1.8;
+  padding: 18px;
+  background: linear-gradient(135deg, var(--primary-light), #f0e8fd);
+  border-radius: var(--radius-sm);
+  border-left: 4px solid var(--primary);
+  margin-bottom: 12px;
+}
+
+.scripture-ref {
+  text-align: right;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Prayer */
+.prayer-card {
+  padding: 16px;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #fef9f4, #fdf0e8);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent);
+}
+
+.prayer-card.answered {
+  background: linear-gradient(135deg, #f0faf2, var(--success-light));
+  border-left-color: var(--success);
+}
+
+/* Idea */
+.idea-card {
+  border-left: 4px solid var(--primary);
+  padding: 16px;
+  margin-bottom: 12px;
+  background: var(--surface);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  border-top: 1px solid var(--border-light);
+  border-right: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.idea-card.priority-high { border-left-color: var(--danger); }
+.idea-card.priority-medium { border-left-color: var(--warning); }
+
+/* Toast */
+.toast {
+  position: fixed;
+  top: calc(20px + var(--safe-top));
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  padding: 12px 24px;
+  background: var(--text);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 300;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* Backup banner */
+.backup-banner {
+  background: var(--warning-light);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+/* Swipe delete */
+.swipe-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+.diary-content { white-space: pre-wrap; line-height: 1.8; font-size: 15px; }
+
+/* Investment table */
+.invest-item {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.invest-item:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+
+<main class="main" id="mainContent"></main>
+
+<nav class="tab-bar">
+  <button class="tab-item active" data-page="dashboard">
+    <span class="tab-icon">&#9737;</span>
+    <span class="tab-label">홈</span>
+  </button>
+  <button class="tab-item" data-page="schedule">
+    <span class="tab-icon">&#128197;</span>
+    <span class="tab-label">스케줄</span>
+  </button>
+  <button class="tab-item" data-page="scripture">
+    <span class="tab-icon">&#128214;</span>
+    <span class="tab-label">말씀</span>
+  </button>
+  <button class="tab-item" data-page="diary">
+    <span class="tab-icon">&#128221;</span>
+    <span class="tab-label">일기</span>
+  </button>
+  <button class="tab-item" data-page="more">
+    <span class="tab-icon">&#8943;</span>
+    <span class="tab-label">더보기</span>
+  </button>
+</nav>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// === IndexedDB Storage ===
+const DB_NAME = 'MyLifeSystem';
+const DB_VERSION = 1;
+const STORES = ['schedules','routines','plans','scriptures','prayers','diary','investments','savings','ideas','meta'];
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      STORES.forEach(name => {
+        if (!db.objectStoreNames.contains(name)) {
+          const store = db.createObjectStore(name, { keyPath: 'id', autoIncrement: true });
+          if (name !== 'meta') {
+            store.createIndex('date', 'date', { unique: false });
+          }
+        }
+      });
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+let dbInstance;
+async function getDB() {
+  if (!dbInstance) dbInstance = await openDB();
+  return dbInstance;
+}
+
+async function dbGetAll(store, dateFilter) {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readonly');
+    const s = tx.objectStore(store);
+    if (dateFilter) {
+      const idx = s.index('date');
+      const req = idx.getAll(dateFilter);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    } else {
+      const req = s.getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    }
+  });
+}
+
+async function dbAdd(store, data) {
+  const db = await getDB();
+  data.created_at = new Date().toISOString();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).add(data);
+    req.onsuccess = () => { data.id = req.result; resolve(data); };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbPut(store, data) {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).put(data);
+    req.onsuccess = () => resolve(data);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbDelete(store, id) {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbGet(store, id) {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).get(id);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// === App Logic ===
+let currentDate = new Date().toISOString().slice(0, 10);
+let currentPage = 'dashboard';
+
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+function formatDate(d) {
+  const date = new Date(d + 'T00:00:00');
+  return date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+}
+
+function formatMoney(n) { return new Intl.NumberFormat('ko-KR').format(n); }
+
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function showModal(html) {
+  $('#modalContent').innerHTML = html;
+  $('#modalOverlay').classList.add('active');
+}
+
+function closeModal() { $('#modalOverlay').classList.remove('active'); }
+
+$('#modalOverlay').addEventListener('click', e => { if (e.target === $('#modalOverlay')) closeModal(); });
+
+$$('.tab-item').forEach(item => {
+  item.addEventListener('click', () => {
+    $$('.tab-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    currentPage = item.dataset.page;
+    renderPage();
+  });
+});
+
+function dateNav() {
+  return `<div class="date-nav">
+    <button class="btn-icon" onclick="changeDate(-1)">&larr;</button>
+    <span class="current-date">${formatDate(currentDate)}</span>
+    <button class="btn-icon" onclick="changeDate(1)">&rarr;</button>
+    <button class="btn btn-sm btn-secondary" onclick="goToday()">오늘</button>
+  </div>`;
+}
+
+window.changeDate = function(dir) {
+  const d = new Date(currentDate + 'T00:00:00');
+  d.setDate(d.getDate() + dir);
+  currentDate = d.toISOString().slice(0, 10);
+  renderPage();
+};
+
+window.goToday = function() {
+  currentDate = new Date().toISOString().slice(0, 10);
+  renderPage();
+};
+
+async function renderPage() {
+  const pages = {
+    dashboard: renderDashboard,
+    schedule: renderSchedule,
+    routine: renderRoutine,
+    scripture: renderScripture,
+    prayer: renderPrayer,
+    diary: renderDiary,
+    plans: renderPlans,
+    ideas: renderIdeas,
+    investment: renderInvestment,
+    savings: renderSavings,
+    more: renderMore,
+  };
+  const fn = pages[currentPage];
+  if (fn) await fn();
+}
+
+function esc(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// === BACKUP ===
+async function exportBackup() {
+  const data = {};
+  for (const store of STORES.filter(s => s !== 'meta')) {
+    data[store] = await dbGetAll(store);
+  }
+  data.exportDate = new Date().toISOString();
+  data.version = 1;
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `나의하루_백업_${currentDate}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  localStorage.setItem('lastBackup', new Date().toISOString());
+  toast('백업 파일이 저장되었습니다');
+}
+
+async function importBackup(file) {
+  const text = await file.text();
+  const data = JSON.parse(text);
+
+  if (!data.version) { toast('올바른 백업 파일이 아닙니다'); return; }
+
+  for (const store of STORES.filter(s => s !== 'meta')) {
+    if (!data[store]) continue;
+    const db = await getDB();
+    const tx = db.transaction(store, 'readwrite');
+    const s = tx.objectStore(store);
+    s.clear();
+    for (const item of data[store]) {
+      s.add(item);
+    }
+  }
+
+  localStorage.setItem('lastBackup', new Date().toISOString());
+  toast('데이터가 복원되었습니다');
+  renderPage();
+}
+
+function checkBackupReminder() {
+  const last = localStorage.getItem('lastBackup');
+  if (!last) return true;
+  const diff = (Date.now() - new Date(last).getTime()) / (1000 * 60 * 60 * 24);
+  return diff >= 7;
+}
+
+// === DASHBOARD ===
+async function renderDashboard() {
+  const today = new Date().toISOString().slice(0, 10);
+  const schedules = await dbGetAll('schedules', today);
+  const plans = (await dbGetAll('plans')).filter(p => p.status === 'active');
+  const investments = await dbGetAll('investments');
+  const savings = await dbGetAll('savings');
+  const scripture = (await dbGetAll('scriptures', today))[0];
+  const ideas = (await dbGetAll('ideas')).filter(i => i.status !== 'done').slice(-5).reverse();
+  const totalInvest = investments.reduce((s, i) => s + (i.amount || 0), 0);
+  const totalSave = savings.reduce((s, i) => s + (i.amount || 0), 0);
+
+  const needsBackup = checkBackupReminder();
+
+  $('#mainContent').innerHTML = `
+    <div class="page-header"><h2>나의 하루</h2></div>
+    ${needsBackup ? `<div class="backup-banner">
+      <span>&#9888; 백업을 해주세요</span>
+      <button class="btn btn-sm btn-primary" onclick="exportBackup()">백업하기</button>
+    </div>` : ''}
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-label">오늘 스케줄</div>
+        <div class="stat-value primary">${schedules.length}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">진행 중 계획</div>
+        <div class="stat-value accent">${plans.length}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">총 투자액</div>
+        <div class="stat-value success">&#8361;${formatMoney(totalInvest)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">총 저축액</div>
+        <div class="stat-value primary">&#8361;${formatMoney(totalSave)}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">&#128197; 오늘의 스케줄</span></div>
+      ${schedules.length ? schedules.map(s => `
+        <div class="list-item">
+          <div class="checkbox ${s.completed ? 'checked' : ''}" onclick="toggleField('schedules',${s.id},'completed',${s.completed})">${s.completed ? '&#10003;' : ''}</div>
+          <div class="item-content">
+            <div class="item-title ${s.completed ? 'completed' : ''}">${esc(s.title)}</div>
+            <div class="item-meta">${s.time || ''}</div>
+          </div>
+        </div>`).join('') : '<div class="empty-state"><div class="message">오늘 스케줄이 없습니다</div></div>'}
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">&#128214; 오늘의 말씀</span></div>
+      ${scripture ? `
+        <div class="scripture-verse">${esc(scripture.verse)}</div>
+        <div class="scripture-ref">${esc(scripture.reference || '')}</div>
+      ` : '<div class="empty-state"><div class="message">오늘의 말씀을 기록하세요</div></div>'}
+    </div>`;
+}
+
+// === SCHEDULE ===
+async function renderSchedule() {
+  const items = (await dbGetAll('schedules', currentDate)).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+  $('#mainContent').innerHTML = `
+    <div class="page-header">
+      <h2>스케줄</h2>
+      <button class="btn btn-primary" onclick="showScheduleModal()">+ 추가</button>
+    </div>
+    ${dateNav()}
+    ${items.length ? items.map(s => `
+      <div class="list-item">
+        <div class="checkbox ${s.completed ? 'checked' : ''}" onclick="toggleField('schedules',${s.id},'completed',${s.completed})">${s.completed ? '&#10003;' : ''}</div>
+        <div class="item-content">
+          <div class="item-title ${s.completed ? 'completed' : ''}">${esc(s.title)}</div>
+          <div class="item-meta">${s.time || '종일'} ${s.description ? '· ' + esc(s.description) : ''}</div>
+        </div>
+        <div class="swipe-actions"><button class="btn-icon" onclick="deleteItem('schedules',${s.id})">&#128465;</button></div>
+      </div>`).join('') : '<div class="empty-state"><div class="icon">&#128197;</div><div class="message">이 날의 스케줄이 없습니다</div></div>'}`;
+}
+
+window.showScheduleModal = function() {
+  showModal(`
+    <div class="modal-header"><span class="modal-title">스케줄 추가</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="form-group"><label class="form-label">날짜</label><input class="form-input" id="f-date" type="date" value="${currentDate}"></div>
+    <div class="form-group"><label class="form-label">시간</label><input class="form-input" id="f-time" type="time"></div>
+    <div class="form-group"><label class="form-label">제목</label><input class="form-input" id="f-title" placeholder="스케줄 제목"></div>
+    <div class="form-group"><label class="form-label">설명</label><textarea class="form-textarea" id="f-desc" rows="3" placeholder="상세 내용 (선택)"></textarea></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="saveSchedule()">저장</button></div>
+  `);
+};
+
+window.saveSchedule = async function() {
+  await dbAdd('schedules', { date: $('#f-date').value, time: $('#f-time').value, title: $('#f-title').value, description: $('#f-desc').value, completed: 0 });
+  closeModal(); toast('스케줄이 저장되었습니다'); renderPage();
+};
+
+// === ROUTINE ===
+async function renderRoutine() {
+  const items = (await dbGetAll('routines', currentDate)).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+  $('#mainContent').innerHTML = `
+    <div class="page-header">
+      <h2>하루 일과</h2>
+      <button class="btn btn-primary" onclick="showRoutineModal()">+ 추가</button>
+    </div>
+    ${dateNav()}
+    ${items.length ? items.map(r => `
+      <div class="list-item">
+        <div class="checkbox ${r.completed ? 'checked' : ''}" onclick="toggleField('routines',${r.id},'completed',${r.completed})">${r.completed ? '&#10003;' : ''}</div>
+        <div class="item-content">
+          <div class="item-title ${r.completed ? 'completed' : ''}">${esc(r.title)}</div>
+          <div class="item-meta">${r.time || ''}</div>
+        </div>
+        <div class="swipe-actions"><button class="btn-icon" onclick="deleteItem('routines',${r.id})">&#128465;</button></div>
+      </div>`).join('') : '<div class="empty-state"><div class="icon">&#9745;</div><div class="message">이 날의 일과가 없습니다</div></div>'}`;
+}
+
+window.showRoutineModal = function() {
+  showModal(`
+    <div class="modal-header"><span class="modal-title">일과 추가</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="form-group"><label class="form-label">날짜</label><input class="form-input" id="f-date" type="date" value="${currentDate}"></div>
+    <div class="form-group"><label class="form-label">시간</label><input class="form-input" id="f-time" type="time"></div>
+    <div class="form-group"><label class="form-label">제목</label><input class="form-input" id="f-title" placeholder="일과를 입력하세요"></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="saveRoutine()">저장</button></div>
+  `);
+};
+
+window.saveRoutine = async function() {
+  await dbAdd('routines', { date: $('#f-date').value, time: $('#f-time').value, title: $('#f-title').value, completed: 0 });
+  closeModal(); toast('일과가 추가되었습니다'); renderPage();
+};
+
+// === SCRIPTURE ===
+async function renderScripture() {
+  const items = await dbGetAll('scriptures', currentDate);
+  const item = items[0];
+  $('#mainContent').innerHTML = `
+    <div class="page-header">
+      <h2>하루 말씀</h2>
+      <button class="btn btn-primary" onclick="showScriptureModal()">${item ? '수정' : '+ 작성'}</button>
+    </div>
+    ${dateNav()}
+    ${item ? `
+      <div class="card">
+        <div class="scripture-verse">${esc(item.verse)}</div>
+        <div class="scripture-ref">${esc(item.reference || '')}</div>
+        ${item.reflection ? `<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border-light)"><div class="form-label">묵상</div><p style="line-height:1.8;font-size:15px">${esc(item.reflection)}</p></div>` : ''}
+      </div>` : '<div class="empty-state"><div class="icon">&#128214;</div><div class="message">오늘의 말씀을 기록하세요</div></div>'}`;
+}
+
+window.showScriptureModal = async function() {
+  const items = await dbGetAll('scriptures', currentDate);
+  const item = items[0] || {};
+  showModal(`
+    <div class="modal-header"><span class="modal-title">하루 말씀</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="form-group"><label class="form-label">날짜</label><input class="form-input" id="f-date" type="date" value="${currentDate}"></div>
+    <div class="form-group"><label class="form-label">말씀</label><textarea class="form-textarea" id="f-verse" rows="4" placeholder="오늘의 말씀">${esc(item.verse || '')}</textarea></div>
+    <div class="form-group"><label class="form-label">성경 구절</label><input class="form-input" id="f-ref" placeholder="예: 요한복음 3:16" value="${esc(item.reference || '')}"></div>
+    <div class="form-group"><label class="form-label">묵상</label><textarea class="form-textarea" id="f-reflection" rows="4" placeholder="이 말씀이 나에게 주는 의미">${esc(item.reflection || '')}</textarea></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="saveScripture(${item.id || 0})">저장</button></div>
+  `);
+};
+
+window.saveScripture = async function(existingId) {
+  const data = { date: $('#f-date').value, verse: $('#f-verse').value, reference: $('#f-ref').value, reflection: $('#f-reflection').value };
+  if (existingId) { data.id = existingId; await dbPut('scriptures', data); }
+  else { await dbAdd('scriptures', data); }
+  closeModal(); toast('말씀이 저장되었습니다'); renderPage();
+};
+
+// === PRAYER ===
+async function renderPrayer() {
+  const items = await dbGetAll('prayers', currentDate);
+  $('#mainContent').innerHTML = `
+    <div class="page-header">
+      <h2>하루 기도</h2>
+      <button class="btn btn-primary" onclick="showPrayerModal()">+ 작성</button>
+    </div>
+    ${dateNav()}
+    ${items.length ? items.map(p => `
+      <div class="prayer-card ${p.answered ? 'answered' : ''}">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div style="flex:1">
+            <span class="tag ${p.answered ? 'tag-success' : 'tag-accent'}">${p.answered ? '응답됨' : esc(p.category)}</span>
+            <p style="margin-top:8px;line-height:1.8;white-space:pre-wrap">${esc(p.content)}</p>
+          </div>
+          <div style="display:flex;gap:4px;margin-left:8px">
+            <button class="btn-icon" onclick="toggleField('prayers',${p.id},'answered',${p.answered})">&#10084;</button>
+            <button class="btn-icon" onclick="deleteItem('prayers',${p.id})">&#128465;</button>
+          </div>
+        </div>
+      </div>`).join('') : '<div class="empty-state"><div class="icon">&#128591;</div><div class="message">오늘의 기도를 작성하세요</div></div>'}`;
+}
+
+window.showPrayerModal = function() {
+  showModal(`
+    <div class="modal-header"><span class="modal-title">기도 작성</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="form-group"><label class="form-label">날짜</label><input class="form-input" id="f-date" type="date" value="${currentDate}"></div>
+    <div class="form-group"><label class="form-label">분류</label>
+      <select class="form-select" id="f-category">
+        <option value="감사">감사</option><option value="간구">간구</option>
+        <option value="회개">회개</option><option value="찬양">찬양</option>
+        <option value="중보기도">중보기도</option><option value="일반">일반</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">기도</label><textarea class="form-textarea" id="f-content" rows="6" placeholder="기도를 작성하세요..."></textarea></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="savePrayer()">저장</button></div>
+  `);
+};
+
+window.savePrayer = async function() {
+  await dbAdd('prayers', { date: $('#f-date').value, category: $('#f-category').value, content: $('#f-content').value, answered: 0 });
+  closeModal(); toast('기도가 저장되었습니다'); renderPage();
+};
+
+// === DIARY ===
+async function renderDiary() {
+  const items = await dbGetAll('diary', currentDate);
+  const item = items[0];
+  $('#mainContent').innerHTML = `
+    <div class="page-header">
+      <h2>하루 일기</h2>
+      <button class="btn btn-primary" onclick="showDiaryModal()">${item ? '수정' : '+ 작성'}</button>
+    </div>
+    ${dateNav()}
+    ${item ? `
+      <div class="card">
+        ${item.mood ? `<div style="margin-bottom:12px"><span class="tag tag-primary">${esc(item.mood)}</span></div>` : ''}
+        <div class="diary-content">${esc(item.content)}</div>
+        ${item.gratitude ? `<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border-light)"><div class="form-label">감사한 일</div><p style="line-height:1.8">${esc(item.gratitude)}</p></div>` : ''}
+      </div>` : '<div class="empty-state"><div class="icon">&#128221;</div><div class="message">오늘의 일기를 기록하세요</div></div>'}`;
+}
+
+window.showDiaryModal = async function() {
+  const items = await dbGetAll('diary', currentDate);
+  const item = items[0] || {};
+  showModal(`
+    <div class="modal-header"><span class="modal-title">하루 일기</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="form-group"><label class="form-label">날짜</label><input class="form-input" id="f-date" type="date" value="${currentDate}"></div>
+    <div class="form-group"><label class="form-label">기분</label>
+      <select class="form-select" id="f-mood">
+        <option value="">기분을 선택하세요</option>
+        <option value="최고" ${item.mood==='최고'?'selected':''}>최고</option>
+        <option value="좋음" ${item.mood==='좋음'?'selected':''}>좋음</option>
+        <option value="보통" ${item.mood==='보통'?'selected':''}>보통</option>
+        <option value="피곤" ${item.mood==='피곤'?'selected':''}>피곤</option>
+        <option value="힘듦" ${item.mood==='힘듦'?'selected':''}>힘듦</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">일기</label><textarea class="form-textarea" id="f-content" rows="6" placeholder="오늘 하루는 어땠나요?">${esc(item.content || '')}</textarea></div>
+    <div class="form-group"><label class="form-label">감사한 일</label><textarea class="form-textarea" id="f-gratitude" rows="3" placeholder="오늘 감사한 일은?">${esc(item.gratitude || '')}</textarea></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="saveDiary(${item.id || 0})">저장</button></div>
+  `);
+};
+
+window.saveDiary = async function(existingId) {
+  const data = { date: $('#f-date').value, mood: $('#f-mood').value, content: $('#f-content').value, gratitude: $('#f-gratitude').value };
+  if (existingId) { data.id = existingId; await dbPut('diary', data); }
+  else { await dbAdd('diary', data); }
+  closeModal(); toast('일기가 저장되었습니다'); renderPage();
+};
+
+// === PLANS ===
+async function renderPlans() {
+  const items = await dbGetAll('plans');
+  const active = items.filter(i => i.status === 'active');
+  const done = items.filter(i => i.status === 'completed');
+  $('#mainContent').innerHTML = `
+    <div class="page-header">
+      <h2>계획</h2>
+      <button class="btn btn-primary" onclick="showPlanModal()">+ 추가</button>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">진행 중 (${active.length})</span></div>
+      ${active.length ? active.map(p => `
+        <div class="list-item">
+          <div class="checkbox" onclick="completePlan(${p.id})"></div>
+          <div class="item-content">
+            <div class="item-title">${esc(p.title)}</div>
+            <div class="item-meta"><span class="tag tag-primary">${esc(p.category)}</span> ${p.target_date ? '· 목표: ' + p.target_date : ''}</div>
+          </div>
+          <div class="swipe-actions"><button class="btn-icon" onclick="deleteItem('plans',${p.id})">&#128465;</button></div>
+        </div>`).join('') : '<div class="empty-state"><div class="message">진행 중인 계획이 없습니다</div></div>'}
+    </div>
+    ${done.length ? `<div class="card"><div class="card-header"><span class="card-title">완료됨 (${done.length})</span></div>
+      ${done.slice(0,5).map(p => `<div class="list-item" style="opacity:0.6"><div class="checkbox checked">&#10003;</div><div class="item-content"><div class="item-title completed">${esc(p.title)}</div></div></div>`).join('')}
+    </div>` : ''}`;
+}
+
+window.showPlanModal = function() {
+  showModal(`
+    <div class="modal-header"><span class="modal-title">계획 추가</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="form-group"><label class="form-label">제목</label><input class="form-input" id="f-title" placeholder="계획 제목"></div>
+    <div class="form-group"><label class="form-label">분류</label>
+      <select class="form-select" id="f-category">
+        <option value="개인">개인</option><option value="커리어">커리어</option>
+        <option value="건강">건강</option><option value="재정">재정</option>
+        <option value="영성">영성</option><option value="일반">일반</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">목표일</label><input class="form-input" id="f-target" type="date"></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="savePlan()">저장</button></div>
+  `);
+};
+
+window.savePlan = async function() {
+  await dbAdd('plans', { title: $('#f-title').value, category: $('#f-category').value, target_date: $('#f-target').value, status: 'active' });
+  closeModal(); toast('계획이 추가되었습니다'); renderPage();
+};
+
+window.completePlan = async function(id) {
+  const item = await dbGet('plans', id);
+  item.status = 'completed';
+  await dbPut('plans', item);
+  toast('계획을 완료했습니다!'); renderPage();
+};
+
+// === IDEAS ===
+async function renderIdeas() {
+  const items = (await dbGetAll('ideas')).reverse();
+  $('#mainContent').innerHTML = `
+    <div class="page-header">
+      <h2>아이디어</h2>
+      <button class="btn btn-primary" onclick="showIdeaModal()">+ 추가</button>
+    </div>
+    ${items.length ? items.map(i => `
+      <div class="idea-card priority-${i.priority > 1 ? 'high' : i.priority > 0 ? 'medium' : 'low'}">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div style="flex:1">
+            <strong>${esc(i.title)}</strong> <span class="tag tag-accent">${esc(i.category)}</span>
+            ${i.content ? `<p style="color:var(--text-secondary);font-size:14px;margin-top:6px;white-space:pre-wrap">${esc(i.content)}</p>` : ''}
+          </div>
+          <button class="btn-icon" onclick="deleteItem('ideas',${i.id})">&#128465;</button>
+        </div>
+      </div>`).join('') : '<div class="empty-state"><div class="icon">&#128161;</div><div class="message">아이디어를 기록하세요!</div></div>'}`;
+}
+
+window.showIdeaModal = function() {
+  showModal(`
+    <div class="modal-header"><span class="modal-title">아이디어 기록</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="form-group"><label class="form-label">제목</label><input class="form-input" id="f-title" placeholder="아이디어 제목"></div>
+    <div class="form-group"><label class="form-label">분류</label>
+      <select class="form-select" id="f-category">
+        <option value="비즈니스">비즈니스</option><option value="프로젝트">프로젝트</option>
+        <option value="창작">창작</option><option value="기술">기술</option>
+        <option value="생활">생활</option><option value="일반">일반</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">상세 내용</label><textarea class="form-textarea" id="f-content" rows="4" placeholder="아이디어 설명"></textarea></div>
+    <div class="form-group"><label class="form-label">우선순위</label>
+      <select class="form-select" id="f-priority">
+        <option value="0">낮음</option><option value="1">보통</option><option value="2">높음</option>
+      </select>
+    </div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="saveIdea()">저장</button></div>
+  `);
+};
+
+window.saveIdea = async function() {
+  await dbAdd('ideas', { title: $('#f-title').value, category: $('#f-category').value, content: $('#f-content').value, priority: Number($('#f-priority').value), status: 'new' });
+  closeModal(); toast('아이디어가 저장되었습니다!'); renderPage();
+};
+
+// === INVESTMENT ===
+async function renderInvestment() {
+  const items = await dbGetAll('investments');
+  const total = items.reduce((s, i) => s + (i.amount||0), 0);
+  const totalCurrent = items.reduce((s, i) => s + (i.current_value||i.amount||0), 0);
+  $('#mainContent').innerHTML = `
+    <div class="page-header">
+      <h2>투자</h2>
+      <button class="btn btn-primary" onclick="showInvestmentModal()">+ 추가</button>
+    </div>
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-label">총 투자액</div><div class="stat-value primary">&#8361;${formatMoney(total)}</div></div>
+      <div class="stat-card"><div class="stat-label">현재 가치</div><div class="stat-value ${totalCurrent>=total?'success':''}" ${totalCurrent<total?'style="color:var(--danger)"':''}>&#8361;${formatMoney(totalCurrent)}</div></div>
+    </div>
+    <div class="card">
+      ${items.length ? items.map(i => {
+        const pl = (i.current_value||i.amount) - i.amount;
+        return `<div class="invest-item">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <strong>${esc(i.name)}</strong> <span class="tag tag-primary">${esc(i.category)}</span>
+              <div class="item-meta" style="margin-top:4px">${i.date} · 투자: &#8361;${formatMoney(i.amount)}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-weight:600;color:${pl>=0?'var(--success)':'var(--danger)'}">${pl>=0?'+':''}&#8361;${formatMoney(pl)}</div>
+              <button class="btn-icon" style="margin-top:4px" onclick="deleteItem('investments',${i.id})">&#128465;</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('') : '<div class="empty-state"><div class="message">투자 기록이 없습니다</div></div>'}
+    </div>`;
+}
+
+window.showInvestmentModal = function() {
+  showModal(`
+    <div class="modal-header"><span class="modal-title">투자 추가</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="form-group"><label class="form-label">날짜</label><input class="form-input" id="f-date" type="date" value="${currentDate}"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">분류</label>
+        <select class="form-select" id="f-category">
+          <option value="주식">주식</option><option value="암호화폐">암호화폐</option>
+          <option value="펀드">펀드</option><option value="부동산">부동산</option><option value="기타">기타</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">종목명</label><input class="form-input" id="f-name" placeholder="종목명"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">투자 금액</label><input class="form-input" id="f-amount" type="number" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">현재 가치</label><input class="form-input" id="f-current" type="number" placeholder="0"></div>
+    </div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="saveInvestment()">저장</button></div>
+  `);
+};
+
+window.saveInvestment = async function() {
+  await dbAdd('investments', { date: $('#f-date').value, category: $('#f-category').value, name: $('#f-name').value, amount: Number($('#f-amount').value), current_value: Number($('#f-current').value)||null });
+  closeModal(); toast('투자가 기록되었습니다'); renderPage();
+};
+
+// === SAVINGS ===
+async function renderSavings() {
+  const items = await dbGetAll('savings');
+  const total = items.reduce((s, i) => s + (i.amount||0), 0);
+  $('#mainContent').innerHTML = `
+    <div class="page-header">
+      <h2>저축</h2>
+      <button class="btn btn-primary" onclick="showSavingsModal()">+ 추가</button>
+    </div>
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-label">총 저축액</div><div class="stat-value success">&#8361;${formatMoney(total)}</div></div>
+    </div>
+    <div class="card">
+      ${items.length ? items.map(s => `
+        <div class="list-item">
+          <div class="item-content">
+            <div class="item-title">&#8361;${formatMoney(s.amount)} <span class="tag tag-success">${esc(s.category)}</span></div>
+            <div class="item-meta">${s.date} ${s.memo ? '· ' + esc(s.memo) : ''}</div>
+          </div>
+          <button class="btn-icon" onclick="deleteItem('savings',${s.id})">&#128465;</button>
+        </div>`).join('') : '<div class="empty-state"><div class="message">저축 기록이 없습니다</div></div>'}
+    </div>`;
+}
+
+window.showSavingsModal = function() {
+  showModal(`
+    <div class="modal-header"><span class="modal-title">저축 추가</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="form-group"><label class="form-label">날짜</label><input class="form-input" id="f-date" type="date" value="${currentDate}"></div>
+    <div class="form-group"><label class="form-label">분류</label>
+      <select class="form-select" id="f-category">
+        <option value="비상금">비상금</option><option value="노후자금">노후자금</option>
+        <option value="목표저축">목표 저축</option><option value="일반">일반</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">금액</label><input class="form-input" id="f-amount" type="number" placeholder="0"></div>
+    <div class="form-group"><label class="form-label">메모</label><input class="form-input" id="f-memo" placeholder="메모"></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="saveSavings()">저장</button></div>
+  `);
+};
+
+window.saveSavings = async function() {
+  await dbAdd('savings', { date: $('#f-date').value, category: $('#f-category').value, amount: Number($('#f-amount').value), memo: $('#f-memo').value });
+  closeModal(); toast('저축이 기록되었습니다'); renderPage();
+};
+
+// === MORE (더보기) ===
+async function renderMore() {
+  $('#mainContent').innerHTML = `
+    <div class="page-header"><h2>더보기</h2></div>
+    <div class="card" onclick="currentPage='routine';$$('.tab-item').forEach(i=>i.classList.remove('active'));renderPage();" style="cursor:pointer">
+      <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">&#9745;</span><span style="font-weight:600">하루 일과</span></div>
+    </div>
+    <div class="card" onclick="currentPage='prayer';$$('.tab-item').forEach(i=>i.classList.remove('active'));renderPage();" style="cursor:pointer">
+      <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">&#128591;</span><span style="font-weight:600">하루 기도</span></div>
+    </div>
+    <div class="card" onclick="currentPage='plans';$$('.tab-item').forEach(i=>i.classList.remove('active'));renderPage();" style="cursor:pointer">
+      <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">&#127919;</span><span style="font-weight:600">계획</span></div>
+    </div>
+    <div class="card" onclick="currentPage='ideas';$$('.tab-item').forEach(i=>i.classList.remove('active'));renderPage();" style="cursor:pointer">
+      <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">&#128161;</span><span style="font-weight:600">아이디어</span></div>
+    </div>
+    <div class="card" onclick="currentPage='investment';$$('.tab-item').forEach(i=>i.classList.remove('active'));renderPage();" style="cursor:pointer">
+      <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">&#128200;</span><span style="font-weight:600">투자</span></div>
+    </div>
+    <div class="card" onclick="currentPage='savings';$$('.tab-item').forEach(i=>i.classList.remove('active'));renderPage();" style="cursor:pointer">
+      <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">&#128176;</span><span style="font-weight:600">저축</span></div>
+    </div>
+    <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
+      <div class="card-title" style="margin-bottom:14px">데이터 관리</div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:10px" onclick="exportBackup()">&#128190; 백업 내보내기</button>
+      <button class="btn btn-secondary" style="width:100%;justify-content:center" onclick="document.getElementById('importFile').click()">&#128194; 백업 가져오기</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(this.files[0])">
+      <p style="margin-top:12px;font-size:12px;color:var(--text-secondary);text-align:center">
+        마지막 백업: ${localStorage.getItem('lastBackup') ? new Date(localStorage.getItem('lastBackup')).toLocaleDateString('ko-KR') : '없음'}
+      </p>
+    </div>`;
+}
+
+// === SHARED ===
+window.toggleField = async function(store, id, field, current) {
+  const item = await dbGet(store, id);
+  item[field] = current ? 0 : 1;
+  await dbPut(store, item);
+  renderPage();
+};
+
+window.deleteItem = async function(store, id) {
+  if (!confirm('이 항목을 삭제하시겠습니까?')) return;
+  await dbDelete(store, id);
+  toast('삭제되었습니다'); renderPage();
+};
+
+window.exportBackup = exportBackup;
+window.importBackup = importBackup;
+
+renderPage();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}
+</script>
+</body>
+</html>
