@@ -514,7 +514,13 @@ async function dbGet(store, id) {
 }
 
 // === App Logic ===
-let currentDate = new Date().toISOString().slice(0, 10);
+function toLocalYMD(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+let currentDate = toLocalYMD(new Date());
 let currentPage = 'dashboard';
 
 const $ = s => document.querySelector(s);
@@ -564,12 +570,12 @@ function dateNav() {
 window.changeDate = function(dir) {
   const d = new Date(currentDate + 'T00:00:00');
   d.setDate(d.getDate() + dir);
-  currentDate = d.toISOString().slice(0, 10);
+  currentDate = toLocalYMD(d);
   renderPage();
 };
 
 window.goToday = function() {
-  currentDate = new Date().toISOString().slice(0, 10);
+  currentDate = toLocalYMD(new Date());
   renderPage();
 };
 
@@ -611,7 +617,7 @@ async function exportBackup() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `나의하루_백업_${currentDate}.json`;
+  a.download = `나의하루_백업.json`;
   a.click();
   URL.revokeObjectURL(url);
 
@@ -650,7 +656,7 @@ function checkBackupReminder() {
 
 // === DASHBOARD ===
 async function renderDashboard() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toLocalYMD(new Date());
   const schedules = await dbGetAll('schedules', today);
   const plans = (await dbGetAll('plans')).filter(p => p.status === 'active');
   const investments = await dbGetAll('investments');
@@ -784,7 +790,10 @@ async function renderScripture() {
   $('#mainContent').innerHTML = `
     <div class="page-header">
       <h2>하루 말씀</h2>
-      <button class="btn btn-primary" onclick="showScriptureModal()">${item ? '수정' : '+ 작성'}</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" onclick="showArchive('scriptures')">&#128203; 목록</button>
+        <button class="btn btn-primary" onclick="showScriptureModal()">${item ? '수정' : '+ 작성'}</button>
+      </div>
     </div>
     ${dateNav()}
     ${item ? `
@@ -821,7 +830,10 @@ async function renderPrayer() {
   $('#mainContent').innerHTML = `
     <div class="page-header">
       <h2>하루 기도</h2>
-      <button class="btn btn-primary" onclick="showPrayerModal()">+ 작성</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" onclick="showArchive('prayers')">&#128203; 목록</button>
+        <button class="btn btn-primary" onclick="showPrayerModal()">+ 작성</button>
+      </div>
     </div>
     ${dateNav()}
     ${items.length ? items.map(p => `
@@ -867,7 +879,10 @@ async function renderDiary() {
   $('#mainContent').innerHTML = `
     <div class="page-header">
       <h2>하루 일기</h2>
-      <button class="btn btn-primary" onclick="showDiaryModal()">${item ? '수정' : '+ 작성'}</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" onclick="showArchive('diary')">&#128203; 목록</button>
+        <button class="btn btn-primary" onclick="showDiaryModal()">${item ? '수정' : '+ 작성'}</button>
+      </div>
     </div>
     ${dateNav()}
     ${item ? `
@@ -1144,6 +1159,40 @@ async function renderMore() {
       </p>
     </div>`;
 }
+
+// === 목록 보기 (지난 기록 모아보기) ===
+window.showArchive = async function(type) {
+  const config = {
+    diary:      { store: 'diary',      title: '일기',  field: 'content', page: 'diary' },
+    prayers:    { store: 'prayers',    title: '기도',  field: 'content', page: 'prayer' },
+    scriptures: { store: 'scriptures', title: '말씀',  field: 'verse',   page: 'scripture' },
+  }[type];
+
+  const items = (await dbGetAll(config.store))
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  const body = items.length ? items.map(it => `
+    <div class="list-item" style="cursor:pointer" onclick="openArchiveDate('${config.page}','${it.date}')">
+      <div class="item-content" style="min-width:0">
+        <div class="item-title">${formatDate(it.date)}</div>
+        <div class="item-meta" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc((it[config.field] || '').replace(/\n/g, ' '))}</div>
+      </div>
+      <span style="color:var(--text-secondary);flex-shrink:0">&rarr;</span>
+    </div>`).join('') : '<div class="empty-state"><div class="message">기록이 없습니다</div></div>';
+
+  showModal(`
+    <div class="modal-header"><span class="modal-title">${config.title} 전체 기록 (${items.length})</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div style="max-height:65vh;overflow-y:auto">${body}</div>
+  `);
+};
+
+window.openArchiveDate = function(page, date) {
+  closeModal();
+  currentDate = date;
+  currentPage = page;
+  $$('.tab-item').forEach(i => i.classList.remove('active'));
+  renderPage();
+};
 
 // === SHARED ===
 window.toggleField = async function(store, id, field, current) {
