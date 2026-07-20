@@ -569,6 +569,56 @@ function toLocalYMD(d) {
 let currentDate = toLocalYMD(new Date());
 let currentPage = 'dashboard';
 
+// 성경 66권 (이름, USFM 코드, 장 수) — bible.com 개역개정(버전 88) 링크용
+const BIBLE_BOOKS = [
+  ['창세기','GEN',50],['출애굽기','EXO',40],['레위기','LEV',27],['민수기','NUM',36],['신명기','DEU',34],
+  ['여호수아','JOS',24],['사사기','JDG',21],['룻기','RUT',4],['사무엘상','1SA',31],['사무엘하','2SA',24],
+  ['열왕기상','1KI',22],['열왕기하','2KI',25],['역대상','1CH',29],['역대하','2CH',36],['에스라','EZR',10],
+  ['느헤미야','NEH',13],['에스더','EST',10],['욥기','JOB',42],['시편','PSA',150],['잠언','PRO',31],
+  ['전도서','ECC',12],['아가','SNG',8],['이사야','ISA',66],['예레미야','JER',52],['예레미야애가','LAM',5],
+  ['에스겔','EZK',48],['다니엘','DAN',12],['호세아','HOS',14],['요엘','JOL',3],['아모스','AMO',9],
+  ['오바댜','OBA',1],['요나','JON',4],['미가','MIC',7],['나훔','NAM',3],['하박국','HAB',3],
+  ['스바냐','ZEP',3],['학개','HAG',2],['스가랴','ZEC',14],['말라기','MAL',4],['마태복음','MAT',28],
+  ['마가복음','MRK',16],['누가복음','LUK',24],['요한복음','JHN',21],['사도행전','ACT',28],['로마서','ROM',16],
+  ['고린도전서','1CO',16],['고린도후서','2CO',13],['갈라디아서','GAL',6],['에베소서','EPH',6],['빌립보서','PHP',4],
+  ['골로새서','COL',4],['데살로니가전서','1TH',5],['데살로니가후서','2TH',3],['디모데전서','1TI',6],['디모데후서','2TI',4],
+  ['디도서','TIT',3],['빌레몬서','PHM',1],['히브리서','HEB',13],['야고보서','JAS',5],['베드로전서','1PE',5],
+  ['베드로후서','2PE',3],['요한일서','1JN',5],['요한이서','2JN',1],['요한삼서','3JN',1],['유다서','JUD',1],
+  ['요한계시록','REV',22],
+];
+
+window.onBookChange = function() {
+  const bi = $('#f-book').value;
+  const chap = $('#f-chap');
+  if (bi === '') { chap.innerHTML = '<option value="">장</option>'; return; }
+  const cnt = BIBLE_BOOKS[+bi][2];
+  chap.innerHTML = '<option value="">장</option>' + Array.from({ length: cnt }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('');
+  updateRef();
+};
+
+window.updateRef = function() {
+  const bi = $('#f-book').value;
+  if (bi === '') return;
+  const name = BIBLE_BOOKS[+bi][0];
+  const ch = $('#f-chap').value;
+  const vs = $('#f-vs') ? $('#f-vs').value : '';
+  let ref = name;
+  if (ch) ref += ' ' + ch;
+  if (ch && vs) ref += ':' + vs;
+  if ($('#f-ref')) $('#f-ref').value = ref;
+};
+
+window.openBible = function() {
+  const bi = $('#f-book').value;
+  if (bi === '') { toast('책을 먼저 선택하세요'); return; }
+  const b = BIBLE_BOOKS[+bi];
+  const ch = $('#f-chap').value || '1';
+  const vs = $('#f-vs') ? $('#f-vs').value : '';
+  let usfm = `${b[1]}.${ch}`;
+  if (vs) usfm += `.${vs}`;
+  window.open(`https://www.bible.com/bible/88/${usfm}`, '_blank');
+};
+
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
@@ -932,7 +982,19 @@ window.showScriptureModal = async function() {
     <div class="modal-header"><span class="modal-title">하루 말씀</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
     <div class="form-group"><label class="form-label">날짜</label><input class="form-input" id="f-date" type="date" value="${currentDate}"></div>
     <div class="form-group"><label class="form-label">말씀</label><textarea class="form-textarea" id="f-verse" rows="4" placeholder="오늘의 말씀">${esc(item.verse || '')}</textarea></div>
-    <div class="form-group"><label class="form-label">성경 구절</label><input class="form-input" id="f-ref" placeholder="예: 요한복음 3:16" value="${esc(item.reference || '')}"></div>
+    <div class="form-group">
+      <label class="form-label">성경 구절 선택</label>
+      <div style="display:flex;gap:8px">
+        <select class="form-select" id="f-book" onchange="onBookChange()" style="flex:2">
+          <option value="">책 선택</option>
+          ${BIBLE_BOOKS.map((b, i) => `<option value="${i}">${b[0]}</option>`).join('')}
+        </select>
+        <select class="form-select" id="f-chap" onchange="updateRef()" style="flex:1"><option value="">장</option></select>
+        <input class="form-input" id="f-vs" type="number" min="1" placeholder="절" onchange="updateRef()" style="flex:1">
+      </div>
+      <button class="btn btn-sm btn-secondary" style="margin-top:8px" onclick="openBible()">&#128214; 개역개정 성경에서 찾기</button>
+      <input class="form-input" id="f-ref" placeholder="예: 요한복음 3:16" value="${esc(item.reference || '')}" style="margin-top:8px">
+    </div>
     <div class="form-group"><label class="form-label">묵상</label><textarea class="form-textarea" id="f-reflection" rows="4" placeholder="이 말씀이 나에게 주는 의미">${esc(item.reflection || '')}</textarea></div>
     <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="saveScripture(${item.id || 0})">저장</button></div>
   `);
