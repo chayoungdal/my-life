@@ -381,6 +381,52 @@ body {
 
 .diary-content { white-space: pre-wrap; line-height: 1.8; font-size: 15px; }
 
+/* Calendar */
+.cal-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.cal-month { flex: 1; text-align: center; font-size: 17px; font-weight: 700; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-head { margin-bottom: 4px; }
+.cal-weekday { text-align: center; font-size: 12px; font-weight: 600; color: var(--text-secondary); padding: 4px 0; }
+.cal-weekday.sun { color: var(--danger); }
+.cal-weekday.sat { color: var(--primary); }
+.cal-cell {
+  min-height: 92px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 6px;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cal-cell:active { background: var(--primary-light); }
+.cal-cell.empty { background: transparent; border: none; }
+.cal-cell.today { border-color: var(--primary); background: var(--primary-light); }
+.cal-daynum { font-size: 13px; font-weight: 600; }
+.cal-daynum.sun { color: var(--danger); }
+.cal-daynum.sat { color: var(--primary); }
+.cal-items { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+.cal-event {
+  font-size: 10px;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  border-radius: 4px;
+  padding: 1px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cal-event.done { text-decoration: line-through; opacity: 0.5; }
+.cal-time { font-weight: 700; }
+.cal-more { font-size: 9px; color: var(--text-secondary); padding-left: 3px; }
+@media (min-width: 768px) {
+  .cal-cell { min-height: 120px; padding: 8px; }
+  .cal-event { font-size: 12px; padding: 2px 6px; }
+  .cal-daynum { font-size: 15px; }
+}
+
 /* Investment table */
 .invest-item {
   padding: 14px 0;
@@ -712,25 +758,100 @@ async function renderDashboard() {
     </div>`;
 }
 
-// === SCHEDULE ===
+// === SCHEDULE (월 달력) ===
 async function renderSchedule() {
-  const items = (await dbGetAll('schedules', currentDate)).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+  const all = await dbGetAll('schedules');
+  const base = new Date(currentDate + 'T00:00:00');
+  const year = base.getFullYear();
+  const month = base.getMonth();
+  const startWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = toLocalYMD(new Date());
+
+  const byDate = {};
+  all.forEach(s => { (byDate[s.date] = byDate[s.date] || []).push(s); });
+  Object.values(byDate).forEach(a => a.sort((x, y) => (x.time || '').localeCompare(y.time || '')));
+
+  const cells = [];
+  for (let i = 0; i < startWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+
   $('#mainContent').innerHTML = `
     <div class="page-header">
       <h2>스케줄</h2>
       <button class="btn btn-primary" onclick="showScheduleModal()">+ 추가</button>
     </div>
-    ${dateNav()}
-    ${items.length ? items.map(s => `
-      <div class="list-item">
-        <div class="checkbox ${s.completed ? 'checked' : ''}" onclick="toggleField('schedules',${s.id},'completed',${s.completed})">${s.completed ? '&#10003;' : ''}</div>
-        <div class="item-content">
-          <div class="item-title ${s.completed ? 'completed' : ''}">${esc(s.title)}</div>
-          <div class="item-meta">${s.time || '종일'} ${s.description ? '· ' + esc(s.description) : ''}</div>
-        </div>
-        <div class="swipe-actions"><button class="btn-icon" onclick="deleteItem('schedules',${s.id})">&#128465;</button></div>
-      </div>`).join('') : '<div class="empty-state"><div class="icon">&#128197;</div><div class="message">이 날의 스케줄이 없습니다</div></div>'}`;
+    <div class="cal-nav">
+      <button class="btn-icon" onclick="changeMonth(-1)">&larr;</button>
+      <span class="cal-month">${year}년 ${month + 1}월</span>
+      <button class="btn-icon" onclick="changeMonth(1)">&rarr;</button>
+      <button class="btn btn-sm btn-secondary" onclick="goToday()">오늘</button>
+    </div>
+    <div class="cal-grid cal-head">
+      ${weekdays.map((w, i) => `<div class="cal-weekday ${i === 0 ? 'sun' : ''} ${i === 6 ? 'sat' : ''}">${w}</div>`).join('')}
+    </div>
+    <div class="cal-grid">
+      ${cells.map(d => {
+        if (d === null) return `<div class="cal-cell empty"></div>`;
+        const ds = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const items = byDate[ds] || [];
+        const wd = new Date(year, month, d).getDay();
+        return `<div class="cal-cell ${ds === todayStr ? 'today' : ''}" onclick="openDay('${ds}')">
+          <div class="cal-daynum ${wd === 0 ? 'sun' : ''} ${wd === 6 ? 'sat' : ''}">${d}</div>
+          <div class="cal-items">
+            ${items.slice(0, 3).map(s => `<div class="cal-event ${s.completed ? 'done' : ''}">${s.time ? `<span class="cal-time">${s.time}</span> ` : ''}${esc(s.title)}</div>`).join('')}
+            ${items.length > 3 ? `<div class="cal-more">+${items.length - 3}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
 }
+
+window.changeMonth = function(dir) {
+  const d = new Date(currentDate + 'T00:00:00');
+  d.setDate(1);
+  d.setMonth(d.getMonth() + dir);
+  currentDate = toLocalYMD(d);
+  renderPage();
+};
+
+window.openDay = async function(ds) {
+  currentDate = ds;
+  const items = (await dbGetAll('schedules', ds)).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  showModal(`
+    <div class="modal-header"><span class="modal-title">${formatDate(ds)}</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div style="max-height:55vh;overflow-y:auto">
+      ${items.length ? items.map(s => `
+        <div class="list-item">
+          <div class="checkbox ${s.completed ? 'checked' : ''}" onclick="dayToggle(${s.id}, ${s.completed}, '${ds}')">${s.completed ? '&#10003;' : ''}</div>
+          <div class="item-content">
+            <div class="item-title ${s.completed ? 'completed' : ''}">${esc(s.title)}</div>
+            <div class="item-meta">${s.time || '종일'} ${s.description ? '· ' + esc(s.description) : ''}</div>
+          </div>
+          <button class="btn-icon" onclick="dayDelete(${s.id}, '${ds}')">&#128465;</button>
+        </div>`).join('') : '<div class="empty-state"><div class="message">이 날의 일정이 없습니다</div></div>'}
+    </div>
+    <div class="modal-actions"><button class="btn btn-primary" style="flex:1" onclick="showScheduleModal()">+ 이 날 일정 추가</button></div>
+  `);
+};
+
+window.dayToggle = async function(id, current, ds) {
+  const item = await dbGet('schedules', id);
+  item.completed = current ? 0 : 1;
+  await dbPut('schedules', item);
+  await renderSchedule();
+  openDay(ds);
+};
+
+window.dayDelete = async function(id, ds) {
+  if (!confirm('이 일정을 삭제하시겠습니까?')) return;
+  await dbDelete('schedules', id);
+  await renderSchedule();
+  openDay(ds);
+};
 
 window.showScheduleModal = function() {
   showModal(`
