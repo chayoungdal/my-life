@@ -472,8 +472,8 @@ body {
 <script>
 // === IndexedDB Storage ===
 const DB_NAME = 'MyLifeSystem';
-const DB_VERSION = 1;
-const STORES = ['schedules','routines','plans','scriptures','prayers','diary','investments','savings','ideas','meta'];
+const DB_VERSION = 2;
+const STORES = ['schedules','routines','plans','scriptures','prayers','diary','investments','savings','ideas','sermons','meta'];
 
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -687,6 +687,7 @@ async function renderPage() {
     ideas: renderIdeas,
     investment: renderInvestment,
     savings: renderSavings,
+    sermons: renderSermons,
     more: renderMore,
   };
   const fn = pages[currentPage];
@@ -1320,6 +1321,9 @@ async function renderMore() {
     <div class="card" onclick="currentPage='prayer';$$('.tab-item').forEach(i=>i.classList.remove('active'));renderPage();" style="cursor:pointer">
       <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">&#128591;</span><span style="font-weight:600">하루 기도</span></div>
     </div>
+    <div class="card" onclick="currentPage='sermons';$$('.tab-item').forEach(i=>i.classList.remove('active'));renderPage();" style="cursor:pointer">
+      <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">&#127908;</span><span style="font-weight:600">설교노트</span></div>
+    </div>
     <div class="card" onclick="currentPage='plans';$$('.tab-item').forEach(i=>i.classList.remove('active'));renderPage();" style="cursor:pointer">
       <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">&#127919;</span><span style="font-weight:600">계획</span></div>
     </div>
@@ -1375,6 +1379,69 @@ window.openArchiveDate = function(page, date) {
   currentPage = page;
   $$('.tab-item').forEach(i => i.classList.remove('active'));
   renderPage();
+};
+
+// === SERMONS (설교노트) ===
+async function renderSermons() {
+  const items = (await dbGetAll('sermons')).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  $('#mainContent').innerHTML = `
+    <div class="page-header">
+      <h2>&#127908; 설교노트</h2>
+      <button class="btn btn-primary" onclick="showSermonModal()">+ 추가</button>
+    </div>
+    ${items.length ? items.map(s => `
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:16px;font-weight:700">${esc(s.title)}</div>
+            <div class="item-meta" style="margin-top:4px">
+              ${formatDate(s.date)}${s.preacher ? ' · ' + esc(s.preacher) : ''}
+              ${s.reference ? ` · <span class="tag tag-primary">${esc(s.reference)}</span>` : ''}
+            </div>
+            ${s.content ? `<p style="margin-top:10px;line-height:1.8;white-space:pre-wrap">${esc(s.content)}</p>` : ''}
+          </div>
+          <div style="display:flex;gap:4px;margin-left:8px">
+            <button class="btn-icon" onclick="showSermonModal(${s.id})">&#9998;</button>
+            <button class="btn-icon" onclick="deleteItem('sermons', ${s.id})">&#128465;</button>
+          </div>
+        </div>
+      </div>`).join('') : '<div class="empty-state"><div class="icon">&#127908;</div><div class="message">설교노트가 없습니다.<br>말씀을 기록하세요.</div></div>'}`;
+}
+
+window.showSermonModal = async function(id) {
+  const item = id ? await dbGet('sermons', id) : {};
+  showModal(`
+    <div class="modal-header"><span class="modal-title">설교노트</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="form-group"><label class="form-label">날짜</label><input class="form-input" id="f-date" type="date" value="${item.date || currentDate}"></div>
+    <div class="form-group"><label class="form-label">설교 제목</label><input class="form-input" id="f-title" placeholder="설교 제목" value="${esc(item.title || '')}"></div>
+    <div class="form-group"><label class="form-label">설교자</label><input class="form-input" id="f-preacher" placeholder="설교자 (선택)" value="${esc(item.preacher || '')}"></div>
+    <div class="form-group">
+      <label class="form-label">본문 (성경 구절)</label>
+      <div style="display:flex;gap:8px">
+        <select class="form-select" id="f-book" onchange="onBookChange()" style="flex:2">
+          <option value="">책 선택</option>
+          ${BIBLE_BOOKS.map((b, i) => `<option value="${i}">${b[0]}</option>`).join('')}
+        </select>
+        <select class="form-select" id="f-chap" onchange="updateRef()" style="flex:1"><option value="">장</option></select>
+        <input class="form-input" id="f-vs" type="number" min="1" placeholder="절" onchange="updateRef()" style="flex:1">
+      </div>
+      <button class="btn btn-sm btn-secondary" style="margin-top:8px" onclick="openBible()">&#128214; 개역개정 성경에서 찾기</button>
+      <input class="form-input" id="f-ref" placeholder="예: 요한복음 3:16" value="${esc(item.reference || '')}" style="margin-top:8px">
+    </div>
+    <div class="form-group"><label class="form-label">설교 내용</label><textarea class="form-textarea" id="f-content" rows="7" placeholder="설교 내용을 기록하세요...">${esc(item.content || '')}</textarea></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="saveSermon(${id || 0})">저장</button></div>
+  `);
+};
+
+window.saveSermon = async function(existingId) {
+  const data = {
+    date: $('#f-date').value, title: $('#f-title').value,
+    preacher: $('#f-preacher').value, reference: $('#f-ref').value,
+    content: $('#f-content').value,
+  };
+  if (existingId) { data.id = existingId; await dbPut('sermons', data); }
+  else { await dbAdd('sermons', data); }
+  closeModal(); toast('설교노트가 저장되었습니다'); renderPage();
 };
 
 // === SHARED ===
