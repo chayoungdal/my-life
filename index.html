@@ -381,6 +381,21 @@ body {
 
 .diary-content { white-space: pre-wrap; line-height: 1.8; font-size: 15px; }
 
+/* Sermon Editor (GoodNotes 스타일) */
+.se-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; }
+.se-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.se-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; margin-bottom: 10px; position: sticky; top: 0; z-index: 10; }
+.se-tool { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text); }
+.se-tool.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.se-color { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border); cursor: pointer; flex-shrink: 0; }
+.se-color.active { box-shadow: 0 0 0 2px var(--primary); }
+.se-page-wrap { border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; background: #fff; }
+.se-page { position: relative; background-image: repeating-linear-gradient(#fff, #fff 33px, #dbe1ee 34px); }
+.se-text { position: absolute; inset: 0; width: 100%; height: 100%; border: none; outline: none; background: transparent; resize: none; font-size: 17px; line-height: 34px; padding: 5px 16px; font-family: inherit; color: var(--text); }
+.se-canvas { position: absolute; inset: 0; touch-action: none; }
+.se-pagenav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; }
+@media (max-width: 767px) { .se-meta { grid-template-columns: 1fr; } }
+
 /* Calendar */
 .cal-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .cal-month { flex: 1; text-align: center; font-size: 17px; font-weight: 700; }
@@ -1381,67 +1396,196 @@ window.openArchiveDate = function(page, date) {
   renderPage();
 };
 
-// === SERMONS (설교노트) ===
+// === SERMONS (설교노트, GoodNotes 스타일 · 타이핑+필기, 여러 페이지, 줄노트) ===
+const SE_COLORS = ['#2B2B40', '#EA4335', '#1A73E8', '#34A853', '#F09300'];
+let SE = null;
+
+function parsePages(content) {
+  if (!content) return [{ text: '', drawing: null }];
+  try { const o = JSON.parse(content); if (o && o.__pages && Array.isArray(o.pages) && o.pages.length) return o.pages; } catch (e) {}
+  return [{ text: content, drawing: null }];
+}
+function serializePages(pages) { return JSON.stringify({ __pages: 1, pages }); }
+
 async function renderSermons() {
   const items = (await dbGetAll('sermons')).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   $('#mainContent').innerHTML = `
     <div class="page-header">
       <h2>&#127908; 설교노트</h2>
-      <button class="btn btn-primary" onclick="showSermonModal()">+ 추가</button>
+      <button class="btn btn-primary" onclick="openSermonEditor(0)">+ 추가</button>
     </div>
-    ${items.length ? items.map(s => `
-      <div class="card">
+    ${items.length ? items.map(s => {
+      const pages = parsePages(s.content);
+      const preview = pages.map(p => p.text || '').join(' ').trim();
+      return `<div class="card" style="cursor:pointer" onclick="openSermonEditor(${s.id})">
         <div style="display:flex;justify-content:space-between;align-items:start">
           <div style="flex:1;min-width:0">
             <div style="font-size:16px;font-weight:700">${esc(s.title)}</div>
             <div class="item-meta" style="margin-top:4px">
               ${formatDate(s.date)}${s.preacher ? ' · ' + esc(s.preacher) : ''}
-              ${s.reference ? ` · <span class="tag tag-primary">${esc(s.reference)}</span>` : ''}
+              ${s.reference ? ` · <span class="tag tag-primary">${esc(s.reference)}</span>` : ''} · ${pages.length}페이지
             </div>
-            ${s.content ? `<p style="margin-top:10px;line-height:1.8;white-space:pre-wrap">${esc(s.content)}</p>` : ''}
+            ${preview ? `<p style="margin-top:10px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(preview)}</p>` : ''}
           </div>
-          <div style="display:flex;gap:4px;margin-left:8px">
-            <button class="btn-icon" onclick="showSermonModal(${s.id})">&#9998;</button>
-            <button class="btn-icon" onclick="deleteItem('sermons', ${s.id})">&#128465;</button>
-          </div>
+          <button class="btn-icon" style="margin-left:8px" onclick="event.stopPropagation();deleteItem('sermons', ${s.id})">&#128465;</button>
         </div>
-      </div>`).join('') : '<div class="empty-state"><div class="icon">&#127908;</div><div class="message">설교노트가 없습니다.<br>말씀을 기록하세요.</div></div>'}`;
+      </div>`;
+    }).join('') : '<div class="empty-state"><div class="icon">&#127908;</div><div class="message">설교노트가 없습니다.<br>말씀을 기록하세요.</div></div>'}`;
 }
 
-window.showSermonModal = async function(id) {
-  const item = id ? await dbGet('sermons', id) : {};
-  showModal(`
-    <div class="modal-header"><span class="modal-title">설교노트</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
-    <div class="form-group"><label class="form-label">날짜</label><input class="form-input" id="f-date" type="date" value="${item.date || currentDate}"></div>
-    <div class="form-group"><label class="form-label">설교 제목</label><input class="form-input" id="f-title" placeholder="설교 제목" value="${esc(item.title || '')}"></div>
-    <div class="form-group"><label class="form-label">설교자</label><input class="form-input" id="f-preacher" placeholder="설교자 (선택)" value="${esc(item.preacher || '')}"></div>
-    <div class="form-group">
-      <label class="form-label">본문 (성경 구절)</label>
-      <div style="display:flex;gap:8px">
-        <select class="form-select" id="f-book" onchange="onBookChange()" style="flex:2">
-          <option value="">책 선택</option>
-          ${BIBLE_BOOKS.map((b, i) => `<option value="${i}">${b[0]}</option>`).join('')}
-        </select>
-        <select class="form-select" id="f-chap" onchange="updateRef()" style="flex:1"><option value="">장</option></select>
-        <input class="form-input" id="f-vs" type="number" min="1" placeholder="절" onchange="updateRef()" style="flex:1">
-      </div>
-      <button class="btn btn-sm btn-secondary" style="margin-top:8px" onclick="openBible()">&#128214; 개역개정 성경에서 찾기</button>
-      <input class="form-input" id="f-ref" placeholder="예: 요한복음 3:16" value="${esc(item.reference || '')}" style="margin-top:8px">
-    </div>
-    <div class="form-group"><label class="form-label">설교 내용</label><textarea class="form-textarea" id="f-content" rows="7" placeholder="설교 내용을 기록하세요...">${esc(item.content || '')}</textarea></div>
-    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="saveSermon(${id || 0})">저장</button></div>
-  `);
+window.openSermonEditor = async function(id) {
+  const item = id ? await dbGet('sermons', id) : { date: currentDate, title: '', preacher: '', reference: '', content: '' };
+  SE = {
+    id, date: item.date || currentDate, title: item.title || '', preacher: item.preacher || '',
+    reference: item.reference || '', pages: parsePages(item.content), cur: 0, pen: false, erase: false, color: SE_COLORS[0],
+  };
+  renderSermonEditor();
 };
 
-window.saveSermon = async function(existingId) {
+function renderSermonEditor() {
+  const p = SE.pages[SE.cur];
+  const pageH = 1000;
+  $('#mainContent').innerHTML = `
+    <div class="se-topbar">
+      <button class="btn btn-secondary btn-sm" onclick="closeSermonEditor()">&larr; 목록</button>
+      <div style="font-weight:700">&#127908; 설교노트</div>
+      <button class="btn btn-primary btn-sm" onclick="saveSermonEditor()">저장</button>
+    </div>
+    <div class="se-meta">
+      <input class="form-input" id="se-title" placeholder="설교 제목" value="${esc(SE.title)}">
+      <input class="form-input" id="se-date" type="date" value="${SE.date}">
+      <input class="form-input" id="se-preacher" placeholder="설교자 (선택)" value="${esc(SE.preacher)}">
+      <div style="display:flex;gap:6px">
+        <select class="form-select" id="f-book" onchange="onBookChange()" style="flex:2"><option value="">책</option>${BIBLE_BOOKS.map((b, i) => `<option value="${i}">${b[0]}</option>`).join('')}</select>
+        <select class="form-select" id="f-chap" onchange="updateRef()" style="flex:1"><option value="">장</option></select>
+        <input class="form-input" id="f-vs" type="number" min="1" placeholder="절" onchange="updateRef()" style="width:56px">
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <button class="btn btn-sm btn-secondary" onclick="openBible()">&#128214; 성경찾기</button>
+      <input class="form-input" id="f-ref" placeholder="본문 (예: 요한복음 3:16)" value="${esc(SE.reference)}">
+    </div>
+    <div class="se-toolbar">
+      <button class="se-tool active" id="tool-type" onclick="sePen(false)">&#9000; 타이핑</button>
+      <button class="se-tool" id="tool-pen" onclick="sePen(true)">&#9998; 필기</button>
+      <button class="se-tool" id="tool-erase" onclick="seErase()">&#9003; 지우개</button>
+      <span style="width:1px;height:22px;background:var(--border);margin:0 2px"></span>
+      ${SE_COLORS.map(c => `<span class="se-color ${c === SE.color ? 'active' : ''}" data-c="${c}" style="background:${c}" onclick="seColor('${c}')"></span>`).join('')}
+      <button class="se-tool" style="margin-left:auto" onclick="seClearDraw()">필기 지우기</button>
+    </div>
+    <div class="se-page-wrap">
+      <div class="se-page" style="height:${pageH}px">
+        <textarea class="se-text" id="se-text" placeholder="설교 내용을 입력하세요...">${esc(p.text || '')}</textarea>
+        <canvas class="se-canvas" id="se-canvas" data-h="${pageH}"></canvas>
+      </div>
+    </div>
+    <div class="se-pagenav">
+      <button class="btn-icon" onclick="sePage(-1)">&larr;</button>
+      <span style="font-weight:600">${SE.cur + 1} / ${SE.pages.length}</span>
+      <button class="btn-icon" onclick="sePage(1)">&rarr;</button>
+      <button class="btn btn-sm btn-secondary" onclick="seAddPage()">+ 페이지</button>
+      ${SE.pages.length > 1 ? `<button class="btn btn-sm btn-secondary" onclick="seDeletePage()" style="color:var(--danger)">페이지 삭제</button>` : ''}
+    </div>`;
+  setupSermonCanvas();
+}
+
+function setupSermonCanvas() {
+  const canvas = $('#se-canvas');
+  if (!canvas) return;
+  const page = SE.pages[SE.cur];
+  const W = canvas.parentElement.clientWidth;
+  const H = parseInt(canvas.dataset.h);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (page.drawing) { const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0, W, H); img.src = page.drawing; }
+  canvas.style.pointerEvents = SE.pen ? 'auto' : 'none';
+
+  let drawing = false, lx = 0, ly = 0;
+  const pos = e => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  canvas.addEventListener('pointerdown', e => { if (!SE.pen) return; drawing = true; try { canvas.setPointerCapture(e.pointerId); } catch (x) {} [lx, ly] = pos(e); });
+  canvas.addEventListener('pointermove', e => {
+    if (!drawing) return;
+    const [x, y] = pos(e);
+    ctx.globalCompositeOperation = SE.erase ? 'destination-out' : 'source-over';
+    ctx.strokeStyle = SE.color;
+    ctx.lineWidth = SE.erase ? 22 : (e.pressure ? 1 + e.pressure * 3 : 2.5);
+    ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(x, y); ctx.stroke();
+    [lx, ly] = [x, y];
+  });
+  const end = () => { if (drawing) { drawing = false; SE.pages[SE.cur].drawing = canvas.toDataURL('image/png'); } };
+  canvas.addEventListener('pointerup', end);
+  canvas.addEventListener('pointerleave', end);
+  canvas.addEventListener('pointercancel', end);
+}
+
+function seCapture() {
+  const t = $('#se-text'); if (t) SE.pages[SE.cur].text = t.value;
+  if ($('#se-title')) SE.title = $('#se-title').value;
+  if ($('#se-date')) SE.date = $('#se-date').value;
+  if ($('#se-preacher')) SE.preacher = $('#se-preacher').value;
+  if ($('#f-ref')) SE.reference = $('#f-ref').value;
+}
+
+window.sePen = function(on) {
+  SE.pen = on; SE.erase = false;
+  $('#se-canvas').style.pointerEvents = on ? 'auto' : 'none';
+  const t = $('#se-text'); t.readOnly = on; t.style.pointerEvents = on ? 'none' : 'auto';
+  $('#tool-pen').classList.toggle('active', on);
+  $('#tool-type').classList.toggle('active', !on);
+  $('#tool-erase').classList.remove('active');
+};
+window.seErase = function() {
+  if (!SE.pen) sePen(true);
+  SE.erase = !SE.erase;
+  $('#tool-erase').classList.toggle('active', SE.erase);
+};
+window.seColor = function(c) {
+  SE.color = c; SE.erase = false;
+  if (!SE.pen) sePen(true);
+  $('#tool-erase').classList.remove('active');
+  $$('.se-color').forEach(el => el.classList.toggle('active', el.dataset.c === c));
+};
+window.seClearDraw = function() {
+  if (!confirm('이 페이지의 필기를 지울까요?')) return;
+  SE.pages[SE.cur].drawing = null;
+  renderSermonEditor();
+};
+window.sePage = function(dir) {
+  seCapture();
+  const n = SE.cur + dir;
+  if (n < 0 || n >= SE.pages.length) return;
+  SE.cur = n; renderSermonEditor();
+};
+window.seAddPage = function() {
+  seCapture();
+  SE.pages.push({ text: '', drawing: null });
+  SE.cur = SE.pages.length - 1; renderSermonEditor();
+};
+window.seDeletePage = function() {
+  if (SE.pages.length <= 1) return;
+  if (!confirm('이 페이지를 삭제할까요?')) return;
+  seCapture();
+  SE.pages.splice(SE.cur, 1);
+  if (SE.cur >= SE.pages.length) SE.cur = SE.pages.length - 1;
+  renderSermonEditor();
+};
+window.closeSermonEditor = function() { SE = null; renderSermons(); };
+
+window.saveSermonEditor = async function() {
+  seCapture();
   const data = {
-    date: $('#f-date').value, title: $('#f-title').value,
-    preacher: $('#f-preacher').value, reference: $('#f-ref').value,
-    content: $('#f-content').value,
+    date: SE.date, title: SE.title || '(제목 없음)',
+    preacher: SE.preacher, reference: SE.reference,
+    content: serializePages(SE.pages),
   };
-  if (existingId) { data.id = existingId; await dbPut('sermons', data); }
+  if (SE.id) { data.id = SE.id; await dbPut('sermons', data); }
   else { await dbAdd('sermons', data); }
-  closeModal(); toast('설교노트가 저장되었습니다'); renderPage();
+  toast('설교노트가 저장되었습니다');
+  SE = null; renderSermons();
 };
 
 // === SHARED ===
