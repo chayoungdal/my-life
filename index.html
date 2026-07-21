@@ -507,8 +507,6 @@ body {
   <div class="drawer-section">성장</div>
   <button class="drawer-item" data-nav="plans"><span class="di-ic">&#127919;</span> 계획</button>
   <button class="drawer-item" data-nav="ideas"><span class="di-ic">&#128161;</span> 아이디어</button>
-  <div class="drawer-section">재정</div>
-  <button class="drawer-item" data-nav="savings"><span class="di-ic">&#128176;</span> 저축</button>
   <div class="drawer-section">데이터</div>
   <button class="drawer-item" data-nav="backup"><span class="di-ic">&#128190;</span> 백업/복원</button>
 </nav>
@@ -780,7 +778,6 @@ async function renderPage() {
     diary: renderDiary,
     plans: renderPlans,
     ideas: renderIdeas,
-    savings: renderSavings,
     sermons: renderSermons,
     backup: renderBackup,
   };
@@ -850,10 +847,8 @@ async function renderDashboard() {
   const today = toLocalYMD(new Date());
   const schedules = await dbGetAll('schedules', today);
   const plans = (await dbGetAll('plans')).filter(p => p.status === 'active');
-  const savings = await dbGetAll('savings');
   const scripture = (await dbGetAll('scriptures', today))[0];
   const ideas = (await dbGetAll('ideas')).filter(i => i.status !== 'done').slice(-5).reverse();
-  const totalSave = savings.reduce((s, i) => s + (i.amount || 0), 0);
 
   const needsBackup = checkBackupReminder();
 
@@ -871,10 +866,6 @@ async function renderDashboard() {
       <div class="stat-card">
         <div class="stat-label">진행 중 계획</div>
         <div class="stat-value accent">${plans.length}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">총 저축액</div>
-        <div class="stat-value primary">&#8361;${formatMoney(totalSave)}</div>
       </div>
     </div>
     <div class="card">
