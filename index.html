@@ -449,11 +449,69 @@ body {
 }
 
 .invest-item:last-child { border-bottom: none; }
+
+/* Drawer (서랍 메뉴) */
+.drawer-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  z-index: 150; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+  backdrop-filter: blur(2px);
+}
+.drawer-overlay.open { opacity: 1; pointer-events: auto; }
+.drawer {
+  position: fixed; top: 0; left: 0; bottom: 0; width: 280px; max-width: 82vw;
+  background: var(--surface); z-index: 160; overflow-y: auto;
+  padding: calc(20px + var(--safe-top)) 0 20px;
+  transform: translateX(-100%); transition: transform 0.28s ease;
+  box-shadow: 4px 0 24px rgba(0,0,0,0.12);
+}
+.drawer.open { transform: translateX(0); }
+.drawer-header { padding: 0 24px 20px; border-bottom: 1px solid var(--border-light); margin-bottom: 8px; }
+.drawer-header h1 { font-size: 22px; font-weight: 700; color: var(--primary); }
+.drawer-date { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.drawer-section {
+  padding: 14px 24px 6px; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.5px; color: var(--text-secondary);
+}
+.drawer-item {
+  display: flex; align-items: center; gap: 14px;
+  width: calc(100% - 16px); margin: 2px 8px; padding: 13px 18px;
+  border: none; background: none; border-radius: 12px;
+  font-size: 16px; font-weight: 500; color: var(--text);
+  text-align: left; cursor: pointer;
+}
+.drawer-item.active { background: var(--primary); color: #fff; }
+.drawer-item:active { background: var(--primary-light); }
+.drawer-item.active:active { background: var(--primary); }
+.di-ic { font-size: 20px; width: 26px; text-align: center; }
 </style>
 </head>
 <body>
 
 <main class="main" id="mainContent"></main>
+
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<nav class="drawer" id="drawer">
+  <div class="drawer-header">
+    <h1>나의 하루</h1>
+    <div class="drawer-date" id="drawerDate"></div>
+  </div>
+  <div class="drawer-section">오늘</div>
+  <button class="drawer-item" data-nav="dashboard"><span class="di-ic">&#9737;</span> 대시보드</button>
+  <button class="drawer-item" data-nav="schedule"><span class="di-ic">&#128197;</span> 스케줄</button>
+  <button class="drawer-item" data-nav="routine"><span class="di-ic">&#9745;</span> 하루 일과</button>
+  <div class="drawer-section">영성</div>
+  <button class="drawer-item" data-nav="scripture"><span class="di-ic">&#128214;</span> 하루 말씀</button>
+  <button class="drawer-item" data-nav="prayer"><span class="di-ic">&#128591;</span> 하루 기도</button>
+  <button class="drawer-item" data-nav="diary"><span class="di-ic">&#128221;</span> 하루 일기</button>
+  <button class="drawer-item" data-nav="sermons"><span class="di-ic">&#127908;</span> 설교노트</button>
+  <div class="drawer-section">성장</div>
+  <button class="drawer-item" data-nav="plans"><span class="di-ic">&#127919;</span> 계획</button>
+  <button class="drawer-item" data-nav="ideas"><span class="di-ic">&#128161;</span> 아이디어</button>
+  <div class="drawer-section">재정</div>
+  <button class="drawer-item" data-nav="savings"><span class="di-ic">&#128176;</span> 저축</button>
+  <div class="drawer-section">데이터</div>
+  <button class="drawer-item" data-nav="backup"><span class="di-ic">&#128190;</span> 백업/복원</button>
+</nav>
 
 <nav class="tab-bar">
   <button class="tab-item active" data-page="dashboard">
@@ -472,9 +530,9 @@ body {
     <span class="tab-icon">&#128221;</span>
     <span class="tab-label">일기</span>
   </button>
-  <button class="tab-item" data-page="more">
-    <span class="tab-icon">&#8943;</span>
-    <span class="tab-label">더보기</span>
+  <button class="tab-item" id="tabMenu">
+    <span class="tab-icon">&#9776;</span>
+    <span class="tab-label">메뉴</span>
   </button>
 </nav>
 
@@ -662,12 +720,34 @@ $('#modalOverlay').addEventListener('click', e => { if (e.target === $('#modalOv
 
 $$('.tab-item').forEach(item => {
   item.addEventListener('click', () => {
-    $$('.tab-item').forEach(i => i.classList.remove('active'));
-    item.classList.add('active');
-    currentPage = item.dataset.page;
-    renderPage();
+    if (item.id === 'tabMenu') { openDrawer(); return; }
+    navigateTo(item.dataset.page);
   });
 });
+
+$$('.drawer-item').forEach(item => {
+  item.addEventListener('click', () => navigateTo(item.dataset.nav));
+});
+
+window.openDrawer = function() {
+  $('#drawerDate').textContent = formatDate(toLocalYMD(new Date()));
+  $$('.drawer-item').forEach(i => i.classList.toggle('active', i.dataset.nav === currentPage));
+  $('#drawer').classList.add('open');
+  $('#drawerOverlay').classList.add('open');
+};
+window.closeDrawer = function() {
+  $('#drawer').classList.remove('open');
+  $('#drawerOverlay').classList.remove('open');
+};
+
+window.navigateTo = function(page) {
+  currentPage = page;
+  closeDrawer();
+  const tabMap = { dashboard: 0, schedule: 1, scripture: 2, diary: 3 };
+  const idx = tabMap[page];
+  $$('.tab-item').forEach((t, i) => t.classList.toggle('active', i === idx));
+  renderPage();
+};
 
 function dateNav() {
   return `<div class="date-nav">
@@ -700,10 +780,9 @@ async function renderPage() {
     diary: renderDiary,
     plans: renderPlans,
     ideas: renderIdeas,
-    investment: renderInvestment,
     savings: renderSavings,
     sermons: renderSermons,
-    more: renderMore,
+    backup: renderBackup,
   };
   const fn = pages[currentPage];
   if (fn) await fn();
@@ -771,11 +850,9 @@ async function renderDashboard() {
   const today = toLocalYMD(new Date());
   const schedules = await dbGetAll('schedules', today);
   const plans = (await dbGetAll('plans')).filter(p => p.status === 'active');
-  const investments = await dbGetAll('investments');
   const savings = await dbGetAll('savings');
   const scripture = (await dbGetAll('scriptures', today))[0];
   const ideas = (await dbGetAll('ideas')).filter(i => i.status !== 'done').slice(-5).reverse();
-  const totalInvest = investments.reduce((s, i) => s + (i.amount || 0), 0);
   const totalSave = savings.reduce((s, i) => s + (i.amount || 0), 0);
 
   const needsBackup = checkBackupReminder();
@@ -794,10 +871,6 @@ async function renderDashboard() {
       <div class="stat-card">
         <div class="stat-label">진행 중 계획</div>
         <div class="stat-value accent">${plans.length}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">총 투자액</div>
-        <div class="stat-value success">&#8361;${formatMoney(totalInvest)}</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">총 저축액</div>
@@ -1327,34 +1400,18 @@ window.saveSavings = async function() {
 };
 
 // === MORE (더보기) ===
-async function renderMore() {
+async function renderBackup() {
   $('#mainContent').innerHTML = `
-    <div class="page-header"><h2>더보기</h2></div>
-    <div class="card" onclick="currentPage='routine';$$('.tab-item').forEach(i=>i.classList.remove('active'));renderPage();" style="cursor:pointer">
-      <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">&#9745;</span><span style="font-weight:600">하루 일과</span></div>
+    <div class="page-header"><h2>&#128190; 백업 / 복원</h2></div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px">백업 내보내기</div>
+      <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">모든 데이터를 JSON 파일로 저장합니다. OneDrive 등에 올려두면 다른 기기에서도 불러올 수 있습니다.</p>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="exportBackup()">&#128229; 백업 파일 내보내기</button>
     </div>
-    <div class="card" onclick="currentPage='prayer';$$('.tab-item').forEach(i=>i.classList.remove('active'));renderPage();" style="cursor:pointer">
-      <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">&#128591;</span><span style="font-weight:600">하루 기도</span></div>
-    </div>
-    <div class="card" onclick="currentPage='sermons';$$('.tab-item').forEach(i=>i.classList.remove('active'));renderPage();" style="cursor:pointer">
-      <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">&#127908;</span><span style="font-weight:600">설교노트</span></div>
-    </div>
-    <div class="card" onclick="currentPage='plans';$$('.tab-item').forEach(i=>i.classList.remove('active'));renderPage();" style="cursor:pointer">
-      <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">&#127919;</span><span style="font-weight:600">계획</span></div>
-    </div>
-    <div class="card" onclick="currentPage='ideas';$$('.tab-item').forEach(i=>i.classList.remove('active'));renderPage();" style="cursor:pointer">
-      <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">&#128161;</span><span style="font-weight:600">아이디어</span></div>
-    </div>
-    <div class="card" onclick="currentPage='investment';$$('.tab-item').forEach(i=>i.classList.remove('active'));renderPage();" style="cursor:pointer">
-      <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">&#128200;</span><span style="font-weight:600">투자</span></div>
-    </div>
-    <div class="card" onclick="currentPage='savings';$$('.tab-item').forEach(i=>i.classList.remove('active'));renderPage();" style="cursor:pointer">
-      <div style="display:flex;align-items:center;gap:12px"><span style="font-size:22px">&#128176;</span><span style="font-weight:600">저축</span></div>
-    </div>
-    <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
-      <div class="card-title" style="margin-bottom:14px">데이터 관리</div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:10px" onclick="exportBackup()">&#128190; 백업 내보내기</button>
-      <button class="btn btn-secondary" style="width:100%;justify-content:center" onclick="document.getElementById('importFile').click()">&#128194; 백업 가져오기</button>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px">백업 가져오기</div>
+      <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">JSON 백업 파일을 불러옵니다. <strong style="color:var(--danger)">현재 데이터는 모두 교체됩니다.</strong></p>
+      <button class="btn btn-secondary" style="width:100%;justify-content:center" onclick="document.getElementById('importFile').click()">&#128228; 백업 파일 가져오기</button>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(this.files[0])">
       <p style="margin-top:12px;font-size:12px;color:var(--text-secondary);text-align:center">
         마지막 백업: ${localStorage.getItem('lastBackup') ? new Date(localStorage.getItem('lastBackup')).toLocaleDateString('ko-KR') : '없음'}
