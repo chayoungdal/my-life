@@ -48,6 +48,7 @@ body {
   padding-top: var(--safe-top);
   padding-bottom: calc(70px + var(--safe-bottom));
   overflow-x: hidden;
+  zoom: 1.15;
 }
 
 /* Tab Bar */
@@ -845,7 +846,7 @@ function checkBackupReminder() {
 // === DASHBOARD ===
 async function renderDashboard() {
   const today = toLocalYMD(new Date());
-  const schedules = await dbGetAll('schedules', today);
+  const schedules = (await dbGetAll('schedules')).filter(s => coversDay(s, today)).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
   const plans = (await dbGetAll('plans')).filter(p => p.status === 'active');
   const scripture = (await dbGetAll('scriptures', today))[0];
   const ideas = (await dbGetAll('ideas')).filter(i => i.status !== 'done').slice(-5).reverse();
@@ -889,6 +890,11 @@ async function renderDashboard() {
 }
 
 // === SCHEDULE (월 달력) ===
+function coversDay(s, ds) {
+  const start = s.date;
+  const end = s.end_date || s.date;
+  return start <= ds && ds <= end;
+}
 async function renderSchedule() {
   const all = await dbGetAll('schedules');
   const base = new Date(currentDate + 'T00:00:00');
@@ -898,9 +904,7 @@ async function renderSchedule() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const todayStr = toLocalYMD(new Date());
 
-  const byDate = {};
-  all.forEach(s => { (byDate[s.date] = byDate[s.date] || []).push(s); });
-  Object.values(byDate).forEach(a => a.sort((x, y) => (x.time || '').localeCompare(y.time || '')));
+  all.sort((x, y) => (x.time || '').localeCompare(y.time || ''));
 
   const cells = [];
   for (let i = 0; i < startWeekday; i++) cells.push(null);
@@ -927,7 +931,7 @@ async function renderSchedule() {
       ${cells.map(d => {
         if (d === null) return `<div class="cal-cell empty"></div>`;
         const ds = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const items = byDate[ds] || [];
+        const items = all.filter(s => coversDay(s, ds));
         const wd = new Date(year, month, d).getDay();
         return `<div class="cal-cell ${ds === todayStr ? 'today' : ''}" onclick="openDay('${ds}')">
           <div class="cal-daynum ${wd === 0 ? 'sun' : ''} ${wd === 6 ? 'sat' : ''}">${d}</div>
@@ -950,7 +954,7 @@ window.changeMonth = function(dir) {
 
 window.openDay = async function(ds) {
   currentDate = ds;
-  const items = (await dbGetAll('schedules', ds)).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  const items = (await dbGetAll('schedules')).filter(s => coversDay(s, ds)).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
   showModal(`
     <div class="modal-header"><span class="modal-title">${formatDate(ds)}</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
     <div style="max-height:55vh;overflow-y:auto">
@@ -986,7 +990,10 @@ window.dayDelete = async function(id, ds) {
 window.showScheduleModal = function() {
   showModal(`
     <div class="modal-header"><span class="modal-title">스케줄 추가</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
-    <div class="form-group"><label class="form-label">날짜</label><input class="form-input" id="f-date" type="date" value="${currentDate}"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">시작일</label><input class="form-input" id="f-date" type="date" value="${currentDate}"></div>
+      <div class="form-group"><label class="form-label">종료일 (선택)</label><input class="form-input" id="f-end" type="date"></div>
+    </div>
     <div class="form-group"><label class="form-label">시간</label><input class="form-input" id="f-time" type="time"></div>
     <div class="form-group"><label class="form-label">제목</label><input class="form-input" id="f-title" placeholder="스케줄 제목"></div>
     <div class="form-group"><label class="form-label">설명</label><textarea class="form-textarea" id="f-desc" rows="3" placeholder="상세 내용 (선택)"></textarea></div>
@@ -995,7 +1002,10 @@ window.showScheduleModal = function() {
 };
 
 window.saveSchedule = async function() {
-  await dbAdd('schedules', { date: $('#f-date').value, time: $('#f-time').value, title: $('#f-title').value, description: $('#f-desc').value, completed: 0 });
+  const start = $('#f-date').value;
+  let end = $('#f-end').value || null;
+  if (end && end < start) end = start;
+  await dbAdd('schedules', { date: start, end_date: end, time: $('#f-time').value, title: $('#f-title').value, description: $('#f-desc').value, completed: 0 });
   closeModal(); toast('스케줄이 저장되었습니다'); renderPage();
 };
 
