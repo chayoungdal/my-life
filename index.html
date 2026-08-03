@@ -187,6 +187,14 @@ body {
 .form-textarea { resize: vertical; min-height: 100px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
+/* Rich text (글씨색) */
+.rt-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.rt-label { font-size: 12px; color: var(--text-secondary); font-weight: 600; }
+.rt-color { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border); cursor: pointer; }
+.rich-input { min-height: 120px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 16px; line-height: 1.7; overflow-y: auto; background: var(--surface); -webkit-user-modify: read-write; }
+.rich-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+.rich-input:empty:before { content: attr(data-ph); color: var(--text-secondary); }
+
 /* List Items */
 .list-item {
   display: flex;
@@ -392,7 +400,8 @@ body {
 .se-color.active { box-shadow: 0 0 0 2px var(--primary); }
 .se-page-wrap { border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; background: #fff; }
 .se-page { position: relative; background-image: repeating-linear-gradient(#fff, #fff 33px, #dbe1ee 34px); }
-.se-text { position: absolute; inset: 0; width: 100%; height: 100%; border: none; outline: none; background: transparent; resize: none; font-size: 17px; line-height: 34px; padding: 5px 16px; font-family: inherit; color: var(--text); }
+.se-text { position: absolute; inset: 0; width: 100%; height: 100%; border: none; outline: none; background: transparent; resize: none; font-size: 17px; line-height: 34px; padding: 5px 16px; font-family: inherit; color: var(--text); overflow-y: auto; -webkit-user-modify: read-write; }
+.se-text:empty:before { content: attr(data-ph); color: var(--text-secondary); }
 .se-canvas { position: absolute; inset: 0; touch-action: none; }
 .se-pagenav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; }
 @media (max-width: 767px) { .se-meta { grid-template-columns: 1fr; } }
@@ -645,17 +654,21 @@ let currentPage = 'dashboard';
 // 한국 공휴일 (2025~2027) — 달력 표시용
 const HOLIDAYS = {
   '2025-01-01':'신정','2025-01-28':'설날 연휴','2025-01-29':'설날','2025-01-30':'설날 연휴',
-  '2025-03-01':'삼일절','2025-05-05':'어린이날·부처님오신날','2025-06-06':'현충일',
-  '2025-08-15':'광복절','2025-10-03':'개천절','2025-10-05':'추석 연휴','2025-10-06':'추석',
-  '2025-10-07':'추석 연휴','2025-10-09':'한글날','2025-12-25':'성탄절',
+  '2025-03-01':'삼일절','2025-03-03':'대체공휴일','2025-05-05':'어린이날·부처님오신날','2025-05-06':'대체공휴일',
+  '2025-06-06':'현충일','2025-08-15':'광복절','2025-10-03':'개천절',
+  '2025-10-05':'추석 연휴','2025-10-06':'추석','2025-10-07':'추석 연휴','2025-10-08':'대체공휴일',
+  '2025-10-09':'한글날','2025-12-25':'성탄절',
   '2026-01-01':'신정','2026-02-16':'설날 연휴','2026-02-17':'설날','2026-02-18':'설날 연휴',
-  '2026-03-01':'삼일절','2026-05-05':'어린이날','2026-05-24':'부처님오신날','2026-06-06':'현충일',
-  '2026-08-15':'광복절','2026-09-24':'추석 연휴','2026-09-25':'추석','2026-09-26':'추석 연휴',
-  '2026-10-03':'개천절','2026-10-09':'한글날','2026-12-25':'성탄절',
-  '2027-01-01':'신정','2027-02-06':'설날 연휴','2027-02-07':'설날','2027-02-08':'설날 연휴',
-  '2027-03-01':'삼일절','2027-05-05':'어린이날','2027-05-13':'부처님오신날','2027-06-06':'현충일',
-  '2027-08-15':'광복절','2027-09-14':'추석 연휴','2027-09-15':'추석','2027-09-16':'추석 연휴',
-  '2027-10-03':'개천절','2027-10-09':'한글날','2027-12-25':'성탄절',
+  '2026-03-01':'삼일절','2026-03-02':'대체공휴일','2026-05-05':'어린이날','2026-05-24':'부처님오신날','2026-05-25':'대체공휴일',
+  '2026-06-06':'현충일','2026-08-15':'광복절','2026-08-17':'대체공휴일',
+  '2026-09-24':'추석 연휴','2026-09-25':'추석','2026-09-26':'추석 연휴','2026-09-28':'대체공휴일',
+  '2026-10-03':'개천절','2026-10-05':'대체공휴일','2026-10-09':'한글날','2026-12-25':'성탄절',
+  '2027-01-01':'신정','2027-02-05':'설날 연휴','2027-02-06':'설날','2027-02-07':'설날 연휴','2027-02-08':'대체공휴일',
+  '2027-03-01':'삼일절','2027-05-05':'어린이날','2027-05-13':'부처님오신날',
+  '2027-06-06':'현충일','2027-08-15':'광복절','2027-08-16':'대체공휴일',
+  '2027-09-14':'추석 연휴','2027-09-15':'추석','2027-09-16':'추석 연휴',
+  '2027-10-03':'개천절','2027-10-04':'대체공휴일','2027-10-09':'한글날','2027-10-11':'대체공휴일',
+  '2027-12-25':'성탄절','2027-12-27':'대체공휴일',
 };
 
 // 성경 66권 (이름, USFM 코드, 장 수) — bible.com 개역개정(버전 88) 링크용
@@ -808,6 +821,26 @@ function esc(str) {
   const d = document.createElement('div');
   d.textContent = str;
   return d.innerHTML;
+}
+
+// 저장된 내용을 서식 입력/표시용 HTML로 변환 (옛 일반텍스트는 줄바꿈 처리)
+function richHTML(s) {
+  if (!s) return '';
+  if (/<[a-z][\s\S]*>/i.test(s)) return s;
+  return esc(s).replace(/\n/g, '<br>');
+}
+function stripHTML(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.innerHTML = s;
+  return d.textContent || '';
+}
+window.rtColor = function(c) {
+  document.execCommand('styleWithCSS', false, true);
+  document.execCommand('foreColor', false, c);
+};
+function rtToolbar() {
+  return `<div class="rt-toolbar"><span class="rt-label">글씨색</span>${SE_COLORS.map(c => `<span class="rt-color" style="background:${c}" onmousedown="event.preventDefault();rtColor('${c}')"></span>`).join('')}</div>`;
 }
 
 // === BACKUP ===
@@ -1135,7 +1168,7 @@ async function renderPrayer() {
         <div style="display:flex;justify-content:space-between;align-items:start">
           <div style="flex:1">
             <span class="tag ${p.answered ? 'tag-success' : 'tag-accent'}">${p.answered ? '응답됨' : esc(p.category)}</span>
-            <p style="margin-top:8px;line-height:1.8;white-space:pre-wrap">${esc(p.content)}</p>
+            <p style="margin-top:8px;line-height:1.8">${richHTML(p.content)}</p>
           </div>
           <div style="display:flex;gap:4px;margin-left:8px">
             <button class="btn-icon" onclick="toggleField('prayers',${p.id},'answered',${p.answered})">&#10084;</button>
@@ -1156,13 +1189,16 @@ window.showPrayerModal = function() {
         <option value="중보기도">중보기도</option><option value="일반">일반</option>
       </select>
     </div>
-    <div class="form-group"><label class="form-label">기도</label><textarea class="form-textarea" id="f-content" rows="6" placeholder="기도를 작성하세요..."></textarea></div>
+    <div class="form-group"><label class="form-label">기도</label>
+      ${rtToolbar()}
+      <div class="rich-input" id="f-content" contenteditable="true" data-ph="기도를 작성하세요..." style="min-height:160px"></div>
+    </div>
     <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="savePrayer()">저장</button></div>
   `);
 };
 
 window.savePrayer = async function() {
-  await dbAdd('prayers', { date: $('#f-date').value, category: $('#f-category').value, content: $('#f-content').value, answered: 0 });
+  await dbAdd('prayers', { date: $('#f-date').value, category: $('#f-category').value, content: $('#f-content').innerHTML, answered: 0 });
   closeModal(); toast('기도가 저장되었습니다'); renderPage();
 };
 
@@ -1182,7 +1218,7 @@ async function renderDiary() {
     ${item ? `
       <div class="card">
         ${item.mood ? `<div style="margin-bottom:12px"><span class="tag tag-primary">${esc(item.mood)}</span></div>` : ''}
-        <div class="diary-content">${esc(item.content)}</div>
+        <div class="diary-content">${richHTML(item.content)}</div>
         ${item.gratitude ? `<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border-light)"><div class="form-label">감사한 일</div><p style="line-height:1.8">${esc(item.gratitude)}</p></div>` : ''}
       </div>` : '<div class="empty-state"><div class="icon">&#128221;</div><div class="message">오늘의 일기를 기록하세요</div></div>'}`;
 }
@@ -1203,14 +1239,17 @@ window.showDiaryModal = async function() {
         <option value="힘듦" ${item.mood==='힘듦'?'selected':''}>힘듦</option>
       </select>
     </div>
-    <div class="form-group"><label class="form-label">일기</label><textarea class="form-textarea" id="f-content" rows="6" placeholder="오늘 하루는 어땠나요?">${esc(item.content || '')}</textarea></div>
+    <div class="form-group"><label class="form-label">일기</label>
+      ${rtToolbar()}
+      <div class="rich-input" id="f-content" contenteditable="true" data-ph="오늘 하루는 어땠나요?" style="min-height:180px">${richHTML(item.content || '')}</div>
+    </div>
     <div class="form-group"><label class="form-label">감사한 일</label><textarea class="form-textarea" id="f-gratitude" rows="3" placeholder="오늘 감사한 일은?">${esc(item.gratitude || '')}</textarea></div>
     <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="saveDiary(${item.id || 0})">저장</button></div>
   `);
 };
 
 window.saveDiary = async function(existingId) {
-  const data = { date: $('#f-date').value, mood: $('#f-mood').value, content: $('#f-content').value, gratitude: $('#f-gratitude').value };
+  const data = { date: $('#f-date').value, mood: $('#f-mood').value, content: $('#f-content').innerHTML, gratitude: $('#f-gratitude').value };
   if (existingId) { data.id = existingId; await dbPut('diary', data); }
   else { await dbAdd('diary', data); }
   closeModal(); toast('일기가 저장되었습니다'); renderPage();
@@ -1495,7 +1534,7 @@ async function renderSermons() {
     </div>
     ${items.length ? items.map(s => {
       const pages = parsePages(s.content);
-      const preview = pages.map(p => p.text || '').join(' ').trim();
+      const preview = stripHTML(pages.map(p => p.text || '').join(' ')).trim();
       return `<div class="card" style="cursor:pointer" onclick="openSermonEditor(${s.id})">
         <div style="display:flex;justify-content:space-between;align-items:start">
           <div style="flex:1;min-width:0">
@@ -1549,12 +1588,12 @@ function renderSermonEditor() {
       <button class="se-tool" id="tool-pen" onclick="sePen(true)">&#9998; 필기</button>
       <button class="se-tool" id="tool-erase" onclick="seErase()">&#9003; 지우개</button>
       <span style="width:1px;height:22px;background:var(--border);margin:0 2px"></span>
-      ${SE_COLORS.map(c => `<span class="se-color ${c === SE.color ? 'active' : ''}" data-c="${c}" style="background:${c}" onclick="seColor('${c}')"></span>`).join('')}
+      ${SE_COLORS.map(c => `<span class="se-color ${c === SE.color ? 'active' : ''}" data-c="${c}" style="background:${c}" onmousedown="event.preventDefault();seColor('${c}')"></span>`).join('')}
       <button class="se-tool" style="margin-left:auto" onclick="seClearDraw()">필기 지우기</button>
     </div>
     <div class="se-page-wrap">
       <div class="se-page" style="height:${pageH}px">
-        <textarea class="se-text" id="se-text" placeholder="설교 내용을 입력하세요...">${esc(p.text || '')}</textarea>
+        <div class="se-text" id="se-text" contenteditable="true" data-ph="설교 내용을 입력하세요...">${richHTML(p.text || '')}</div>
         <canvas class="se-canvas" id="se-canvas" data-h="${pageH}"></canvas>
       </div>
     </div>
@@ -1602,7 +1641,7 @@ function setupSermonCanvas() {
 }
 
 function seCapture() {
-  const t = $('#se-text'); if (t) SE.pages[SE.cur].text = t.value;
+  const t = $('#se-text'); if (t) SE.pages[SE.cur].text = t.innerHTML;
   if ($('#se-title')) SE.title = $('#se-title').value;
   if ($('#se-date')) SE.date = $('#se-date').value;
   if ($('#se-preacher')) SE.preacher = $('#se-preacher').value;
@@ -1612,7 +1651,7 @@ function seCapture() {
 window.sePen = function(on) {
   SE.pen = on; SE.erase = false;
   $('#se-canvas').style.pointerEvents = on ? 'auto' : 'none';
-  const t = $('#se-text'); t.readOnly = on; t.style.pointerEvents = on ? 'none' : 'auto';
+  const t = $('#se-text'); t.contentEditable = on ? 'false' : 'true'; t.style.pointerEvents = on ? 'none' : 'auto';
   $('#tool-pen').classList.toggle('active', on);
   $('#tool-type').classList.toggle('active', !on);
   $('#tool-erase').classList.remove('active');
@@ -1624,9 +1663,11 @@ window.seErase = function() {
 };
 window.seColor = function(c) {
   SE.color = c; SE.erase = false;
-  if (!SE.pen) sePen(true);
   $('#tool-erase').classList.remove('active');
   $$('.se-color').forEach(el => el.classList.toggle('active', el.dataset.c === c));
+  if (SE.pen) return; // 필기 모드: 펜 색만 변경
+  document.execCommand('styleWithCSS', false, true);
+  document.execCommand('foreColor', false, c);
 };
 window.seClearDraw = function() {
   if (!confirm('이 페이지의 필기를 지울까요?')) return;
