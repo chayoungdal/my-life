@@ -758,6 +758,27 @@ $$('.drawer-item').forEach(item => {
   item.addEventListener('click', () => navigateTo(item.dataset.nav));
 });
 
+// 좌우 스와이프로 페이지 넘기기 (달력 월 이동, 설교노트 페이지, 일기·기도·말씀 날짜)
+let swipeX = 0, swipeY = 0;
+document.addEventListener('touchstart', e => {
+  if (e.touches.length !== 1) { swipeX = null; return; }
+  swipeX = e.touches[0].clientX; swipeY = e.touches[0].clientY;
+}, { passive: true });
+document.addEventListener('touchend', e => {
+  if (swipeX == null) return;
+  const dx = e.changedTouches[0].clientX - swipeX;
+  const dy = e.changedTouches[0].clientY - swipeY;
+  if (Math.abs(dx) < 70 || Math.abs(dy) > 55) return; // 뚜렷한 가로 스와이프만
+  if ($('#modalOverlay').classList.contains('active')) return;
+  if ($('#drawer').classList.contains('open')) return;
+  const t = e.target;
+  if (t.closest && t.closest('.se-canvas, .se-text, .rich-input, textarea, input, select')) return;
+  const dir = dx < 0 ? 1 : -1; // 왼쪽으로 밀면 다음
+  if (currentPage === 'schedule') changeMonth(dir);
+  else if (currentPage === 'sermons' && SE) sePage(dir);
+  else if (['scripture', 'prayer', 'diary', 'routine'].includes(currentPage)) changeDate(dir);
+}, { passive: true });
+
 window.openDrawer = function() {
   $('#drawerDate').textContent = formatDate(toLocalYMD(new Date()));
   $$('.drawer-item').forEach(i => i.classList.toggle('active', i.dataset.nav === currentPage));
