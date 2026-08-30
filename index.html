@@ -791,6 +791,7 @@ window.closeDrawer = function() {
 };
 
 window.navigateTo = function(page) {
+  if (typeof seFlush === 'function') seFlush(); // 설교노트 작성 중이면 먼저 저장
   currentPage = page;
   closeDrawer();
   const tabMap = { dashboard: 0, schedule: 1, scripture: 2, diary: 3 };
@@ -1587,7 +1588,7 @@ function renderSermonEditor() {
   $('#mainContent').innerHTML = `
     <div class="se-topbar">
       <button class="btn btn-secondary btn-sm" onclick="closeSermonEditor()">&larr; 목록</button>
-      <div style="font-weight:700">&#127908; 설교노트</div>
+      <span id="se-status" style="font-size:12px;color:var(--text-secondary)">자동 저장</span>
       <button class="btn btn-primary btn-sm" onclick="saveSermonEditor()">저장</button>
     </div>
     <div class="se-meta">
@@ -1626,6 +1627,9 @@ function renderSermonEditor() {
       ${SE.pages.length > 1 ? `<button class="btn btn-sm btn-secondary" onclick="seDeletePage()" style="color:var(--danger)">페이지 삭제</button>` : ''}
     </div>`;
   setupSermonCanvas();
+  ['se-title', 'se-date', 'se-preacher', 'se-text', 'f-ref'].forEach(id => {
+    const el = $('#' + id); if (el) el.addEventListener('input', seAutosave);
+  });
 }
 
 function setupSermonCanvas() {
@@ -1655,7 +1659,7 @@ function setupSermonCanvas() {
     ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(x, y); ctx.stroke();
     [lx, ly] = [x, y];
   });
-  const end = () => { if (drawing) { drawing = false; SE.pages[SE.cur].drawing = canvas.toDataURL('image/png'); } };
+  const end = () => { if (drawing) { drawing = false; SE.pages[SE.cur].drawing = canvas.toDataURL('image/png'); seAutosave(); } };
   canvas.addEventListener('pointerup', end);
   canvas.addEventListener('pointerleave', end);
   canvas.addEventListener('pointercancel', end);
@@ -1668,6 +1672,39 @@ function seCapture() {
   if ($('#se-preacher')) SE.preacher = $('#se-preacher').value;
   if ($('#f-ref')) SE.reference = $('#f-ref').value;
 }
+
+// 자동 저장 (작성 중 내용 손실 방지)
+let seSaveTimer = null, seSaving = false;
+function seAutosave() {
+  clearTimeout(seSaveTimer);
+  const st = $('#se-status'); if (st) st.textContent = '입력 중…';
+  seSaveTimer = setTimeout(() => seSaveNow(false), 1000);
+}
+async function seSaveNow(showToast) {
+  if (!SE) return;
+  seCapture();
+  const empty = !(SE.title || '').trim() && !(SE.reference || '').trim() && !(SE.preacher || '').trim()
+    && SE.pages.every(p => !stripHTML(p.text || '').trim() && !p.drawing);
+  if (!SE.id && empty) return;
+  if (seSaving) { seAutosave(); return; }
+  seSaving = true;
+  const data = {
+    date: SE.date, title: SE.title || '(제목 없음)',
+    preacher: SE.preacher, reference: SE.reference,
+    content: serializePages(SE.pages),
+  };
+  try {
+    if (SE.id) { data.id = SE.id; await dbPut('sermons', data); }
+    else { const created = await dbAdd('sermons', data); if (created && created.id) SE.id = created.id; }
+    const st = $('#se-status'); if (st) st.textContent = '자동 저장됨';
+    if (showToast) toast('설교노트가 저장되었습니다');
+  } catch (e) {
+    const st = $('#se-status'); if (st) st.textContent = '저장 실패';
+  } finally {
+    seSaving = false;
+  }
+}
+window.seFlush = function() { if (!SE) return; clearTimeout(seSaveTimer); seSaveNow(false); };
 
 window.sePen = function(on) {
   SE.pen = on; SE.erase = false;
@@ -1696,13 +1733,13 @@ window.seClearDraw = function() {
   renderSermonEditor();
 };
 window.sePage = function(dir) {
-  seCapture();
+  seCapture(); seAutosave();
   const n = SE.cur + dir;
   if (n < 0 || n >= SE.pages.length) return;
   SE.cur = n; renderSermonEditor();
 };
 window.seAddPage = function() {
-  seCapture();
+  seCapture(); seAutosave();
   SE.pages.push({ text: '', drawing: null });
   SE.cur = SE.pages.length - 1; renderSermonEditor();
 };
@@ -1712,20 +1749,18 @@ window.seDeletePage = function() {
   seCapture();
   SE.pages.splice(SE.cur, 1);
   if (SE.cur >= SE.pages.length) SE.cur = SE.pages.length - 1;
+  seAutosave();
   renderSermonEditor();
 };
-window.closeSermonEditor = function() { SE = null; renderSermons(); };
+window.closeSermonEditor = async function() {
+  clearTimeout(seSaveTimer);
+  if (SE) await seSaveNow(false);
+  SE = null; renderSermons();
+};
 
 window.saveSermonEditor = async function() {
-  seCapture();
-  const data = {
-    date: SE.date, title: SE.title || '(제목 없음)',
-    preacher: SE.preacher, reference: SE.reference,
-    content: serializePages(SE.pages),
-  };
-  if (SE.id) { data.id = SE.id; await dbPut('sermons', data); }
-  else { await dbAdd('sermons', data); }
-  toast('설교노트가 저장되었습니다');
+  clearTimeout(seSaveTimer);
+  await seSaveNow(true);
   SE = null; renderSermons();
 };
 
