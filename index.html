@@ -1055,6 +1055,33 @@ window.fillVerseFromRef = function() {
   toast('본문을 입력했습니다');
 };
 
+// 설교노트(서식 입력)에 참조로 본문을 커서 위치에 삽입
+window.sermonInsertVerse = function() {
+  const ref = ($('#f-ref') && $('#f-ref').value || '').trim();
+  if (!ref) { toast('본문(예: 시편 1:1~2)을 입력하세요'); return; }
+  if (!BIBLE_TEXT) { toast('먼저 "성경 가져오기"에서 성경을 올려주세요'); return; }
+  const txt = getVerseText(ref);
+  if (!txt) { toast('해당 구절을 찾지 못했습니다'); return; }
+  if (SE && SE.pen) sePen(false); // 타이핑 모드로 전환
+  const el = $('#se-text');
+  if (!el) return;
+  el.focus();
+  const html = esc(txt).replace(/\n/g, '<br>') + '<br>';
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount && el.contains(sel.anchorNode)) {
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    const frag = range.createContextualFragment(html);
+    const last = frag.lastChild;
+    range.insertNode(frag);
+    if (last) { range.setStartAfter(last); range.collapse(true); sel.removeAllRanges(); sel.addRange(range); }
+  } else {
+    el.innerHTML += html;
+  }
+  seCapture(); seAutosave();
+  toast('본문을 입력했습니다');
+};
+
 async function renderBibleImport() {
   const rec = await bibleLoad();
   $('#mainContent').innerHTML = `
@@ -1821,9 +1848,12 @@ function renderSermonEditor() {
         <input class="form-input" id="f-vs" type="number" min="1" placeholder="절" onchange="updateRef()" style="width:56px">
       </div>
     </div>
-    <div style="display:flex;gap:6px;margin-bottom:12px">
-      <button class="btn btn-sm btn-secondary" onclick="openBible()">&#128214; 성경찾기</button>
-      <input class="form-input" id="f-ref" placeholder="본문 (예: 요한복음 3:16)" value="${esc(SE.reference)}">
+    <div style="margin-bottom:12px">
+      <input class="form-input" id="f-ref" placeholder="본문 (예: 시편 1:1~2)" value="${esc(SE.reference)}">
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="btn btn-sm btn-primary" onclick="sermonInsertVerse()">&#11015; 본문 자동입력</button>
+        <button class="btn btn-sm btn-secondary" onclick="openBible()">&#128214; 성경찾기</button>
+      </div>
     </div>
     <div class="se-toolbar">
       <button class="se-tool active" id="tool-type" onclick="sePen(false)">&#9000; 타이핑</button>
