@@ -933,33 +933,22 @@ async function bibleSave(rec) {
 function parseBibleText(fullText) {
   const verses = {};
   const text = fullText.replace(/\r/g, ' ').replace(/ /g, ' ');
-  // 각 책의 시작 위치를 정경 순서대로 탐색
-  const bounds = [];
-  let from = 0;
-  for (let i = 0; i < BIBLE_BOOKS.length; i++) {
-    const names = [BIBLE_BOOKS[i][0], BOOK_ABBR[i]];
-    let pos = -1;
-    for (const nm of names) {
-      const p = text.indexOf(nm, from);
-      if (p >= 0 && (pos < 0 || p < pos)) pos = p;
-    }
-    bounds.push(pos);
-    if (pos >= 0) from = pos;
-  }
+  // 약어/전체이름 + 장:절 마커를 찾아 절 사이 본문을 추출 ("창1:1", "출 1:1" 모두 인식)
   let count = 0;
-  for (let i = 0; i < BIBLE_BOOKS.length; i++) {
-    const start = bounds[i];
-    if (start < 0) continue;
-    let end = text.length;
-    for (let j = i + 1; j < BIBLE_BOOKS.length; j++) { if (bounds[j] >= 0) { end = bounds[j]; break; } }
-    const seg = text.slice(start, end);
-    // "장:절 본문" 패턴 우선
-    const re = /(\d+)\s*[:：]\s*(\d+)\s+([^]*?)(?=\s*\d+\s*[:：]\s*\d+\s|\s*$)/g;
-    let m, got = 0;
-    while ((m = re.exec(seg)) !== null) {
-      const ch = +m[1], vs = +m[2], t = m[3].replace(/\s+/g, ' ').trim();
-      if (t) { verses[i + ':' + ch + ':' + vs] = t; count++; got++; }
-    }
+  const aliases = Object.keys(ABBR_IDX).sort((a, b) => b.length - a.length)
+    .map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  const re = new RegExp('(' + aliases + ')\\s*(\\d+)\\s*[:：]\\s*(\\d+)', 'g');
+  const marks = [];
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    marks.push({ bi: ABBR_IDX[m[1]], ch: +m[2], vs: +m[3], start: m.index, end: re.lastIndex });
+  }
+  for (let i = 0; i < marks.length; i++) {
+    const cur = marks[i], next = marks[i + 1];
+    if (cur.bi == null) continue;
+    let body = text.slice(cur.end, next ? next.start : text.length).trim();
+    body = body.replace(/^\s*<[^>]*>\s*/, '').trim();
+    if (body) { verses[cur.bi + ':' + cur.ch + ':' + cur.vs] = body; count++; }
   }
   return { verses, count };
 }
@@ -1044,14 +1033,26 @@ window.showBibleSample = function() {
   alert(window.__bibleSample ? window.__bibleSample : 'PDF를 먼저 가져와 주세요.');
 };
 
-// 말씀 작성 시 참조로 본문 자동입력
+// 말씀 작성 시 참조로 본문 자동입력 (노트의 커서 위치에 삽입)
 window.fillVerseFromRef = function() {
   const ref = ($('#f-ref') && $('#f-ref').value || '').trim();
   if (!ref) { toast('본문(예: 시편 1:1~2)을 입력하세요'); return; }
   if (!BIBLE_TEXT) { toast('먼저 "성경 가져오기"에서 성경을 올려주세요'); return; }
   const txt = getVerseText(ref);
   if (!txt) { toast('해당 구절을 찾지 못했습니다'); return; }
-  const vf = $('#f-verse'); if (vf) { vf.value = txt; toast('본문을 입력했습니다'); }
+  const vf = $('#f-verse');
+  if (!vf) return;
+  const s = vf.selectionStart, e = vf.selectionEnd;
+  if (typeof s === 'number') {
+    const before = vf.value.slice(0, s), after = vf.value.slice(e);
+    const ins = (before && !before.endsWith('\n') ? '\n' : '') + txt + (after && !after.startsWith('\n') ? '\n' : '');
+    vf.value = before + ins + after;
+    const pos = (before + ins).length;
+    vf.focus(); try { vf.setSelectionRange(pos, pos); } catch (x) {}
+  } else {
+    vf.value = (vf.value ? vf.value + '\n' : '') + txt;
+  }
+  toast('본문을 입력했습니다');
 };
 
 async function renderBibleImport() {
