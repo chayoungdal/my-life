@@ -1055,13 +1055,8 @@ window.fillVerseFromRef = function() {
   toast('본문을 입력했습니다');
 };
 
-// 설교노트(서식 입력)에 참조로 본문을 커서 위치에 삽입
-window.sermonInsertVerse = function() {
-  const ref = ($('#f-ref') && $('#f-ref').value || '').trim();
-  if (!ref) { toast('본문(예: 시편 1:1~2)을 입력하세요'); return; }
-  if (!BIBLE_TEXT) { toast('먼저 "성경 가져오기"에서 성경을 올려주세요'); return; }
-  const txt = getVerseText(ref);
-  if (!txt) { toast('해당 구절을 찾지 못했습니다'); return; }
+// 설교노트(서식 입력)에 본문 텍스트를 커서 위치에 삽입
+function insertIntoSermon(txt) {
   if (SE && SE.pen) sePen(false); // 타이핑 모드로 전환
   const el = $('#se-text');
   if (!el) return;
@@ -1080,6 +1075,24 @@ window.sermonInsertVerse = function() {
   }
   seCapture(); seAutosave();
   toast('본문을 입력했습니다');
+}
+// 참조 입력칸(f-ref) 기준 삽입
+window.sermonInsertVerse = function() {
+  const ref = ($('#f-ref') && $('#f-ref').value || '').trim();
+  if (!ref) { toast('본문(예: 시편 1:1~2)을 입력하세요'); return; }
+  if (!BIBLE_TEXT) { toast('먼저 "성경 가져오기"에서 성경을 올려주세요'); return; }
+  const txt = getVerseText(ref);
+  if (!txt) { toast('해당 구절을 찾지 못했습니다'); return; }
+  insertIntoSermon(txt);
+};
+// 툴바 전용 버튼: 구절을 물어보고 바로 삽입
+window.sermonVersePrompt = function() {
+  if (!BIBLE_TEXT) { toast('먼저 "성경 가져오기"에서 성경을 올려주세요'); return; }
+  const ref = window.prompt('성경 구절 입력 (예: 시편 1:1~2)');
+  if (!ref) return;
+  const txt = getVerseText(ref.trim());
+  if (!txt) { toast('해당 구절을 찾지 못했습니다'); return; }
+  insertIntoSermon(txt);
 };
 
 async function renderBibleImport() {
@@ -1859,6 +1872,7 @@ function renderSermonEditor() {
       <button class="se-tool active" id="tool-type" onclick="sePen(false)">&#9000; 타이핑</button>
       <button class="se-tool" id="tool-pen" onclick="sePen(true)">&#9998; 필기</button>
       <button class="se-tool" id="tool-erase" onclick="seErase()">&#9003; 지우개</button>
+      <button class="se-tool" style="background:var(--primary-light);color:var(--primary);border-color:var(--primary)" onclick="sermonVersePrompt()">&#128214; 말씀</button>
       <span style="width:1px;height:22px;background:var(--border);margin:0 2px"></span>
       ${SE_COLORS.map(c => `<span class="se-color ${c === SE.color ? 'active' : ''}" data-c="${c}" style="background:${c}" onmousedown="event.preventDefault();seColor('${c}')"></span>`).join('')}
       <button class="se-tool" style="margin-left:auto" onclick="seClearDraw()">필기 지우기</button>
