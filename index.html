@@ -409,9 +409,13 @@ body {
 .diary-content { white-space: pre-wrap; line-height: 1.8; font-size: 15px; }
 
 /* Sermon Editor (GoodNotes 스타일) */
-.se-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; }
+.se-topbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 12; background: var(--bg); padding: 8px 0 8px; margin-bottom: 8px; }
 .se-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-.se-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; margin-bottom: 10px; position: sticky; top: 0; z-index: 10; }
+.se-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; margin-bottom: 10px; position: sticky; top: 54px; z-index: 11; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.se-pin-btn { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.se-pin-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+body.se-unfrozen .se-topbar,
+body.se-unfrozen .se-toolbar { position: static; box-shadow: none; }
 .se-tool { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text); }
 .se-tool.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 .se-color { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border); cursor: pointer; flex-shrink: 0; }
@@ -1991,7 +1995,8 @@ function renderSermonEditor() {
   $('#mainContent').innerHTML = `
     <div class="se-topbar">
       <button class="btn btn-secondary btn-sm" onclick="closeSermonEditor()">&larr; 목록</button>
-      <span id="se-status" style="font-size:12px;color:var(--text-secondary)">자동 저장</span>
+      <span id="se-status" style="font-size:12px;color:var(--text-secondary);flex:1;text-align:center">자동 저장</span>
+      <button class="se-pin-btn ${sePinOn() ? 'active' : ''}" id="se-pin-btn" onclick="seTogglePin()" title="상단바·툴바 고정" aria-pressed="${sePinOn()}">&#128204; 틀고정</button>
       <button class="btn btn-primary btn-sm" onclick="saveSermonEditor()">저장</button>
     </div>
     <div class="se-meta">
@@ -2038,6 +2043,7 @@ function renderSermonEditor() {
       ${SE.pages.length > 1 ? `<button class="btn btn-sm btn-secondary" onclick="seDeletePage()" style="color:var(--danger)">페이지 삭제</button>` : ''}
     </div>`;
   setupSermonCanvas();
+  seApplyPin();
   ['se-title', 'se-date', 'se-preacher', 'se-text', 'f-ref'].forEach(id => {
     const el = $('#' + id); if (el) el.addEventListener('input', seAutosave);
   });
@@ -2153,6 +2159,20 @@ window.seFontSize = function(dir) {
   renderSermonEditor();
   seAutosave();
 };
+function sePinOn() {
+  try { return localStorage.getItem('sePin') !== '0'; } catch (e) { return true; }
+}
+function seApplyPin() {
+  const on = sePinOn();
+  document.body.classList.toggle('se-unfrozen', !on);
+  const btn = document.getElementById('se-pin-btn');
+  if (btn) { btn.classList.toggle('active', on); btn.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+}
+window.seTogglePin = function() {
+  const cur = sePinOn();
+  try { localStorage.setItem('sePin', cur ? '0' : '1'); } catch (e) {}
+  seApplyPin();
+};
 window.sePage = function(dir) {
   seCapture(); seAutosave();
   const n = SE.cur + dir;
@@ -2176,7 +2196,9 @@ window.seDeletePage = function() {
 window.closeSermonEditor = async function() {
   clearTimeout(seSaveTimer);
   if (SE) await seSaveNow(false);
-  SE = null; renderSermons();
+  SE = null;
+  document.body.classList.remove('se-unfrozen');
+  renderSermons();
 };
 
 window.saveSermonEditor = async function() {
