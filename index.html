@@ -421,9 +421,8 @@ body.se-unfrozen .se-toolbar { position: static; box-shadow: none; }
 .se-color { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border); cursor: pointer; flex-shrink: 0; }
 .se-color.active { box-shadow: 0 0 0 2px var(--primary); }
 .se-page-wrap { border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; background: #fff; }
-.se-page { position: relative; background-image: repeating-linear-gradient(#fff, #fff calc(var(--se-lh, 34px) - 1px), #dbe1ee var(--se-lh, 34px)); }
-.se-text { position: absolute; inset: 0; width: 100%; height: 100%; border: none; outline: none; background: transparent; resize: none; font-size: var(--se-fs, 17px); line-height: var(--se-lh, 34px); padding: 5px 16px; font-family: inherit; color: var(--text); overflow-y: auto; -webkit-user-modify: read-write; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
-.se-fs-label { min-width: 44px; text-align: center; font-size: 12px; color: var(--text-secondary); font-weight: 700; user-select: none; }
+.se-page { position: relative; background-image: repeating-linear-gradient(#fff, #fff 33px, #dbe1ee 34px); }
+.se-text { position: absolute; inset: 0; width: 100%; height: 100%; border: none; outline: none; background: transparent; resize: none; font-size: 17px; line-height: 34px; padding: 5px 16px; font-family: inherit; color: var(--text); overflow-y: auto; -webkit-user-modify: read-write; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .se-text:empty:before { content: attr(data-ph); color: var(--text-secondary); }
 .se-canvas { position: absolute; inset: 0; touch-action: none; }
 .se-pagenav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; }
@@ -1942,13 +1941,8 @@ function parsePages(content) {
   try { const o = JSON.parse(content); if (o && o.__pages && Array.isArray(o.pages) && o.pages.length) return o.pages; } catch (e) {}
   return [{ text: content, drawing: null }];
 }
-function parseSermonFontSize(content) {
-  if (!content) return 17;
-  try { const o = JSON.parse(content); if (o && o.__pages && typeof o.fontSize === 'number') return o.fontSize; } catch (e) {}
-  return 17;
-}
-function serializePages(pages, fontSize) { return JSON.stringify({ __pages: 1, pages, fontSize: fontSize || 17 }); }
-const SE_FS_MIN = 13, SE_FS_MAX = 29, SE_FS_STEP = 2;
+function serializePages(pages) { return JSON.stringify({ __pages: 1, pages }); }
+const SE_FS_MIN = 10, SE_FS_MAX = 40, SE_FS_STEP = 2, SE_FS_DEFAULT = 17;
 
 async function renderSermons() {
   const items = (await dbGetAll('sermons')).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
@@ -1981,7 +1975,6 @@ window.openSermonEditor = async function(id) {
   SE = {
     id, date: item.date || currentDate, title: item.title || '', preacher: item.preacher || '',
     reference: item.reference || '', pages: parsePages(item.content),
-    fontSize: parseSermonFontSize(item.content),
     cur: 0, pen: false, erase: false, color: SE_COLORS[0],
   };
   renderSermonEditor();
@@ -1990,8 +1983,6 @@ window.openSermonEditor = async function(id) {
 function renderSermonEditor() {
   const p = SE.pages[SE.cur];
   const pageH = 1000;
-  const fs = SE.fontSize || 17;
-  const lh = fs * 2;
   $('#mainContent').innerHTML = `
     <div class="se-topbar">
       <button class="btn btn-secondary btn-sm" onclick="closeSermonEditor()">&larr; 목록</button>
@@ -2022,15 +2013,14 @@ function renderSermonEditor() {
       <button class="se-tool" id="tool-erase" onclick="seErase()">&#9003; 지우개</button>
       <button class="se-tool" style="background:var(--primary-light);color:var(--primary);border-color:var(--primary)" onclick="sermonVersePrompt()">&#128214; 말씀</button>
       <span style="width:1px;height:22px;background:var(--border);margin:0 2px"></span>
-      <button class="se-tool" onclick="seFontSize(-1)" title="글씨 작게" aria-label="글씨 작게" ${fs <= SE_FS_MIN ? 'disabled style="opacity:.4"' : ''}>가&minus;</button>
-      <span class="se-fs-label" id="se-fs-label">${fs}px</span>
-      <button class="se-tool" onclick="seFontSize(1)" title="글씨 크게" aria-label="글씨 크게" ${fs >= SE_FS_MAX ? 'disabled style="opacity:.4"' : ''}>가+</button>
+      <button class="se-tool" onmousedown="event.preventDefault()" onclick="seFontSize(-1)" title="선택 글씨 작게 (먼저 드래그로 선택)" aria-label="선택 글씨 작게">가&minus;</button>
+      <button class="se-tool" onmousedown="event.preventDefault()" onclick="seFontSize(1)" title="선택 글씨 크게 (먼저 드래그로 선택)" aria-label="선택 글씨 크게">가+</button>
       <span style="width:1px;height:22px;background:var(--border);margin:0 2px"></span>
       ${SE_COLORS.map(c => `<span class="se-color ${c === SE.color ? 'active' : ''}" data-c="${c}" style="background:${c}" onmousedown="event.preventDefault();seColor('${c}')"></span>`).join('')}
       <button class="se-tool" style="margin-left:auto" onclick="seClearDraw()">필기 지우기</button>
     </div>
     <div class="se-page-wrap">
-      <div class="se-page" style="height:${pageH}px;--se-fs:${fs}px;--se-lh:${lh}px">
+      <div class="se-page" style="height:${pageH}px">
         <div class="se-text" id="se-text" contenteditable="true" data-ph="설교 내용을 입력하세요...">${richHTML(p.text || '')}</div>
         <canvas class="se-canvas" id="se-canvas" data-h="${pageH}"></canvas>
       </div>
@@ -2108,7 +2098,7 @@ async function seSaveNow(showToast) {
   const data = {
     date: SE.date, title: SE.title || '(제목 없음)',
     preacher: SE.preacher, reference: SE.reference,
-    content: serializePages(SE.pages, SE.fontSize),
+    content: serializePages(SE.pages),
   };
   try {
     if (SE.id) { data.id = SE.id; await dbPut('sermons', data); }
@@ -2151,12 +2141,39 @@ window.seClearDraw = function() {
 };
 window.seFontSize = function(dir) {
   if (!SE) return;
-  const cur = SE.fontSize || 17;
-  const next = Math.max(SE_FS_MIN, Math.min(SE_FS_MAX, cur + dir * SE_FS_STEP));
-  if (next === cur) return;
+  const editable = document.getElementById('se-text');
+  const sel = window.getSelection();
+  if (!editable || !sel || !sel.rangeCount) { toast('먼저 크기를 바꿀 글씨를 드래그해서 선택하세요'); return; }
+  const range = sel.getRangeAt(0);
+  if (range.collapsed || !editable.contains(range.commonAncestorContainer)) {
+    toast('먼저 크기를 바꿀 글씨를 드래그해서 선택하세요'); return;
+  }
+  // 선택 시작점 기준 현재 픽셀 크기 계산 → 한 단계 증감
+  let refNode = range.startContainer;
+  if (refNode.nodeType === Node.TEXT_NODE) refNode = refNode.parentElement;
+  const curSize = Math.round(parseFloat(window.getComputedStyle(refNode).fontSize) || SE_FS_DEFAULT);
+  const nextSize = Math.max(SE_FS_MIN, Math.min(SE_FS_MAX, curSize + dir * SE_FS_STEP));
+  if (nextSize === curSize) { toast(dir > 0 ? '이미 최대 크기입니다' : '이미 최소 크기입니다'); return; }
+  // 선택 영역을 꺼내 기존 font-size 지정을 모두 제거한 뒤 새 크기로 감싸기
+  const frag = range.extractContents();
+  const strip = (n) => {
+    if (n.nodeType === Node.ELEMENT_NODE) {
+      if (n.style && n.style.fontSize) n.style.fontSize = '';
+      if (n.tagName === 'FONT' && n.hasAttribute('size')) n.removeAttribute('size');
+      Array.from(n.childNodes).forEach(strip);
+    }
+  };
+  Array.from(frag.childNodes).forEach(strip);
+  const wrap = document.createElement('span');
+  wrap.style.fontSize = nextSize + 'px';
+  wrap.appendChild(frag);
+  range.insertNode(wrap);
+  // 선택 유지 → 연속으로 +/− 눌러 계속 조절 가능
+  sel.removeAllRanges();
+  const nr = document.createRange();
+  nr.selectNodeContents(wrap);
+  sel.addRange(nr);
   seCapture();
-  SE.fontSize = next;
-  renderSermonEditor();
   seAutosave();
 };
 function sePinOn() {
