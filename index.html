@@ -39,6 +39,8 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg);
@@ -194,6 +196,22 @@ body {
 .rich-input { min-height: 120px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 16px; line-height: 1.7; overflow-y: auto; background: var(--surface); -webkit-user-modify: read-write; }
 .rich-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
 .rich-input:empty:before { content: attr(data-ph); color: var(--text-secondary); }
+
+/* Memo (노션 스타일) */
+.me-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; }
+.me-title { width: 100%; border: none; outline: none; font-size: 24px; font-weight: 700; padding: 4px 0; margin-bottom: 8px; color: var(--text); background: transparent; }
+.me-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; margin-bottom: 12px; position: sticky; top: 0; z-index: 10; }
+.me-tool { padding: 8px 11px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text); }
+.me-tool:active { background: var(--primary-light); }
+.me-body { min-height: 400px; border: 1px solid var(--border-light); border-radius: 10px; padding: 16px; font-size: 16px; line-height: 1.8; outline: none; background: var(--surface); box-shadow: var(--shadow); -webkit-user-modify: read-write; }
+.me-body:empty:before { content: attr(data-ph); color: var(--text-secondary); }
+.me-body h2 { font-size: 21px; margin: 12px 0 6px; }
+.me-body ul, .me-body ol { padding-left: 24px; margin: 6px 0; }
+.me-body blockquote { border-left: 3px solid var(--primary); padding-left: 12px; color: var(--text-secondary); margin: 8px 0; }
+.me-body .chk { display: flex; align-items: flex-start; gap: 6px; }
+.me-body .cb { cursor: pointer; user-select: none; color: var(--primary); font-size: 18px; }
+.me-body .chk.done { color: var(--text-secondary); text-decoration: line-through; }
+.memo-card { cursor: pointer; }
 
 /* List Items */
 .list-item {
@@ -399,8 +417,9 @@ body {
 .se-color { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border); cursor: pointer; flex-shrink: 0; }
 .se-color.active { box-shadow: 0 0 0 2px var(--primary); }
 .se-page-wrap { border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; background: #fff; }
-.se-page { position: relative; background-image: repeating-linear-gradient(#fff, #fff 33px, #dbe1ee 34px); }
-.se-text { position: absolute; inset: 0; width: 100%; height: 100%; border: none; outline: none; background: transparent; resize: none; font-size: 17px; line-height: 34px; padding: 5px 16px; font-family: inherit; color: var(--text); overflow-y: auto; -webkit-user-modify: read-write; }
+.se-page { position: relative; background-image: repeating-linear-gradient(#fff, #fff calc(var(--se-lh, 34px) - 1px), #dbe1ee var(--se-lh, 34px)); }
+.se-text { position: absolute; inset: 0; width: 100%; height: 100%; border: none; outline: none; background: transparent; resize: none; font-size: var(--se-fs, 17px); line-height: var(--se-lh, 34px); padding: 5px 16px; font-family: inherit; color: var(--text); overflow-y: auto; -webkit-user-modify: read-write; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+.se-fs-label { min-width: 44px; text-align: center; font-size: 12px; color: var(--text-secondary); font-weight: 700; user-select: none; }
 .se-text:empty:before { content: attr(data-ph); color: var(--text-secondary); }
 .se-canvas { position: absolute; inset: 0; touch-action: none; }
 .se-pagenav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; }
@@ -518,6 +537,7 @@ body {
   <div class="drawer-section">성장</div>
   <button class="drawer-item" data-nav="plans"><span class="di-ic">&#127919;</span> 계획</button>
   <button class="drawer-item" data-nav="ideas"><span class="di-ic">&#128161;</span> 아이디어</button>
+  <button class="drawer-item" data-nav="memos"><span class="di-ic">&#128221;</span> 메모</button>
   <div class="drawer-section">데이터</div>
   <button class="drawer-item" data-nav="bible"><span class="di-ic">&#128214;</span> 성경 가져오기</button>
   <button class="drawer-item" data-nav="backup"><span class="di-ic">&#128190;</span> 백업/복원</button>
@@ -555,8 +575,8 @@ body {
 <script>
 // === IndexedDB Storage ===
 const DB_NAME = 'MyLifeSystem';
-const DB_VERSION = 3;
-const STORES = ['schedules','routines','plans','scriptures','prayers','diary','investments','savings','ideas','sermons','meta'];
+const DB_VERSION = 4;
+const STORES = ['schedules','routines','plans','scriptures','prayers','diary','investments','savings','ideas','sermons','memos','meta'];
 
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -797,6 +817,7 @@ window.closeDrawer = function() {
 
 window.navigateTo = function(page) {
   if (typeof seFlush === 'function') seFlush(); // 설교노트 작성 중이면 먼저 저장
+  if (typeof memoFlush === 'function') memoFlush(); // 메모 작성 중이면 먼저 저장
   currentPage = page;
   closeDrawer();
   const tabMap = { dashboard: 0, schedule: 1, scripture: 2, diary: 3 };
@@ -837,6 +858,7 @@ async function renderPage() {
     plans: renderPlans,
     ideas: renderIdeas,
     sermons: renderSermons,
+    memos: renderMemos,
     backup: renderBackup,
     bible: renderBibleImport,
   };
@@ -870,6 +892,117 @@ window.rtColor = function(c) {
 function rtToolbar() {
   return `<div class="rt-toolbar"><span class="rt-label">글씨색</span>${SE_COLORS.map(c => `<span class="rt-color" style="background:${c}" onmousedown="event.preventDefault();rtColor('${c}')"></span>`).join('')}</div>`;
 }
+
+// === MEMO (노션 스타일) ===
+let ME = null, meSaveTimer = null, meSaving = false;
+
+async function renderMemos() {
+  const items = (await dbGetAll('memos')).sort((a, b) => (b.updated_at || b.created_at || '').localeCompare(a.updated_at || a.created_at || ''));
+  $('#mainContent').innerHTML = `
+    <div class="page-header">
+      <h2>&#128221; 메모</h2>
+      <button class="btn btn-primary" onclick="openMemo(0)">+ 새 메모</button>
+    </div>
+    ${items.length ? items.map(m => {
+      const preview = stripHTML(m.content || '').slice(0, 80);
+      return `<div class="card memo-card" onclick="openMemo(${m.id})">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:17px;font-weight:700">${esc(m.title || '(제목 없음)')}</div>
+            ${preview ? `<p style="margin-top:6px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(preview)}</p>` : ''}
+            <div class="item-meta" style="margin-top:6px">${(m.updated_at || m.created_at || '').slice(0, 16).replace('T', ' ')}</div>
+          </div>
+          <button class="btn-icon" style="margin-left:8px" onclick="event.stopPropagation();deleteItem('memos', ${m.id})">&#128465;</button>
+        </div>
+      </div>`;
+    }).join('') : '<div class="empty-state"><div class="icon">&#128221;</div><div class="message">메모가 없습니다.<br>+ 새 메모로 시작하세요.</div></div>'}`;
+}
+
+window.openMemo = async function(id) {
+  const item = id ? await dbGet('memos', id) : { title: '', content: '' };
+  ME = { id, title: item.title || '', content: item.content || '' };
+  renderMemoEditor();
+};
+
+function renderMemoEditor() {
+  $('#mainContent').innerHTML = `
+    <div class="me-topbar">
+      <button class="btn btn-secondary btn-sm" onclick="closeMemo()">&larr; 목록</button>
+      <span id="me-status" style="font-size:12px;color:var(--text-secondary)">자동 저장</span>
+      <button class="btn btn-primary btn-sm" onclick="saveMemoNow(true)">저장</button>
+    </div>
+    <input class="me-title" id="me-title" placeholder="제목" value="${esc(ME.title)}">
+    <div class="me-toolbar">
+      <button class="me-tool" onmousedown="event.preventDefault();meCmd('formatBlock','h2')">H</button>
+      <button class="me-tool" style="font-weight:800" onmousedown="event.preventDefault();meCmd('bold')">B</button>
+      <button class="me-tool" style="text-decoration:underline" onmousedown="event.preventDefault();meCmd('underline')">U</button>
+      <button class="me-tool" onmousedown="event.preventDefault();meCmd('insertUnorderedList')">&#8226; 목록</button>
+      <button class="me-tool" onmousedown="event.preventDefault();meCmd('insertOrderedList')">1. 목록</button>
+      <button class="me-tool" onmousedown="event.preventDefault();meCheck()">&#9744; 체크</button>
+      <button class="me-tool" onmousedown="event.preventDefault();meCmd('formatBlock','blockquote')">&#8220; 인용</button>
+      <span style="width:1px;height:22px;background:var(--border);margin:0 2px"></span>
+      ${SE_COLORS.map(c => `<span class="rt-color" style="background:${c}" onmousedown="event.preventDefault();meColor('${c}')"></span>`).join('')}
+    </div>
+    <div class="me-body" id="me-body" contenteditable="true" data-ph="내용을 입력하세요...">${ME.content || ''}</div>`;
+  const body = $('#me-body');
+  body.addEventListener('input', memoAutosave);
+  $('#me-title').addEventListener('input', memoAutosave);
+  body.addEventListener('click', e => {
+    if (e.target.classList && e.target.classList.contains('cb')) {
+      const done = e.target.textContent.trim() === '☑';
+      e.target.textContent = done ? '☐' : '☑';
+      if (e.target.parentElement) e.target.parentElement.classList.toggle('done', !done);
+      memoAutosave();
+    }
+  });
+}
+
+window.meCmd = function(cmd, val) {
+  document.execCommand('styleWithCSS', false, true);
+  document.execCommand(cmd, false, val || null);
+  $('#me-body').focus();
+};
+window.meColor = function(c) {
+  document.execCommand('styleWithCSS', false, true);
+  document.execCommand('foreColor', false, c);
+};
+window.meCheck = function() {
+  $('#me-body').focus();
+  document.execCommand('insertHTML', false, '<div class="chk"><span class="cb" contenteditable="false">☐</span>&nbsp;</div>');
+};
+
+function memoCapture() {
+  if ($('#me-title')) ME.title = $('#me-title').value;
+  if ($('#me-body')) ME.content = $('#me-body').innerHTML;
+}
+function memoAutosave() {
+  clearTimeout(meSaveTimer);
+  const st = $('#me-status'); if (st) st.textContent = '입력 중…';
+  meSaveTimer = setTimeout(() => saveMemoNow(false), 1000);
+}
+window.saveMemoNow = async function(showToast) {
+  if (!ME) return;
+  memoCapture();
+  const empty = !(ME.title || '').trim() && !stripHTML(ME.content || '').trim();
+  if (!ME.id && empty) { if (showToast) { ME = null; renderMemos(); } return; }
+  if (meSaving) { memoAutosave(); return; }
+  meSaving = true;
+  const data = { title: ME.title, content: ME.content, updated_at: new Date().toISOString() };
+  try {
+    if (ME.id) { data.id = ME.id; await dbPut('memos', data); }
+    else { const c = await dbAdd('memos', data); if (c && c.id) ME.id = c.id; }
+    const st = $('#me-status'); if (st) st.textContent = '자동 저장됨';
+    if (showToast) { toast('메모가 저장되었습니다'); ME = null; renderMemos(); }
+  } catch (e) {
+    const st = $('#me-status'); if (st) st.textContent = '저장 실패';
+  } finally { meSaving = false; }
+};
+window.closeMemo = async function() {
+  clearTimeout(meSaveTimer);
+  if (ME) await saveMemoNow(false);
+  ME = null; renderMemos();
+};
+window.memoFlush = function() { if (!ME) return; clearTimeout(meSaveTimer); saveMemoNow(false); };
 
 // ===== 성경 (기기에만 저장, 배포/백업 제외) =====
 let BIBLE_TEXT = null; // { "bookIdx:chap:verse": "본문", ... }
@@ -1805,7 +1938,13 @@ function parsePages(content) {
   try { const o = JSON.parse(content); if (o && o.__pages && Array.isArray(o.pages) && o.pages.length) return o.pages; } catch (e) {}
   return [{ text: content, drawing: null }];
 }
-function serializePages(pages) { return JSON.stringify({ __pages: 1, pages }); }
+function parseSermonFontSize(content) {
+  if (!content) return 17;
+  try { const o = JSON.parse(content); if (o && o.__pages && typeof o.fontSize === 'number') return o.fontSize; } catch (e) {}
+  return 17;
+}
+function serializePages(pages, fontSize) { return JSON.stringify({ __pages: 1, pages, fontSize: fontSize || 17 }); }
+const SE_FS_MIN = 13, SE_FS_MAX = 29, SE_FS_STEP = 2;
 
 async function renderSermons() {
   const items = (await dbGetAll('sermons')).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
@@ -1837,7 +1976,9 @@ window.openSermonEditor = async function(id) {
   const item = id ? await dbGet('sermons', id) : { date: currentDate, title: '', preacher: '', reference: '', content: '' };
   SE = {
     id, date: item.date || currentDate, title: item.title || '', preacher: item.preacher || '',
-    reference: item.reference || '', pages: parsePages(item.content), cur: 0, pen: false, erase: false, color: SE_COLORS[0],
+    reference: item.reference || '', pages: parsePages(item.content),
+    fontSize: parseSermonFontSize(item.content),
+    cur: 0, pen: false, erase: false, color: SE_COLORS[0],
   };
   renderSermonEditor();
 };
@@ -1845,6 +1986,8 @@ window.openSermonEditor = async function(id) {
 function renderSermonEditor() {
   const p = SE.pages[SE.cur];
   const pageH = 1000;
+  const fs = SE.fontSize || 17;
+  const lh = fs * 2;
   $('#mainContent').innerHTML = `
     <div class="se-topbar">
       <button class="btn btn-secondary btn-sm" onclick="closeSermonEditor()">&larr; 목록</button>
@@ -1874,11 +2017,15 @@ function renderSermonEditor() {
       <button class="se-tool" id="tool-erase" onclick="seErase()">&#9003; 지우개</button>
       <button class="se-tool" style="background:var(--primary-light);color:var(--primary);border-color:var(--primary)" onclick="sermonVersePrompt()">&#128214; 말씀</button>
       <span style="width:1px;height:22px;background:var(--border);margin:0 2px"></span>
+      <button class="se-tool" onclick="seFontSize(-1)" title="글씨 작게" aria-label="글씨 작게" ${fs <= SE_FS_MIN ? 'disabled style="opacity:.4"' : ''}>가&minus;</button>
+      <span class="se-fs-label" id="se-fs-label">${fs}px</span>
+      <button class="se-tool" onclick="seFontSize(1)" title="글씨 크게" aria-label="글씨 크게" ${fs >= SE_FS_MAX ? 'disabled style="opacity:.4"' : ''}>가+</button>
+      <span style="width:1px;height:22px;background:var(--border);margin:0 2px"></span>
       ${SE_COLORS.map(c => `<span class="se-color ${c === SE.color ? 'active' : ''}" data-c="${c}" style="background:${c}" onmousedown="event.preventDefault();seColor('${c}')"></span>`).join('')}
       <button class="se-tool" style="margin-left:auto" onclick="seClearDraw()">필기 지우기</button>
     </div>
     <div class="se-page-wrap">
-      <div class="se-page" style="height:${pageH}px">
+      <div class="se-page" style="height:${pageH}px;--se-fs:${fs}px;--se-lh:${lh}px">
         <div class="se-text" id="se-text" contenteditable="true" data-ph="설교 내용을 입력하세요...">${richHTML(p.text || '')}</div>
         <canvas class="se-canvas" id="se-canvas" data-h="${pageH}"></canvas>
       </div>
@@ -1955,7 +2102,7 @@ async function seSaveNow(showToast) {
   const data = {
     date: SE.date, title: SE.title || '(제목 없음)',
     preacher: SE.preacher, reference: SE.reference,
-    content: serializePages(SE.pages),
+    content: serializePages(SE.pages, SE.fontSize),
   };
   try {
     if (SE.id) { data.id = SE.id; await dbPut('sermons', data); }
@@ -1995,6 +2142,16 @@ window.seClearDraw = function() {
   if (!confirm('이 페이지의 필기를 지울까요?')) return;
   SE.pages[SE.cur].drawing = null;
   renderSermonEditor();
+};
+window.seFontSize = function(dir) {
+  if (!SE) return;
+  const cur = SE.fontSize || 17;
+  const next = Math.max(SE_FS_MIN, Math.min(SE_FS_MAX, cur + dir * SE_FS_STEP));
+  if (next === cur) return;
+  seCapture();
+  SE.fontSize = next;
+  renderSermonEditor();
+  seAutosave();
 };
 window.sePage = function(dir) {
   seCapture(); seAutosave();
