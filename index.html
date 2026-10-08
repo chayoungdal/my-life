@@ -9,6 +9,9 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.json">
 <title>나의 하루</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
 :root {
   --primary: #4F6AF0;
@@ -628,35 +631,51 @@ async function dbGetAll(store, dateFilter) {
   });
 }
 
+function makeUuid() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+
 async function dbAdd(store, data) {
   const db = await getDB();
-  data.created_at = new Date().toISOString();
-  return new Promise((resolve, reject) => {
+  const now = new Date().toISOString();
+  data.created_at = now;
+  data.updated_at = now;
+  if (!data.uuid) data.uuid = makeUuid();
+  const result = await new Promise((resolve, reject) => {
     const tx = db.transaction(store, 'readwrite');
     const req = tx.objectStore(store).add(data);
     req.onsuccess = () => { data.id = req.result; resolve(data); };
     req.onerror = () => reject(req.error);
   });
+  cloudPush(store, 'set', result);
+  return result;
 }
 
 async function dbPut(store, data) {
   const db = await getDB();
-  return new Promise((resolve, reject) => {
+  if (!data.uuid) data.uuid = makeUuid();
+  data.updated_at = new Date().toISOString();
+  const result = await new Promise((resolve, reject) => {
     const tx = db.transaction(store, 'readwrite');
     const req = tx.objectStore(store).put(data);
     req.onsuccess = () => resolve(data);
     req.onerror = () => reject(req.error);
   });
+  cloudPush(store, 'set', result);
+  return result;
 }
 
 async function dbDelete(store, id) {
   const db = await getDB();
-  return new Promise((resolve, reject) => {
+  const existing = await dbGet(store, id).catch(() => null);
+  await new Promise((resolve, reject) => {
     const tx = db.transaction(store, 'readwrite');
     const req = tx.objectStore(store).delete(id);
     req.onsuccess = () => resolve();
     req.onerror = () => reject(req.error);
   });
+  if (existing && existing.uuid) cloudPush(store, 'delete', existing);
 }
 
 async function dbGet(store, id) {
@@ -667,6 +686,235 @@ async function dbGet(store, id) {
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
+}
+
+// === Firebase 클라우드 동기화 ===
+const CLOUD_STORES = STORES.filter(s => s !== 'meta'); // bible은 기기 로컬 전용
+let fbApp = null, fbAuth = null, fbDb = null, fbUser = null;
+let cloudUnsubs = [];
+let suppressCloudPush = false;
+let cloudPendingPulls = 0;
+
+function cloudGetConfig() {
+  try { return JSON.parse(localStorage.getItem('firebaseConfig') || 'null'); } catch (e) { return null; }
+}
+function cloudSetConfig(cfg) {
+  if (cfg) localStorage.setItem('firebaseConfig', JSON.stringify(cfg));
+  else localStorage.removeItem('firebaseConfig');
+}
+function cloudEnabled() { return !!(fbUser && fbDb); }
+
+function cloudSetStatus(text) {
+  const el = document.getElementById('cloud-status');
+  if (el) el.textContent = text;
+}
+
+async function cloudInit() {
+  const cfg = cloudGetConfig();
+  if (!cfg || !cfg.apiKey || typeof firebase === 'undefined') return false;
+  if (!fbApp) {
+    try {
+      fbApp = firebase.initializeApp(cfg);
+      fbAuth = firebase.auth();
+      fbDb = firebase.firestore();
+      try { await fbDb.enablePersistence({ synchronizeTabs: true }); } catch (e) { /* 다중 탭 등은 무시 */ }
+      fbAuth.onAuthStateChanged(async (u) => {
+        fbUser = u;
+        if (u) {
+          cloudSetStatus(`로그인됨: ${u.email || u.displayName || u.uid}`);
+          await cloudPullAll();
+          cloudStartListeners();
+          renderPage();
+        } else {
+          cloudSetStatus('로그아웃 상태');
+          cloudStopListeners();
+        }
+      });
+    } catch (e) {
+      console.warn('Firebase init 실패', e);
+      cloudSetStatus('Firebase 초기화 실패: ' + e.message);
+      return false;
+    }
+  }
+  return true;
+}
+
+window.cloudSignIn = async function () {
+  const ok = await cloudInit();
+  if (!ok) { toast('먼저 Firebase 설정을 입력하세요'); return; }
+  const provider = new firebase.auth.GoogleAuthProvider();
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  try {
+    if (standalone) {
+      await fbAuth.signInWithRedirect(provider);
+    } else {
+      try {
+        await fbAuth.signInWithPopup(provider);
+      } catch (e) {
+        if (['auth/popup-blocked','auth/popup-closed-by-user','auth/operation-not-supported-in-this-environment','auth/cancelled-popup-request'].includes(e.code)) {
+          await fbAuth.signInWithRedirect(provider);
+        } else { throw e; }
+      }
+    }
+  } catch (e) {
+    toast('로그인 실패: ' + e.message);
+  }
+};
+window.cloudSignOut = async function () {
+  if (fbAuth) await fbAuth.signOut();
+  toast('로그아웃 되었습니다');
+};
+window.cloudSaveConfig = async function () {
+  const ta = document.getElementById('firebase-config-input');
+  if (!ta) return;
+  let txt = ta.value.trim();
+  if (!txt) { cloudSetConfig(null); toast('Firebase 설정을 지웠습니다'); renderBackup(); return; }
+  // 콘솔에서 복사한 "const firebaseConfig = {...};" 전체도 허용
+  txt = txt.replace(/^\s*(?:const|let|var)\s+\w+\s*=\s*/, '').replace(/;\s*$/, '').trim();
+  let cfg;
+  try { cfg = (new Function('return (' + txt + ')'))(); }
+  catch (e) { toast('설정 형식이 올바르지 않습니다'); return; }
+  if (!cfg || !cfg.apiKey || !cfg.projectId) { toast('apiKey/projectId가 필요합니다'); return; }
+  cloudSetConfig(cfg);
+  const ok = await cloudInit();
+  toast(ok ? '저장했습니다. 이제 Google 로그인을 누르세요.' : '저장했지만 초기화 실패했습니다');
+  renderBackup();
+};
+
+function cloudPush(store, op, data) {
+  if (!cloudEnabled() || suppressCloudPush) return;
+  if (!CLOUD_STORES.includes(store)) return;
+  if (!data || !data.uuid) return;
+  const ref = fbDb.collection('users').doc(fbUser.uid).collection(store).doc(data.uuid);
+  const p = (op === 'delete') ? ref.delete() : ref.set(stripForCloud(data));
+  p.catch(err => console.warn('cloudPush 실패', store, err));
+}
+
+function stripForCloud(data) {
+  // Firestore에 저장할 때 함수/undefined 등 걸러내고, 로컬 id는 보존하되 큰 문제 없음
+  const copy = {};
+  for (const k in data) {
+    const v = data[k];
+    if (v === undefined || typeof v === 'function') continue;
+    copy[k] = v;
+  }
+  return copy;
+}
+
+async function cloudPullAll() {
+  if (!cloudEnabled()) return;
+  cloudPendingPulls++;
+  cloudSetStatus('클라우드에서 데이터 받는 중…');
+  suppressCloudPush = true;
+  try {
+    for (const store of CLOUD_STORES) {
+      const snap = await fbDb.collection('users').doc(fbUser.uid).collection(store).get();
+      const cloudItems = [];
+      const cloudUuids = new Set();
+      snap.forEach(d => { cloudItems.push(d.data()); cloudUuids.add(d.id); });
+      // 1) 클라우드 → 로컬 머지 (삭제 없음, 안전)
+      await mergeStoreLocal(store, cloudItems);
+      // 2) 로컬에만 있는 항목을 클라우드로 올리기 (첫 로그인 시 마이그레이션 + 오프라인 쌓인 변경)
+      const localItems = await dbGetAll(store);
+      for (const it of localItems) {
+        if (!it.uuid) { it.uuid = makeUuid(); await dbPut(store, it); } // suppressCloudPush 중이라 로컬만 저장
+        if (!cloudUuids.has(it.uuid)) {
+          try { await fbDb.collection('users').doc(fbUser.uid).collection(store).doc(it.uuid).set(stripForCloud(it)); } catch (e) { console.warn('초기 업로드 실패', store, it.uuid, e); }
+        }
+      }
+    }
+    cloudSetStatus(`로그인됨: ${fbUser.email || fbUser.uid} · 동기화 완료`);
+  } catch (e) {
+    console.warn(e); cloudSetStatus('동기화 실패: ' + e.message);
+  } finally {
+    suppressCloudPush = false;
+    cloudPendingPulls--;
+  }
+}
+
+async function mergeStoreLocal(store, items) {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    const s = tx.objectStore(store);
+    const getAll = s.getAll();
+    getAll.onsuccess = () => {
+      const existing = getAll.result || [];
+      const localByUuid = new Map();
+      existing.forEach(it => { if (it.uuid) localByUuid.set(it.uuid, it); });
+      items.forEach(it => {
+        const localItem = localByUuid.get(it.uuid);
+        if (localItem) {
+          // LWW: 로컬이 더 최신이면 덮어쓰지 않음
+          const localT = localItem.updated_at || '';
+          const cloudT = it.updated_at || '';
+          if (localT > cloudT) return;
+          it.id = localItem.id;
+        } else {
+          delete it.id;
+        }
+        s.put(it);
+      });
+    };
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function applyCloudChangeLocal(store, change) {
+  const db = await getDB();
+  const docId = change.doc.id;
+  const data = change.doc.data();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    const s = tx.objectStore(store);
+    const getAll = s.getAll();
+    getAll.onsuccess = () => {
+      const existing = (getAll.result || []).find(it => it.uuid === docId);
+      if (change.type === 'removed') {
+        if (existing) s.delete(existing.id);
+      } else {
+        if (existing) {
+          const localT = existing.updated_at || '';
+          const cloudT = data.updated_at || '';
+          if (localT > cloudT) return; // 로컬이 더 최신
+          data.id = existing.id;
+        } else {
+          delete data.id;
+        }
+        s.put(data);
+      }
+    };
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+function cloudStartListeners() {
+  cloudStopListeners();
+  if (!cloudEnabled()) return;
+  for (const store of CLOUD_STORES) {
+    let isInitial = true;
+    const unsub = fbDb.collection('users').doc(fbUser.uid).collection(store)
+      .onSnapshot(async (snap) => {
+        if (isInitial) { isInitial = false; return; } // pullAll에서 이미 반영됨
+        if (snap.metadata.hasPendingWrites) return;
+        if (cloudPendingPulls > 0) return;
+        const changes = snap.docChanges();
+        if (!changes.length) return;
+        suppressCloudPush = true;
+        try {
+          for (const ch of changes) await applyCloudChangeLocal(store, ch);
+          renderPage();
+        } finally { suppressCloudPush = false; }
+      }, err => console.warn('listener err', store, err));
+    cloudUnsubs.push(unsub);
+  }
+}
+
+function cloudStopListeners() {
+  cloudUnsubs.forEach(u => { try { u(); } catch (e) {} });
+  cloudUnsubs = [];
 }
 
 // === App Logic ===
@@ -1880,8 +2128,46 @@ window.saveSavings = async function() {
 
 // === MORE (더보기) ===
 async function renderBackup() {
+  const cfg = cloudGetConfig();
+  const cfgText = cfg ? JSON.stringify(cfg, null, 2) : '';
+  const signed = cloudEnabled();
   $('#mainContent').innerHTML = `
-    <div class="page-header"><h2>&#128190; 백업 / 복원</h2></div>
+    <div class="page-header"><h2>&#128190; 백업 / 동기화</h2></div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px">&#9729; 클라우드 동기화 (여러 기기 공유)</div>
+      <p style="color:var(--text-secondary);font-size:13px;line-height:1.7;margin-bottom:12px">
+        Firebase에 로그인하면 아이패드·스마트폰·노트북에서 <b>같은 상태</b>를 봅니다. 변경은 자동으로 다른 기기에도 반영됩니다.
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        ${signed
+          ? `<button class="btn btn-secondary btn-sm" onclick="cloudSignOut()">&#128274; 로그아웃</button>
+             <button class="btn btn-primary btn-sm" onclick="cloudPullAll().then(()=>{toast('동기화 완료');renderPage();})">&#128260; 지금 동기화</button>`
+          : `<button class="btn btn-primary btn-sm" onclick="cloudSignIn()">&#128272; Google로 로그인</button>`}
+      </div>
+      <div id="cloud-status" style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">${signed ? ('로그인됨: ' + (fbUser.email || fbUser.uid)) : (cfg ? '설정 저장됨 · 로그아웃 상태' : '설정 없음')}</div>
+      <details ${cfg ? '' : 'open'} style="margin-top:8px">
+        <summary style="font-size:13px;font-weight:600;cursor:pointer;color:var(--text-secondary)">Firebase 설정 (처음 1회만)</summary>
+        <p style="color:var(--text-secondary);font-size:12px;line-height:1.6;margin:10px 0">
+          <a href="https://console.firebase.google.com/" target="_blank" style="color:var(--primary)">Firebase 콘솔</a>에서<br>
+          ① 프로젝트 생성 →<br>
+          ② Build → Firestore Database 활성화 →<br>
+          ③ Build → Authentication → Sign-in method에서 <b>Google</b> 활성화 (승인된 도메인에 <code>chayoungdal.github.io</code> 추가) →<br>
+          ④ 프로젝트 설정 → 웹앱 추가 → <b>firebaseConfig</b> 객체 복사 →<br>
+          ⑤ 아래에 붙여넣고 <b>설정 저장</b>.<br><br>
+          <b>Firestore 규칙(필수)</b> — 다른 사람이 내 데이터를 못 보게 하려면 Firestore &rarr; Rules 탭에 아래 규칙을 넣고 <b>Publish</b>:
+        </p>
+        <pre style="background:#1A1A2E;color:#9DD4FF;padding:10px 12px;border-radius:8px;font-size:11px;line-height:1.5;overflow:auto">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}</pre>
+        <textarea id="firebase-config-input" class="form-textarea" rows="10" placeholder='{\n  "apiKey": "...",\n  "authDomain": "xxx.firebaseapp.com",\n  "projectId": "xxx",\n  "storageBucket": "...",\n  "messagingSenderId": "...",\n  "appId": "..."\n}' style="font-family:monospace;font-size:12px">${esc(cfgText)}</textarea>
+        <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="cloudSaveConfig()">설정 저장</button>
+      </details>
+    </div>
     <div class="card">
       <div class="card-title" style="margin-bottom:8px">백업 내보내기</div>
       <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">모든 데이터를 JSON 파일로 저장합니다. OneDrive 등에 올려두면 다른 기기에서도 불러올 수 있습니다.</p>
@@ -2243,6 +2529,7 @@ window.importBackup = importBackup;
 
 renderPage();
 bibleLoad().then(rec => { if (rec && rec.verses) BIBLE_TEXT = rec.verses; });
+cloudInit();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js');
