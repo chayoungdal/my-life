@@ -12,6 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root {
   --primary: #4F6AF0;
@@ -702,6 +703,19 @@ function cloudSetConfig(cfg) {
   if (cfg) localStorage.setItem('firebaseConfig', JSON.stringify(cfg));
   else localStorage.removeItem('firebaseConfig');
 }
+function cloudGetClientId() {
+  try { return (localStorage.getItem('googleClientId') || '').trim(); } catch (e) { return ''; }
+}
+function cloudSetClientId(id) {
+  if (id) localStorage.setItem('googleClientId', id);
+  else localStorage.removeItem('googleClientId');
+}
+window.cloudSaveClientId = function () {
+  const el = document.getElementById('google-clientid-input');
+  if (!el) return;
+  cloudSetClientId(el.value.trim());
+  toast('OAuth 클라이언트 ID를 저장했습니다');
+};
 function cloudEnabled() { return !!(fbUser && fbDb); }
 
 function cloudSetStatus(text) {
@@ -742,24 +756,79 @@ async function cloudInit() {
 window.cloudSignIn = async function () {
   const ok = await cloudInit();
   if (!ok) { toast('먼저 Firebase 설정을 입력하세요'); return; }
-  const provider = new firebase.auth.GoogleAuthProvider();
   const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  const clientId = cloudGetClientId();
+  // 홈화면 PWA에서는 GIS(구글 인앱 로그인)를 쓴다. 리디렉트가 Safari로 빠져나가서 세션이 끊기는 iOS 이슈를 우회.
+  if (standalone && clientId) {
+    openGisSignInModal(clientId);
+    return;
+  }
+  const provider = new firebase.auth.GoogleAuthProvider();
   try {
     if (standalone) {
-      await fbAuth.signInWithRedirect(provider);
-    } else {
-      try {
-        await fbAuth.signInWithPopup(provider);
-      } catch (e) {
-        if (['auth/popup-blocked','auth/popup-closed-by-user','auth/operation-not-supported-in-this-environment','auth/cancelled-popup-request'].includes(e.code)) {
-          await fbAuth.signInWithRedirect(provider);
-        } else { throw e; }
-      }
+      // PWA인데 OAuth 클라이언트 ID가 없으면 안내 후 중단
+      toast('홈화면 앱에서는 백업/동기화 → "OAuth 클라이언트 ID" 설정이 필요합니다');
+      return;
+    }
+    try {
+      await fbAuth.signInWithPopup(provider);
+    } catch (e) {
+      if (['auth/popup-blocked','auth/popup-closed-by-user','auth/operation-not-supported-in-this-environment','auth/cancelled-popup-request'].includes(e.code)) {
+        await fbAuth.signInWithRedirect(provider);
+      } else { throw e; }
     }
   } catch (e) {
     toast('로그인 실패: ' + e.message);
   }
 };
+
+let gisInited = false;
+function openGisSignInModal(clientId) {
+  if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
+    toast('Google 로그인 라이브러리 로드 중입니다. 2초 후 다시 눌러주세요.');
+    return;
+  }
+  if (!gisInited) {
+    google.accounts.id.initialize({
+      client_id: clientId,
+      callback: async (resp) => {
+        try {
+          if (!resp || !resp.credential) return;
+          const m = document.getElementById('gsi-modal'); if (m) m.remove();
+          const cred = firebase.auth.GoogleAuthProvider.credential(resp.credential);
+          await fbAuth.signInWithCredential(cred);
+        } catch (e) {
+          toast('로그인 실패: ' + e.message);
+        }
+      },
+      auto_select: false,
+      cancel_on_tap_outside: false,
+      ux_mode: 'popup',
+    });
+    gisInited = true;
+  }
+  const existing = document.getElementById('gsi-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'gsi-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
+  modal.innerHTML = `
+    <div style="background:#fff;padding:28px 24px;border-radius:14px;max-width:360px;width:100%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.25)">
+      <h3 style="margin:0 0 10px;font-size:18px;color:#1A1A2E">Google 로그인</h3>
+      <p style="margin:0 0 20px;color:#6B7280;font-size:13px;line-height:1.6">아래 버튼을 눌러 로그인하세요</p>
+      <div id="gsi-btn-container" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px"></div>
+      <button type="button" onclick="document.getElementById('gsi-modal').remove()" style="padding:9px 24px;border:1px solid #E5E7EB;background:#F8F9FC;border-radius:8px;cursor:pointer;font-size:14px;color:#1A1A2E">취소</button>
+    </div>`;
+  document.body.appendChild(modal);
+  try {
+    google.accounts.id.renderButton(
+      document.getElementById('gsi-btn-container'),
+      { theme: 'filled_blue', size: 'large', text: 'continue_with', shape: 'rectangular', width: 280 }
+    );
+  } catch (e) {
+    toast('로그인 버튼 생성 실패: ' + e.message);
+  }
+}
 window.cloudSignOut = async function () {
   if (fbAuth) await fbAuth.signOut();
   toast('로그아웃 되었습니다');
@@ -2131,6 +2200,8 @@ async function renderBackup() {
   const cfg = cloudGetConfig();
   const cfgText = cfg ? JSON.stringify(cfg, null, 2) : '';
   const signed = cloudEnabled();
+  const clientId = cloudGetClientId();
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   $('#mainContent').innerHTML = `
     <div class="page-header"><h2>&#128190; 백업 / 동기화</h2></div>
     <div class="card">
@@ -2166,6 +2237,16 @@ service cloud.firestore {
 }</pre>
         <textarea id="firebase-config-input" class="form-textarea" rows="10" placeholder='{\n  "apiKey": "...",\n  "authDomain": "xxx.firebaseapp.com",\n  "projectId": "xxx",\n  "storageBucket": "...",\n  "messagingSenderId": "...",\n  "appId": "..."\n}' style="font-family:monospace;font-size:12px">${esc(cfgText)}</textarea>
         <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="cloudSaveConfig()">설정 저장</button>
+      </details>
+      <details ${clientId ? '' : (isStandalone ? 'open' : '')} style="margin-top:12px">
+        <summary style="font-size:13px;font-weight:600;cursor:pointer;color:var(--text-secondary)">홈화면 PWA용 — OAuth 클라이언트 ID ${clientId ? '✓' : '(아이폰/아이패드 홈화면 앱용 필수)'}</summary>
+        <p style="color:var(--text-secondary);font-size:12px;line-height:1.6;margin:10px 0">
+          <b>왜 필요한가요?</b> 홈화면에 추가한 PWA는 Safari와 격리돼 있어서 일반 Google 로그인이 안 됩니다. GIS(Google Identity Services)를 쓰면 PWA 안에서 바로 로그인 처리가 가능해요.<br><br>
+          <b>찾는 법:</b> <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--primary)">Google Cloud Console → API 및 서비스 → 사용자 인증 정보</a> → <b>OAuth 2.0 클라이언트 ID</b> 섹션 → <b>"Web client (auto created by Google Service)"</b> 클릭 → <b>클라이언트 ID</b> 값 복사 → 아래 붙여넣기.<br><br>
+          <b>⚠️ 추가 설정 (중요):</b> 같은 화면에서 <b>승인된 JavaScript 출처</b>에 <code>https://chayoungdal.github.io</code> 를 추가하고 저장해주세요. 안 하면 GIS가 거부합니다.
+        </p>
+        <input id="google-clientid-input" class="form-input" style="font-family:monospace;font-size:12px" placeholder="570792922946-xxxxxxxxxxx.apps.googleusercontent.com" value="${esc(clientId)}">
+        <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="cloudSaveClientId()">클라이언트 ID 저장</button>
       </details>
     </div>
     <div class="card">
