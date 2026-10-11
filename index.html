@@ -1747,11 +1747,12 @@ window.openDay = async function(ds) {
       ${items.length ? items.map(s => `
         <div class="list-item">
           <div class="checkbox ${s.completed ? 'checked' : ''}" onclick="dayToggle(${s.id}, ${s.completed}, '${ds}')">${s.completed ? '&#10003;' : ''}</div>
-          <div class="item-content">
+          <div class="item-content" onclick="showScheduleModal(${s.id}, '${ds}')" style="cursor:pointer">
             <div class="item-title ${s.completed ? 'completed' : ''}">${esc(s.title)}</div>
             <div class="item-meta">${s.time || '종일'} ${s.description ? '· ' + esc(s.description) : ''}</div>
           </div>
-          <button class="btn-icon" onclick="dayDelete(${s.id}, '${ds}')">&#128465;</button>
+          <button class="btn-icon" onclick="showScheduleModal(${s.id}, '${ds}')" title="수정">&#9998;</button>
+          <button class="btn-icon" onclick="dayDelete(${s.id}, '${ds}')" title="삭제">&#128465;</button>
         </div>`).join('') : '<div class="empty-state"><div class="message">이 날의 일정이 없습니다</div></div>'}
     </div>
     <div class="modal-actions"><button class="btn btn-primary" style="flex:1" onclick="showScheduleModal()">+ 이 날 일정 추가</button></div>
@@ -1773,26 +1774,67 @@ window.dayDelete = async function(id, ds) {
   openDay(ds);
 };
 
-window.showScheduleModal = function() {
+window.showScheduleModal = async function(id, backToDs) {
+  const existing = id ? await dbGet('schedules', id) : null;
+  const title = existing ? '스케줄 수정' : '스케줄 추가';
+  const dateV = existing ? (existing.date || currentDate) : currentDate;
+  const endV = existing ? (existing.end_date || '') : '';
+  const timeV = existing ? (existing.time || '') : '';
+  const titleV = existing ? (existing.title || '') : '';
+  const descV = existing ? (existing.description || '') : '';
   showModal(`
-    <div class="modal-header"><span class="modal-title">스케줄 추가</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="modal-header"><span class="modal-title">${title}</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">시작일</label><input class="form-input" id="f-date" type="date" value="${currentDate}"></div>
-      <div class="form-group"><label class="form-label">종료일 (선택)</label><input class="form-input" id="f-end" type="date"></div>
+      <div class="form-group"><label class="form-label">시작일</label><input class="form-input" id="f-date" type="date" value="${dateV}"></div>
+      <div class="form-group"><label class="form-label">종료일 (선택)</label><input class="form-input" id="f-end" type="date" value="${endV}"></div>
     </div>
-    <div class="form-group"><label class="form-label">시간</label><input class="form-input" id="f-time" type="time"></div>
-    <div class="form-group"><label class="form-label">제목</label><input class="form-input" id="f-title" placeholder="스케줄 제목"></div>
-    <div class="form-group"><label class="form-label">설명</label><textarea class="form-textarea" id="f-desc" rows="3" placeholder="상세 내용 (선택)"></textarea></div>
-    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="saveSchedule()">저장</button></div>
+    <div class="form-group"><label class="form-label">시간</label><input class="form-input" id="f-time" type="time" value="${timeV}"></div>
+    <div class="form-group"><label class="form-label">제목</label><input class="form-input" id="f-title" placeholder="스케줄 제목" value="${esc(titleV)}"></div>
+    <div class="form-group"><label class="form-label">설명</label><textarea class="form-textarea" id="f-desc" rows="3" placeholder="상세 내용 (선택)">${esc(descV)}</textarea></div>
+    <input type="hidden" id="f-id" value="${id || ''}">
+    <input type="hidden" id="f-back" value="${backToDs || ''}">
+    <div class="modal-actions">
+      ${existing ? `<button class="btn btn-secondary" style="color:var(--danger)" onclick="scheduleDeleteFromEdit()">삭제</button>` : ''}
+      <button class="btn btn-secondary" onclick="closeModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveSchedule()">저장</button>
+    </div>
   `);
 };
 
 window.saveSchedule = async function() {
+  const idRaw = $('#f-id') && $('#f-id').value;
+  const id = idRaw ? parseInt(idRaw) : null;
+  const backDs = $('#f-back') && $('#f-back').value;
   const start = $('#f-date').value;
   let end = $('#f-end').value || null;
   if (end && end < start) end = start;
-  await dbAdd('schedules', { date: start, end_date: end, time: $('#f-time').value, title: $('#f-title').value, description: $('#f-desc').value, completed: 0 });
-  closeModal(); toast('스케줄이 저장되었습니다'); renderPage();
+  if (id) {
+    const existing = await dbGet('schedules', id);
+    if (existing) {
+      existing.date = start;
+      existing.end_date = end;
+      existing.time = $('#f-time').value;
+      existing.title = $('#f-title').value;
+      existing.description = $('#f-desc').value;
+      await dbPut('schedules', existing);
+    }
+    closeModal(); toast('스케줄이 수정되었습니다'); await renderSchedule();
+    if (backDs) openDay(backDs);
+  } else {
+    await dbAdd('schedules', { date: start, end_date: end, time: $('#f-time').value, title: $('#f-title').value, description: $('#f-desc').value, completed: 0 });
+    closeModal(); toast('스케줄이 저장되었습니다'); renderPage();
+  }
+};
+
+window.scheduleDeleteFromEdit = async function() {
+  const idRaw = $('#f-id') && $('#f-id').value;
+  const id = idRaw ? parseInt(idRaw) : null;
+  const backDs = $('#f-back') && $('#f-back').value;
+  if (!id) return;
+  if (!confirm('이 일정을 삭제하시겠습니까?')) return;
+  await dbDelete('schedules', id);
+  closeModal(); toast('삭제되었습니다'); await renderSchedule();
+  if (backDs) openDay(backDs);
 };
 
 // === ROUTINE ===
