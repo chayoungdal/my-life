@@ -520,6 +520,35 @@ body.se-unfrozen .se-toolbar { position: static; box-shadow: none; }
 .drawer-item:active { background: var(--primary-light); }
 .drawer-item.active:active { background: var(--primary); }
 .di-ic { font-size: 20px; width: 26px; text-align: center; }
+
+/* 나의 공간 */
+.sp-hero { background: linear-gradient(135deg, var(--primary), #7B5CF0); color: #fff; border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow-md); }
+.sp-greet { font-size: 13px; opacity: 0.85; }
+.sp-motto { font-size: 18px; font-weight: 700; margin-top: 6px; line-height: 1.5; cursor: pointer; word-break: keep-all; }
+.sp-motto small { font-size: 12px; font-weight: 400; opacity: 0.75; margin-left: 6px; }
+.sp-stats { display: flex; gap: 22px; margin-top: 16px; font-size: 12px; opacity: 0.95; }
+.sp-stats b { display: block; font-size: 22px; line-height: 1.2; }
+.sp-months { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; font-size: 10px; color: var(--text-secondary); margin-bottom: 4px; white-space: nowrap; }
+.sp-heat { display: grid; grid-template-rows: repeat(7, auto); grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; }
+.sp-cell { aspect-ratio: 1; border-radius: 3px; background: var(--border-light); cursor: pointer; }
+.sp-cell.l1 { background: #C9D2FB; }
+.sp-cell.l2 { background: #98A8F6; }
+.sp-cell.l3 { background: #6C82F2; }
+.sp-cell.l4 { background: var(--primary-dark); }
+.sp-cell.today { outline: 2px solid var(--accent); outline-offset: 1px; }
+.sp-cell.future { background: transparent; cursor: default; }
+.sp-day { margin-top: 12px; font-size: 13px; color: var(--text-secondary); min-height: 20px; }
+.sp-link { color: var(--primary); cursor: pointer; font-weight: 600; }
+.sp-look { border-left: 3px solid var(--primary); padding: 2px 0 2px 12px; margin-top: 16px; }
+.sp-look-label { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+.sp-look-row { font-size: 14px; line-height: 1.7; cursor: pointer; word-break: keep-all; overflow-wrap: anywhere; }
+.sp-week { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.sp-week > div { background: var(--bg); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: var(--text-secondary); }
+.sp-week b { display: block; font-size: 20px; color: var(--text); line-height: 1.3; }
+.sp-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border-light); }
+.sp-quote { background: var(--accent-light); border-radius: var(--radius-sm); padding: 14px; margin-top: 12px; line-height: 1.7; font-size: 15px; word-break: keep-all; overflow-wrap: anywhere; }
+.sp-hit { padding: 10px 0; border-top: 1px solid var(--border-light); cursor: pointer; }
+.sp-hit mark { background: var(--warning-light); color: inherit; border-radius: 3px; padding: 0 2px; }
 </style>
 </head>
 <body>
@@ -534,6 +563,7 @@ body.se-unfrozen .se-toolbar { position: static; box-shadow: none; }
   </div>
   <div class="drawer-section">오늘</div>
   <button class="drawer-item" data-nav="dashboard"><span class="di-ic">&#9737;</span> 대시보드</button>
+  <button class="drawer-item" data-nav="space"><span class="di-ic">&#127969;</span> 나의 공간</button>
   <button class="drawer-item" data-nav="schedule"><span class="di-ic">&#128197;</span> 스케줄</button>
   <button class="drawer-item" data-nav="routine"><span class="di-ic">&#9745;</span> 하루 일과</button>
   <div class="drawer-section">영성</div>
@@ -1247,6 +1277,7 @@ async function renderPage() {
     ideas: renderIdeas,
     sermons: renderSermons,
     memos: renderMemos,
+    space: renderSpace,
     backup: renderBackup,
     bible: renderBibleImport,
   };
@@ -1285,7 +1316,8 @@ function rtToolbar() {
 let ME = null, meSaveTimer = null, meSaving = false;
 
 async function renderMemos() {
-  const items = (await dbGetAll('memos')).sort((a, b) => (b.updated_at || b.created_at || '').localeCompare(a.updated_at || a.created_at || ''));
+  const items = (await dbGetAll('memos')).filter(m => !m.kind) // 타임캡슐·나의 문장은 '나의 공간'에서만 보인다
+    .sort((a, b) => (b.updated_at || b.created_at || '').localeCompare(a.updated_at || a.created_at || ''));
   $('#mainContent').innerHTML = `
     <div class="page-header">
       <h2>&#128221; 메모</h2>
@@ -1702,9 +1734,12 @@ async function renderDashboard() {
   const ideas = (await dbGetAll('ideas')).filter(i => i.status !== 'done').slice(-5).reverse();
 
   const needsBackup = checkBackupReminder();
+  const spaceCard = await spaceTeaser().catch(() => '');
+  if (currentPage !== 'dashboard') return; // 그 사이 다른 화면으로 이동함
 
   $('#mainContent').innerHTML = `
     <div class="page-header"><h2>나의 하루</h2></div>
+    ${spaceCard}
     ${needsBackup ? `<div class="backup-banner">
       <span>&#9888; 백업을 해주세요</span>
       <button class="btn btn-sm btn-primary" onclick="exportBackup()">백업하기</button>
@@ -2887,6 +2922,461 @@ window.saveSermonEditor = async function() {
   await seSaveNow(true);
   SE = null; renderSermons();
 };
+
+// === 나의 공간 (돌아보기 · 기록 잔디 · 이번 주 · 타임캡슐 · 마음 서랍 · 전체 검색) ===
+// 새 저장소를 만들지 않는다. 타임캡슐과 '나의 문장'은 memos 저장소에 kind 값을 붙여 보관해
+// 기존 동기화·백업을 그대로 쓴다. (메모 목록에서는 kind가 있는 항목을 숨긴다)
+const SPACE_REC = [ // '기록한 날'로 세는 것
+  { store: 'diary', label: '일기', page: 'diary' },
+  { store: 'scriptures', label: '말씀', page: 'scripture' },
+  { store: 'prayers', label: '기도', page: 'prayer' },
+  { store: 'sermons', label: '설교노트', page: 'sermons' },
+];
+const SPACE_LOOKBACK = [
+  { label: '일주일 전 오늘', by: { d: -7 } }, { label: '한 달 전 오늘', by: { m: -1 } },
+  { label: '석 달 전 오늘', by: { m: -3 } }, { label: '반년 전 오늘', by: { m: -6 } },
+  { label: '1년 전 오늘', by: { y: -1 } }, { label: '2년 전 오늘', by: { y: -2 } },
+  { label: '3년 전 오늘', by: { y: -3 } }, { label: '5년 전 오늘', by: { y: -5 } },
+];
+const SPACE_QUESTIONS = [
+  '오늘 가장 감사했던 순간은 언제였나요?', '오늘 나를 웃게 한 것은 무엇인가요?', '요즘 내 마음을 가장 많이 차지하는 생각은 무엇인가요?',
+  '오늘 누군가에게 받은 친절이 있었나요?', '오늘 내가 잘한 일 한 가지는 무엇인가요?', '지금 내려놓고 싶은 걱정은 무엇인가요?',
+  '최근에 새롭게 배운 것은 무엇인가요?', '오늘 말씀 중 마음에 남은 한 구절은 무엇인가요?', '내일의 나에게 해 주고 싶은 말은 무엇인가요?',
+  '요즘 기도하고 있는 사람은 누구인가요?', '오늘 하루를 한 단어로 표현한다면 무엇인가요?', '최근 나를 성장시킨 어려움은 무엇이었나요?',
+  '지금 가장 보고 싶은 사람은 누구인가요?', '오늘 미루지 않고 해낸 일은 무엇인가요?', '요즘 나에게 쉼이 되는 것은 무엇인가요?',
+  '1년 뒤의 나는 어떤 모습이면 좋을까요?', '오늘 용서하거나 용서받고 싶은 일이 있나요?', '최근에 응답받았다고 느낀 기도는 무엇인가요?',
+  '오늘 내 몸은 어떤 신호를 보냈나요?', '요즘 나를 설레게 하는 일은 무엇인가요?', '오늘 누구에게 고맙다고 말하고 싶나요?',
+  '지금 이 계절에서 좋아하는 것은 무엇인가요?', '오늘 놓쳐서 아쉬운 것은 무엇인가요?', '내가 지키고 싶은 작은 습관 하나는 무엇인가요?',
+  '요즘 하나님께 가장 묻고 싶은 것은 무엇인가요?', '오늘 나는 누구에게 어떤 사람이었나요?', '최근 읽거나 들은 것 중 기억에 남는 문장은 무엇인가요?',
+  '지금 가진 것 중 당연하지 않은 것은 무엇인가요?', '이번 주에 꼭 해내고 싶은 한 가지는 무엇인가요?', '오늘의 나를 칭찬한다면 뭐라고 할까요?',
+  '요즘 시간과 돈을 어디에 가장 많이 쓰고 있나요?',
+];
+const SPACE_HEAT_WEEKS = 18;
+let spaceWeekOffset = 0, spaceData = null, spaceIndex = null, spaceHits = [], spaceSearchTimer = null;
+
+// 저장소의 날짜만 가볍게 읽는다 (내용은 읽지 않음)
+async function dbDates(store) {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const out = [];
+    const req = db.transaction(store, 'readonly').objectStore(store).index('date').openKeyCursor();
+    req.onsuccess = () => {
+      const c = req.result;
+      if (!c) { resolve(out); return; }
+      if (typeof c.key === 'string') out.push(c.key);
+      c.continue();
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+// 날짜 이동. 그 달에 없는 날(예: 31일)은 clamp면 말일로, 아니면 null
+function ymdShift(ymd, by, clamp) {
+  const dt = new Date(ymd + 'T00:00:00');
+  if (by.d) dt.setDate(dt.getDate() + by.d);
+  const months = (by.m || 0) + (by.y || 0) * 12;
+  if (months) {
+    const day = dt.getDate();
+    dt.setDate(1);
+    dt.setMonth(dt.getMonth() + months);
+    const last = new Date(dt.getFullYear(), dt.getMonth() + 1, 0).getDate();
+    if (day > last && !clamp) return null;
+    dt.setDate(Math.min(day, last));
+  }
+  return toLocalYMD(dt);
+}
+function spaceSnip(text, n) {
+  const t = (text || '').replace(/\s+/g, ' ').trim();
+  return t.length > n ? t.slice(0, n) + '…' : t;
+}
+function spaceDays(a, b) { // a에서 b까지 며칠
+  return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
+}
+async function spaceActivity() { // 날짜 → 그날 남긴 기록 종류
+  const byDate = new Map();
+  for (const r of SPACE_REC) {
+    for (const ds of await dbDates(r.store)) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(ds)) continue;
+      if (!byDate.has(ds)) byDate.set(ds, new Set());
+      byDate.get(ds).add(r.label);
+    }
+  }
+  return byDate;
+}
+function spaceStreak(byDate) {
+  const today = toLocalYMD(new Date());
+  // 오늘 아직 안 썼어도 어제까지의 연속은 끊기지 않은 것으로 본다
+  let cur = 0, d = byDate.has(today) ? today : ymdShift(today, { d: -1 });
+  while (byDate.has(d)) { cur++; d = ymdShift(d, { d: -1 }); }
+  const days = [...byDate.keys()].filter(k => k <= today).sort();
+  let best = 0, run = 0, prev = null;
+  for (const k of days) {
+    run = (prev && ymdShift(prev, { d: 1 }) === k) ? run + 1 : 1;
+    if (run > best) best = run;
+    prev = k;
+  }
+  return { cur, best, total: days.length, todayDone: byDate.has(today) };
+}
+function spaceMotto(memos) {
+  return memos.filter(m => m.kind === 'motto').sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''))[0] || null;
+}
+function spaceGreeting() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 11) return '좋은 아침이에요';
+  if (h >= 11 && h < 17) return '좋은 오후예요';
+  if (h >= 17 && h < 22) return '좋은 저녁이에요';
+  return '오늘도 수고 많으셨어요';
+}
+
+// 홈 화면에 보이는 작은 안내 카드
+async function spaceTeaser() {
+  const today = toLocalYMD(new Date());
+  const [byDate, memos] = await Promise.all([spaceActivity(), dbGetAll('memos')]);
+  const st = spaceStreak(byDate);
+  const look = SPACE_LOOKBACK.find(l => { const ds = ymdShift(today, l.by); return ds && byDate.has(ds); });
+  const due = memos.filter(m => m.kind === 'capsule' && !m.opened && (m.open_date || '') <= today).length;
+  const motto = spaceMotto(memos);
+  const lines = [st.cur ? `&#128293; ${st.cur}일 연속 기록 중` : '오늘의 첫 기록을 남겨보세요'];
+  if (look) lines.push(`${look.label}의 기록이 있어요`);
+  return `<div class="card" style="cursor:pointer" onclick="navigateTo('space')">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <div style="min-width:0">
+        <div class="card-title">&#127969; 나의 공간</div>
+        ${motto && motto.content ? `<div style="margin-top:6px;font-weight:600;word-break:keep-all">&ldquo;${esc(motto.content)}&rdquo;</div>` : ''}
+        <div class="item-meta" style="margin-top:6px">${lines.join(' · ')}</div>
+        ${due ? `<div style="margin-top:6px;color:var(--accent);font-weight:600">&#128140; 미래의 나에게 쓴 편지가 도착했어요</div>` : ''}
+      </div>
+      <span style="color:var(--text-secondary);flex-shrink:0">&rarr;</span>
+    </div>
+  </div>`;
+}
+
+function spaceHeatHTML(byDate, today) {
+  const now = new Date(today + 'T00:00:00');
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() - (SPACE_HEAT_WEEKS - 1) * 7);
+  let cells = '', months = '', lastMonth = -1;
+  for (let w = 0; w < SPACE_HEAT_WEEKS; w++) {
+    const first = new Date(start.getFullYear(), start.getMonth(), start.getDate() + w * 7);
+    months += `<span>${first.getMonth() !== lastMonth ? (first.getMonth() + 1) + '월' : ''}</span>`;
+    lastMonth = first.getMonth();
+    for (let i = 0; i < 7; i++) {
+      const ds = toLocalYMD(new Date(first.getFullYear(), first.getMonth(), first.getDate() + i));
+      if (ds > today) { cells += '<div class="sp-cell future"></div>'; continue; }
+      const n = byDate.has(ds) ? byDate.get(ds).size : 0;
+      cells += `<div class="sp-cell${n ? ' l' + Math.min(n, 4) : ''}${ds === today ? ' today' : ''}" onclick="spaceDay('${ds}')"></div>`;
+    }
+  }
+  return `<div class="sp-months">${months}</div><div class="sp-heat">${cells}</div>
+    <div class="sp-day" id="space-day">칸을 누르면 그날 남긴 기록을 볼 수 있어요. 색이 진할수록 여러 가지를 기록한 날입니다.</div>`;
+}
+window.spaceDay = function(ds) {
+  const box = $('#space-day');
+  if (!box || !spaceData) return;
+  const kinds = spaceData.byDate.get(ds);
+  if (!kinds) { box.innerHTML = `${formatDate(ds)} · 기록 없음`; return; }
+  box.innerHTML = `${formatDate(ds)} · ` + SPACE_REC.filter(r => kinds.has(r.label))
+    .map(r => `<span class="sp-link" onclick="openArchiveDate('${r.page}','${ds}')">${r.label}</span>`).join(' · ');
+};
+
+async function spaceLookbackHTML(d, today) {
+  const seen = new Set();
+  let html = '';
+  for (const l of SPACE_LOOKBACK) {
+    const ds = ymdShift(today, l.by);
+    if (!ds || seen.has(ds) || !d.byDate.has(ds)) continue;
+    seen.add(ds);
+    const diary = d.diary.find(x => x.date === ds);
+    const scripture = d.scriptures.find(x => x.date === ds);
+    const prayers = d.prayers.filter(x => x.date === ds);
+    const sermons = await dbGetAll('sermons', ds);
+    let rows = '';
+    if (diary) {
+      rows += `<div class="sp-look-row" onclick="openArchiveDate('diary','${ds}')">&#128221; ${diary.mood ? `<span class="tag tag-primary">${esc(diary.mood)}</span> ` : ''}${esc(spaceSnip(stripHTML(diary.content), 110)) || '일기'}</div>`;
+      if ((diary.gratitude || '').trim()) rows += `<div class="sp-look-row" onclick="openArchiveDate('diary','${ds}')">&#127807; 감사: ${esc(spaceSnip(diary.gratitude, 80))}</div>`;
+    }
+    if (scripture) rows += `<div class="sp-look-row" onclick="openArchiveDate('scripture','${ds}')">&#128214; ${esc(spaceSnip(scripture.verse, 90))}${scripture.reference ? ` <span class="item-meta">${esc(scripture.reference)}</span>` : ''}</div>`;
+    if (prayers.length) {
+      const answered = prayers.filter(p => p.answered).length;
+      rows += `<div class="sp-look-row" onclick="openArchiveDate('prayer','${ds}')">&#128591; ${esc(spaceSnip(stripHTML(prayers[0].content), 80))}${prayers.length > 1 ? ` <span class="item-meta">외 ${prayers.length - 1}개</span>` : ''}${answered ? ' <span class="tag tag-success">응답됨</span>' : ''}</div>`;
+    }
+    sermons.forEach(s => { rows += `<div class="sp-look-row" onclick="spaceOpenSermon(${s.id})">&#127908; ${esc(s.title || '설교노트')}${s.reference ? ` <span class="item-meta">${esc(s.reference)}</span>` : ''}</div>`; });
+    if (rows) html += `<div class="sp-look"><div class="sp-look-label">${l.label} · ${formatDate(ds)}</div>${rows}</div>`;
+  }
+  return html || `<div class="item-meta" style="line-height:1.7">아직 돌아볼 기록이 없어요.<br>오늘 남긴 기록이 일주일 뒤, 1년 뒤의 나에게 선물이 됩니다.</div>`;
+}
+window.spaceOpenSermon = function(id) {
+  currentPage = 'sermons';
+  $$('.tab-item').forEach(i => i.classList.remove('active'));
+  openSermonEditor(id);
+};
+
+function spaceWeekHTML(d) {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() + spaceWeekOffset * 7);
+  const days = [];
+  for (let i = 0; i < 7; i++) days.push(toLocalYMD(new Date(start.getFullYear(), start.getMonth(), start.getDate() + i)));
+  const inWeek = new Set(days);
+  const sch = d.schedules.filter(s => days.some(ds => coversDay(s, ds)));
+  const rou = d.routines.filter(r => inWeek.has(r.date));
+  const diary = d.diary.filter(x => inWeek.has(x.date));
+  const diaryDays = new Set(diary.map(x => x.date)).size;
+  const wordDays = new Set(d.scriptures.filter(x => inWeek.has(x.date)).map(x => x.date)).size;
+  const prayers = d.prayers.filter(x => inWeek.has(x.date));
+  const recDays = days.filter(ds => d.byDate.has(ds)).length;
+  const moods = diary.filter(x => x.mood).sort((a, b) => a.date.localeCompare(b.date));
+  const rate = rou.length ? Math.round(rou.filter(r => r.completed).length / rou.length * 100) : null;
+  const md = ds => `${Number(ds.slice(5, 7))}/${Number(ds.slice(8, 10))}`;
+  return `
+    <div class="card-header">
+      <span class="card-title">&#128202; ${spaceWeekOffset ? '지난 주' : '이번 주'} 돌아보기 <span class="item-meta" style="font-weight:400">${md(days[0])}~${md(days[6])}</span></span>
+      <button class="btn btn-sm btn-secondary" onclick="spaceToggleWeek()">${spaceWeekOffset ? '이번 주' : '지난 주'}</button>
+    </div>
+    <div class="sp-week">
+      <div><b>${recDays}<span style="font-size:13px;font-weight:400"> / 7일</span></b>기록한 날</div>
+      <div><b>${sch.filter(s => s.completed).length}<span style="font-size:13px;font-weight:400"> / ${sch.length}</span></b>완료한 일정</div>
+      <div><b>${rate === null ? '-' : rate + '%'}</b>하루 일과 달성</div>
+      <div><b>${prayers.length}<span style="font-size:13px;font-weight:400">개${prayers.filter(p => p.answered).length ? ' · 응답 ' + prayers.filter(p => p.answered).length : ''}</span></b>기도</div>
+      <div><b>${diaryDays}<span style="font-size:13px;font-weight:400">일</span></b>일기</div>
+      <div><b>${wordDays}<span style="font-size:13px;font-weight:400">일</span></b>말씀</div>
+    </div>
+    ${moods.length ? `<div style="margin-top:12px;font-size:13px;color:var(--text-secondary)">기분 흐름 ${moods.map(x => `<span class="tag tag-primary" style="margin-left:4px">${esc(x.mood)}</span>`).join('')}</div>` : ''}`;
+}
+window.spaceToggleWeek = function() {
+  spaceWeekOffset = spaceWeekOffset ? 0 : -1;
+  const box = $('#space-week');
+  if (box && spaceData) box.innerHTML = spaceWeekHTML(spaceData);
+};
+
+function spaceCapsulesHTML(d, today) {
+  const caps = d.memos.filter(m => m.kind === 'capsule').sort((a, b) => (a.open_date || '').localeCompare(b.open_date || ''));
+  const rows = caps.map(c => {
+    const due = (c.open_date || '') <= today;
+    const left = due ? 0 : spaceDays(today, c.open_date);
+    const icon = due ? (c.opened ? '&#128236;' : '&#128140;') : '&#128274;';
+    const text = due
+      ? (c.opened ? `${formatDate(c.open_date)}에 열어본 편지` : `<b style="color:var(--accent)">편지가 도착했어요</b>`)
+      : `${formatDate(c.open_date)}에 열려요 <span class="tag tag-primary">D-${left}</span>`;
+    return `<div class="sp-row">
+      <div style="font-size:22px">${icon}</div>
+      <div style="flex:1;min-width:0;${due ? 'cursor:pointer' : ''}" ${due ? `onclick="openCapsule(${c.id})"` : ''}>
+        <div style="font-size:14px">${text}</div>
+        <div class="item-meta">${c.written_date ? formatDate(c.written_date) + '에 씀' : ''}</div>
+      </div>
+      ${due ? `<button class="btn btn-sm btn-primary" onclick="openCapsule(${c.id})">열기</button>` : ''}
+      <button class="btn-icon" onclick="deleteItem('memos', ${c.id})">&#128465;</button>
+    </div>`;
+  }).join('');
+  return `
+    <div class="card-header">
+      <span class="card-title">&#128140; 미래의 나에게</span>
+      <button class="btn btn-sm btn-primary" onclick="showCapsuleModal()">+ 편지 쓰기</button>
+    </div>
+    ${rows || `<div class="item-meta" style="line-height:1.7">지금의 마음을 편지로 적어 두면, 정한 날짜가 될 때까지 봉인됩니다.<br>1년 뒤의 나에게 한 통 남겨보세요.</div>`}`;
+}
+window.showCapsuleModal = function() {
+  const today = toLocalYMD(new Date());
+  showModal(`
+    <div class="modal-header"><span class="modal-title">&#128140; 미래의 나에게</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <p class="item-meta" style="margin-bottom:12px;line-height:1.6">정한 날짜가 되기 전에는 내용이 가려져 열어볼 수 없습니다.</p>
+    <div class="form-group"><label class="form-label">편지</label><textarea class="form-textarea" id="f-letter" rows="8" placeholder="미래의 나에게 하고 싶은 말, 지금의 고민과 기도, 그때쯤 이루고 싶은 것…"></textarea></div>
+    <div class="form-group"><label class="form-label">열어볼 날짜</label>
+      <input class="form-input" id="f-open" type="date" min="${ymdShift(today, { d: 1 })}" value="${ymdShift(today, { y: 1 }, true)}">
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn btn-sm btn-secondary" onclick="capsuleQuick(1)">한 달 뒤</button>
+        <button class="btn btn-sm btn-secondary" onclick="capsuleQuick(6)">반년 뒤</button>
+        <button class="btn btn-sm btn-secondary" onclick="capsuleQuick(12)">1년 뒤</button>
+        <button class="btn btn-sm btn-secondary" onclick="capsuleQuick(36)">3년 뒤</button>
+      </div>
+    </div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="saveCapsule()">봉인하기</button></div>
+  `);
+};
+window.capsuleQuick = function(months) {
+  const el = $('#f-open');
+  if (el) el.value = ymdShift(toLocalYMD(new Date()), { m: months }, true);
+};
+window.saveCapsule = async function() {
+  const today = toLocalYMD(new Date());
+  const letter = ($('#f-letter').value || '').trim();
+  const open = $('#f-open').value;
+  if (!letter) { toast('편지 내용을 적어주세요'); return; }
+  if (!open || open <= today) { toast('열어볼 날짜는 내일 이후로 정해주세요'); return; }
+  await dbAdd('memos', {
+    kind: 'capsule', title: `타임캡슐 (${open} 개봉)`,
+    content: esc(letter).replace(/\n/g, '<br>'),
+    open_date: open, written_date: today, opened: 0,
+  });
+  closeModal();
+  toast(`편지를 봉인했습니다. ${formatDate(open)}에 만나요`);
+  renderPage();
+};
+window.openCapsule = async function(id) {
+  const item = await dbGet('memos', id);
+  if (!item || item.kind !== 'capsule') return;
+  if ((item.open_date || '') > toLocalYMD(new Date())) { toast('아직 열 수 없는 편지예요'); return; }
+  showModal(`
+    <div class="modal-header"><span class="modal-title">&#128140; 과거의 내가 보낸 편지</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <p class="item-meta" style="margin-bottom:12px">${item.written_date ? formatDate(item.written_date) + '의 내가 ' : ''}${formatDate(item.open_date)}의 나에게</p>
+    <div class="sp-quote" style="margin-top:0;max-height:55vh;overflow-y:auto">${item.content || ''}</div>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="closeModal()">닫기</button></div>
+  `);
+  if (!item.opened) { item.opened = 1; await dbPut('memos', item); if (currentPage === 'space') renderPage(); }
+};
+
+window.spaceEditMotto = function() {
+  const cur = spaceData && spaceMotto(spaceData.memos);
+  showModal(`
+    <div class="modal-header"><span class="modal-title">나의 문장</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <p class="item-meta" style="margin-bottom:12px;line-height:1.6">올해의 말씀, 다짐, 좌우명처럼 자주 보고 싶은 한 문장을 적어두세요. 홈 화면에도 함께 보입니다.</p>
+    <div class="form-group"><textarea class="form-textarea" id="f-motto" rows="3" maxlength="120" placeholder="예: 범사에 감사하라">${esc(cur ? cur.content : '')}</textarea></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="spaceSaveMotto()">저장</button></div>
+  `);
+};
+window.spaceSaveMotto = async function() {
+  const text = ($('#f-motto').value || '').replace(/\s+/g, ' ').trim();
+  const cur = spaceMotto(await dbGetAll('memos'));
+  if (cur) { cur.content = text; await dbPut('memos', cur); }
+  else if (text) await dbAdd('memos', { kind: 'motto', title: '나의 문장', content: text });
+  closeModal(); toast('나의 문장을 저장했습니다'); renderPage();
+};
+
+window.spaceAnswerQuestion = async function(i) {
+  currentDate = toLocalYMD(new Date());
+  await showDiaryModal();
+  const box = $('#f-content'), q = SPACE_QUESTIONS[i];
+  if (!box || !q || box.textContent.includes(q)) return;
+  box.insertAdjacentHTML('beforeend', `<div><b>Q. ${esc(q)}</b></div><div><br></div>`);
+};
+window.spacePickGratitude = function() {
+  const box = $('#space-grat');
+  if (!box || !spaceData) return;
+  const list = spaceData.diary.filter(x => (x.gratitude || '').trim());
+  if (!list.length) return;
+  const it = list[Math.floor(Math.random() * list.length)];
+  box.innerHTML = `<div class="sp-quote">${esc(it.gratitude)}<div class="item-meta" style="margin-top:8px">${formatDate(it.date)} · <span class="sp-link" onclick="openArchiveDate('diary','${it.date}')">그날의 일기 보기</span></div></div>`;
+};
+window.spaceShowAnswered = function() {
+  if (!spaceData) return;
+  const items = spaceData.prayers.filter(p => p.answered).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  showModal(`
+    <div class="modal-header"><span class="modal-title">&#128330; 응답된 기도 (${items.length})</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div style="max-height:65vh;overflow-y:auto">${items.map(p => `
+      <div class="list-item" style="cursor:pointer" onclick="openArchiveDate('prayer','${p.date}')">
+        <div class="item-content" style="min-width:0">
+          <div class="item-title">${formatDate(p.date)} <span class="tag tag-success">${esc(p.category || '기도')}</span></div>
+          <div class="item-meta">${esc(spaceSnip(stripHTML(p.content), 120))}</div>
+        </div>
+      </div>`).join('')}</div>
+  `);
+};
+
+// --- 전체 검색 ---
+async function spaceBuildIndex() {
+  const out = [];
+  const add = (type, date, title, text, go) => {
+    const full = ((title || '') + ' ' + (text || '')).replace(/\s+/g, ' ').trim();
+    if (full) out.push({ type, date: date || '', title: title || '', text: full, low: full.toLowerCase(), go });
+  };
+  (await dbGetAll('diary')).forEach(x => add('일기', x.date, '', stripHTML(x.content) + ' ' + (x.gratitude || ''), { page: 'diary', date: x.date }));
+  (await dbGetAll('scriptures')).forEach(x => add('말씀', x.date, x.reference, (x.verse || '') + ' ' + (x.reflection || ''), { page: 'scripture', date: x.date }));
+  (await dbGetAll('prayers')).forEach(x => add('기도', x.date, '', stripHTML(x.content), { page: 'prayer', date: x.date }));
+  (await dbGetAll('sermons')).forEach(x => add('설교노트', x.date, x.title, [x.preacher, x.reference].concat(parsePages(x.content).map(p => stripHTML(p.text || ''))).join(' '), { sermon: x.id }));
+  (await dbGetAll('memos')).filter(x => !x.kind).forEach(x => add('메모', (x.updated_at || x.created_at || '').slice(0, 10), x.title, stripHTML(x.content), { memo: x.id }));
+  (await dbGetAll('ideas')).forEach(x => add('아이디어', (x.created_at || '').slice(0, 10), x.title, x.content, { nav: 'ideas' }));
+  (await dbGetAll('plans')).forEach(x => add('계획', x.target_date, x.title, x.category, { nav: 'plans' }));
+  (await dbGetAll('schedules')).forEach(x => add('스케줄', x.date, x.title, x.description, { schedule: x.date }));
+  return out;
+}
+window.spaceSearch = function() {
+  clearTimeout(spaceSearchTimer);
+  spaceSearchTimer = setTimeout(spaceRunSearch, 250);
+};
+async function spaceRunSearch() {
+  const input = $('#space-q'), box = $('#space-results');
+  if (!input || !box) return;
+  const q = input.value.trim().toLowerCase();
+  if (q.length < 2) { box.innerHTML = q ? '<div class="item-meta" style="margin-top:10px">두 글자 이상 입력하세요</div>' : ''; return; }
+  if (!spaceIndex) spaceIndex = await spaceBuildIndex();
+  if ($('#space-q') !== input || input.value.trim().toLowerCase() !== q) return; // 그 사이 검색어가 바뀜
+  const all = spaceIndex.filter(e => e.low.includes(q)).sort((a, b) => b.date.localeCompare(a.date));
+  spaceHits = all.slice(0, 50);
+  box.innerHTML = `<div class="item-meta" style="margin:10px 0 2px">${all.length ? `${all.length}개 찾음${all.length > 50 ? ' (최근 50개만 표시)' : ''}` : '찾은 기록이 없습니다'}</div>` +
+    spaceHits.map((e, i) => {
+      const at = e.low.indexOf(q), from = Math.max(0, at - 24);
+      const piece = (from ? '…' : '') + esc(e.text.slice(from, at)) + '<mark>' + esc(e.text.slice(at, at + q.length)) + '</mark>' + esc(e.text.slice(at + q.length, at + q.length + 60)) + (e.text.length > at + q.length + 60 ? '…' : '');
+      return `<div class="sp-hit" onclick="spaceGo(${i})">
+        <div class="item-meta"><span class="tag tag-primary">${e.type}</span> ${e.date ? formatDate(e.date) : ''}</div>
+        <div style="font-size:14px;line-height:1.6;margin-top:2px;overflow-wrap:anywhere">${piece}</div>
+      </div>`;
+    }).join('');
+}
+window.spaceGo = function(i) {
+  const g = spaceHits[i] && spaceHits[i].go;
+  if (!g) return;
+  if (g.page) openArchiveDate(g.page, g.date);
+  else if (g.sermon) spaceOpenSermon(g.sermon);
+  else if (g.memo) { currentPage = 'memos'; $$('.tab-item').forEach(t => t.classList.remove('active')); openMemo(g.memo); }
+  else if (g.schedule) { currentDate = g.schedule; navigateTo('schedule'); }
+  else if (g.nav) navigateTo(g.nav);
+};
+
+async function renderSpace() {
+  const today = toLocalYMD(new Date());
+  const [diary, scriptures, prayers, memos, schedules, routines, byDate] = await Promise.all([
+    dbGetAll('diary'), dbGetAll('scriptures'), dbGetAll('prayers'), dbGetAll('memos'),
+    dbGetAll('schedules'), dbGetAll('routines'), spaceActivity(),
+  ]);
+  const d = spaceData = { diary, scriptures, prayers, memos, schedules, routines, byDate };
+  spaceIndex = null;
+  const st = spaceStreak(byDate);
+  const motto = spaceMotto(memos);
+  const qi = Math.floor(new Date(today + 'T00:00:00').getTime() / 86400000) % SPACE_QUESTIONS.length;
+  const gratCount = diary.filter(x => (x.gratitude || '').trim()).length;
+  const answered = prayers.filter(p => p.answered).length;
+  const lookback = await spaceLookbackHTML(d, today);
+  if (currentPage !== 'space') return; // 그 사이 다른 화면으로 이동함
+  $('#mainContent').innerHTML = `
+    <div class="page-header"><h2>&#127969; 나의 공간</h2></div>
+    <div class="sp-hero">
+      <div class="sp-greet">${spaceGreeting()} · ${formatDate(today)}</div>
+      <div class="sp-motto" onclick="spaceEditMotto()">${motto && motto.content ? `&ldquo;${esc(motto.content)}&rdquo;<small>&#9998;</small>` : '나의 문장을 적어보세요 <small>&#9998; 눌러서 쓰기</small>'}</div>
+      <div class="sp-stats">
+        <div><b>${st.cur}일</b>${st.cur && !st.todayDone ? '연속 (오늘 쓰면 +1)' : '연속 기록'}</div>
+        <div><b>${st.best}일</b>최장 연속</div>
+        <div><b>${st.total}일</b>기록한 날</div>
+      </div>
+    </div>
+    <div class="card">
+      <input class="form-input" id="space-q" type="search" placeholder="&#128269; 내 기록 전체에서 찾기" oninput="spaceSearch()" autocomplete="off">
+      <div id="space-results"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">&#128172; 오늘의 질문</span></div>
+      <div style="font-size:16px;font-weight:600;line-height:1.6;word-break:keep-all">${esc(SPACE_QUESTIONS[qi])}</div>
+      <button class="btn btn-sm btn-primary" style="margin-top:12px" onclick="spaceAnswerQuestion(${qi})">오늘 일기에 답하기</button>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">&#128347; 그날의 나</span></div>
+      ${lookback}
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">&#127793; 기록 잔디</span><span class="item-meta">최근 ${SPACE_HEAT_WEEKS}주</span></div>
+      ${spaceHeatHTML(byDate, today)}
+    </div>
+    <div class="card" id="space-week">${spaceWeekHTML(d)}</div>
+    <div class="card">${spaceCapsulesHTML(d, today)}</div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">&#127807; 마음 서랍</span></div>
+      <div class="sp-row">
+        <div style="flex:1"><div style="font-size:14px">감사 항아리</div><div class="item-meta">지금까지 일기에 적은 감사 ${gratCount}개</div></div>
+        ${gratCount ? `<button class="btn btn-sm btn-secondary" onclick="spacePickGratitude()">하나 꺼내보기</button>` : ''}
+      </div>
+      <div id="space-grat"></div>
+      <div class="sp-row" style="border-top:1px solid var(--border-light)">
+        <div style="flex:1"><div style="font-size:14px">응답된 기도</div><div class="item-meta">기도 ${prayers.length}개 중 ${answered}개</div></div>
+        ${answered ? `<button class="btn btn-sm btn-secondary" onclick="spaceShowAnswered()">모아 보기</button>` : ''}
+      </div>
+    </div>`;
+}
 
 // === SHARED ===
 window.toggleField = async function(store, id, field, current) {
