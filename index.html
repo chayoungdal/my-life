@@ -596,6 +596,8 @@ body.se-unfrozen .se-toolbar { position: static; box-shadow: none; }
 .hm-word-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; min-height: 30px; }
 .hm-word-ref { font-size: 13px; opacity: 0.85; }
 .hm-word-btn { margin-left: auto; border: none; background: rgba(255,255,255,0.18); color: #fff; font-size: 12px; font-weight: 600; padding: 7px 12px; border-radius: 999px; cursor: pointer; font-family: inherit; }
+.app-update { position: fixed; left: 50%; bottom: calc(84px + var(--safe-bottom)); transform: translateX(-50%); z-index: 250; display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 18px; background: var(--text); color: #fff; border-radius: 999px; font-size: 13px; font-weight: 500; white-space: nowrap; box-shadow: var(--shadow-md); }
+.app-update button { border: none; background: #fff; color: var(--text); font-size: 13px; font-weight: 700; padding: 7px 14px; border-radius: 999px; cursor: pointer; font-family: inherit; }
 .tab-item .tab-icon svg { width: 22px; height: 22px; display: block; }
 @media (min-width: 768px) {
   .hm-hello { font-size: 32px; }
@@ -3554,7 +3556,17 @@ window.deleteItem = async function(store, id) {
 window.exportBackup = exportBackup;
 window.importBackup = importBackup;
 
-renderPage();
+const APP_PAGES = ['dashboard', 'schedule', 'routine', 'scripture', 'prayer', 'diary', 'plans', 'ideas', 'sermons', 'memos', 'space', 'backup', 'bible'];
+(function start() {
+  let resume = null;
+  try { resume = JSON.parse(sessionStorage.getItem('appResume') || 'null'); sessionStorage.removeItem('appResume'); } catch (e) {}
+  if (resume && APP_PAGES.includes(resume.page)) { // 새 버전 적용으로 새로 고친 경우: 보던 화면으로 돌아온다
+    if (/^\d{4}-\d{2}-\d{2}$/.test(resume.date || '')) currentDate = resume.date;
+    navigateTo(resume.page);
+  } else {
+    renderPage();
+  }
+})();
 bibleLoad().then(rec => {
   if (!rec || !rec.verses) return;
   BIBLE_TEXT = rec.verses;
@@ -3563,8 +3575,53 @@ bibleLoad().then(rec => {
 });
 cloudInit();
 
+// === 앱 업데이트: 새 버전을 알아서 받아 적용한다 ===
+// 서비스워커가 서버의 화면이 바뀐 것을 알려주면, 방금 앱을 열었거나 돌아온 직후이고
+// 작성 중인 것이 없을 때는 바로 새로 고친다. 그 밖에는 아래쪽에 작은 안내를 띄워 누를 때 적용한다.
+let appUpdateReady = false, appReloading = false, appSeenAt = Date.now();
+function appBusy() { // 작성 중인 화면이나 창이 열려 있는가
+  return editorOpen() || $('#modalOverlay').classList.contains('active');
+}
+async function appReload() {
+  if (appReloading) return;
+  appReloading = true;
+  try { await seSaveChain; } catch (e) {}                                              // 설교노트 저장이 끝난 뒤
+  for (let i = 0; i < 30 && meSaving; i++) await new Promise(r => setTimeout(r, 100)); // 메모 저장이 끝난 뒤
+  try { sessionStorage.setItem('appResume', JSON.stringify({ page: currentPage, date: currentDate })); } catch (e) {} // 보던 화면으로 돌아오기
+  location.reload();
+}
+function appUpdateFound() {
+  appUpdateReady = true;
+  if (!appBusy() && Date.now() - appSeenAt < 8000) { appReload(); return; }
+  if (document.getElementById('app-update')) return;
+  const bar = document.createElement('div');
+  bar.id = 'app-update';
+  bar.className = 'app-update';
+  bar.innerHTML = '<span>새 버전이 준비됐어요</span><button onclick="appApplyUpdate()">적용</button>';
+  document.body.appendChild(bar);
+}
+window.appApplyUpdate = function() {
+  if (appBusy()) { toast('작성 중인 내용을 저장하거나 닫은 뒤 눌러주세요'); return; }
+  appReload();
+};
+function appCheckUpdate() {
+  const sw = navigator.serviceWorker && navigator.serviceWorker.controller;
+  if (sw) sw.postMessage({ type: 'check-update' });
+}
+
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js');
+  let appSwReg = null;
+  navigator.serviceWorker.register('./sw.js').then(reg => { appSwReg = reg; }).catch(() => {});
+  navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'app-updated') appUpdateFound(); });
+  // 앱으로 돌아올 때마다 새 버전을 확인한다 (홈 화면 앱은 껐다 켜지 않고 이어서 쓰는 일이 많다)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    appSeenAt = Date.now();
+    if (appUpdateReady) { if (!appBusy()) appReload(); return; }
+    appCheckUpdate();
+    if (appSwReg) appSwReg.update().catch(() => {});
+  });
+  setInterval(() => { if (!document.hidden && !appUpdateReady) appCheckUpdate(); }, 30 * 60 * 1000); // 오래 켜 둔 경우
 }
 </script>
 </body>
