@@ -553,7 +553,10 @@ body.se-unfrozen .se-frozen::before, body.se-unfrozen .se-topbar::before, body.s
 .drawer-item.active { background: var(--primary); color: #fff; }
 .drawer-item:active { background: var(--primary-light); }
 .drawer-item.active:active { background: var(--primary); }
-.di-ic { font-size: 20px; width: 26px; text-align: center; }
+/* 메뉴 아이콘: 색 있는 이모지 대신 회색 선 아이콘으로 통일 (선택된 메뉴는 글자와 같은 흰색) */
+.di-ic { width: 26px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-secondary); }
+.di-ic svg { width: 21px; height: 21px; display: block; }
+.drawer-item.active .di-ic { color: #fff; }
 
 /* 나의 공간 */
 .sp-hero { background: linear-gradient(135deg, var(--primary), #7B5CF0); color: #fff; border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow-md); }
@@ -650,22 +653,22 @@ body.se-unfrozen .se-frozen::before, body.se-unfrozen .se-topbar::before, body.s
     <div class="drawer-date" id="drawerDate"></div>
   </div>
   <div class="drawer-section">오늘</div>
-  <button class="drawer-item" data-nav="dashboard"><span class="di-ic">&#9737;</span> 대시보드</button>
-  <button class="drawer-item" data-nav="space"><span class="di-ic">&#127969;</span> 나의 공간</button>
-  <button class="drawer-item" data-nav="schedule"><span class="di-ic">&#128197;</span> 스케줄</button>
-  <button class="drawer-item" data-nav="routine"><span class="di-ic">&#9745;</span> 하루 일과</button>
+  <button class="drawer-item" data-nav="dashboard"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1h-4.5v-6h-6v6H4.5a1 1 0 0 1-1-1z"/></svg></span> 대시보드</button>
+  <button class="drawer-item" data-nav="space"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z"/></svg></span> 나의 공간</button>
+  <button class="drawer-item" data-nav="schedule"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span> 스케줄</button>
+  <button class="drawer-item" data-nav="routine"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12.3l2.8 2.8L16 9.5"/></svg></span> 하루 일과</button>
   <div class="drawer-section">영성</div>
-  <button class="drawer-item" data-nav="scripture"><span class="di-ic">&#128214;</span> 하루 말씀</button>
-  <button class="drawer-item" data-nav="prayer"><span class="di-ic">&#128591;</span> 하루 기도</button>
-  <button class="drawer-item" data-nav="diary"><span class="di-ic">&#128221;</span> 하루 일기</button>
-  <button class="drawer-item" data-nav="sermons"><span class="di-ic">&#127908;</span> 설교노트</button>
+  <button class="drawer-item" data-nav="scripture"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-2-1.4-4.6-2-8-2v13c3.4 0 6 .6 8 2 2-1.4 4.6-2 8-2v-13c-3.4 0-6 .6-8 2z"/><path d="M12 6.5v13"/></svg></span> 하루 말씀</button>
+  <button class="drawer-item" data-nav="prayer"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M7 8.5h10"/></svg></span> 하루 기도</button>
+  <button class="drawer-item" data-nav="diary"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19.5 8.5l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span> 하루 일기</button>
+  <button class="drawer-item" data-nav="sermons"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg></span> 설교노트</button>
   <div class="drawer-section">성장</div>
-  <button class="drawer-item" data-nav="plans"><span class="di-ic">&#127919;</span> 계획</button>
-  <button class="drawer-item" data-nav="ideas"><span class="di-ic">&#128161;</span> 아이디어</button>
-  <button class="drawer-item" data-nav="memos"><span class="di-ic">&#128221;</span> 메모</button>
+  <button class="drawer-item" data-nav="plans"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg></span> 계획</button>
+  <button class="drawer-item" data-nav="ideas"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 18h5M10.5 21h3M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z"/></svg></span> 아이디어</button>
+  <button class="drawer-item" data-nav="memos"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8.5L19 8v12.5H6z"/><path d="M14 3.5V8h5M9 12.5h6M9 16h6"/></svg></span> 메모</button>
   <div class="drawer-section">데이터</div>
-  <button class="drawer-item" data-nav="bible"><span class="di-ic">&#128214;</span> 성경 가져오기</button>
-  <button class="drawer-item" data-nav="backup"><span class="di-ic">&#128190;</span> 백업/복원</button>
+  <button class="drawer-item" data-nav="bible"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/></svg></span> 성경 가져오기</button>
+  <button class="drawer-item" data-nav="backup"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18.5a4 4 0 0 1-.6-7.95A5.5 5.5 0 0 1 17 9.5a4.5 4.5 0 0 1 .5 9z"/></svg></span> 백업/복원</button>
 </nav>
 
 <nav class="tab-bar">
