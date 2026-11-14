@@ -802,6 +802,7 @@ let fbApp = null, fbAuth = null, fbDb = null, fbUser = null;
 let cloudUnsubs = [];
 let suppressCloudPush = false;
 let cloudPendingPulls = 0;
+let cloudAuthKnown = false; // 로그인 여부 확인이 끝났는가
 // 중복 정리로 지운 항목의 기록. 꺼져 있던 다른 기기가 나중에 그 항목을 다시 올려 되살리는 것을 막는다.
 const CLOUD_TOMB = '_tombstones';
 let cloudTombs = new Map(); // uuid → 정리한 시각(ISO)
@@ -844,6 +845,7 @@ async function cloudInit() {
       try { await fbDb.enablePersistence({ synchronizeTabs: true }); } catch (e) { /* 다중 탭 등은 무시 */ }
       fbAuth.onAuthStateChanged(async (u) => {
         fbUser = u;
+        cloudAuthKnown = true;
         if (u) {
           cloudSetStatus(`로그인됨: ${u.email || u.displayName || u.uid}`);
           await cloudPullAll();
@@ -852,6 +854,7 @@ async function cloudInit() {
         } else {
           cloudSetStatus('로그아웃 상태');
           cloudStopListeners();
+          if (currentPage === 'dashboard' && !editorOpen()) renderPage(); // 홈에 로그인 안내 표시
         }
       });
     } catch (e) {
@@ -1886,6 +1889,9 @@ async function renderDashboard() {
     <button class="hm-chip ${done ? 'done' : ''}" onclick="homeGo('${page}')">
       <span class="hm-dot">&#10003;</span>${label}<small>${note}</small>
     </button>`;
+  const cloudCfg = cloudGetConfig();
+  const needSetup = appStandalone() && !cloudCfg;             // 홈 화면 앱인데 동기화 설정이 없음
+  const loggedOut = !!cloudCfg && cloudAuthKnown && !fbUser;  // 설정은 있는데 로그아웃 상태
   const spaceNote = !sp ? '돌아보기 · 기록 잔디 · 타임캡슐'
     : sp.due ? '미래의 나에게 쓴 편지가 도착했어요'
     : sp.look ? `${sp.look.label}의 기록이 있어요`
@@ -1898,6 +1904,16 @@ async function renderDashboard() {
       ${sp && sp.motto && sp.motto.content ? `<div class="hm-motto" onclick="navigateTo('space')">${esc(sp.motto.content)}</div>` : ''}
     </div>
 
+    ${needSetup ? `<div class="hm-card">
+      <div class="hm-top"><span class="hm-label">기록 불러오기</span></div>
+      <div style="font-size:15px;font-weight:700;line-height:1.5">사파리에서 쓰던 기록이 안 보이나요?</div>
+      <div class="hm-empty" style="margin-top:4px">홈 화면 앱은 사파리와 저장 공간이 따로입니다. 사파리로 이 앱을 열어 메뉴 &rsaquo; 백업/복원에서 <b>설정 복사</b>를 누른 뒤, 여기로 돌아와 아래 버튼을 누르세요.</div>
+      <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="cloudPasteSetup()">설정 붙여넣기</button>
+    </div>` : ''}
+    ${loggedOut ? `<div class="hm-card hm-link" onclick="navigateTo('backup')">
+      <div style="flex:1;min-width:0"><b>클라우드 로그아웃 상태예요</b><span class="hm-sub">로그인해야 다른 기기의 기록이 보이고, 여기서 쓴 기록도 안전하게 올라갑니다</span></div>
+      <span class="hm-arrow">&rsaquo;</span>
+    </div>` : ''}
     <div class="hm-word" id="hm-word">${dailyWordHTML()}</div>
 
     <div class="hm-card hm-nums">
@@ -2512,13 +2528,69 @@ window.saveSavings = async function() {
   closeModal(); toast('저축이 기록되었습니다'); renderPage();
 };
 
+// === 설정 옮기기 (사파리 ↔ 홈 화면 앱, 다른 기기) ===
+// 아이폰·아이패드의 홈 화면 앱은 사파리와 저장 공간이 따로라서 Firebase 설정과 로그인이 넘어오지 않는다.
+// 쓰던 쪽에서 '설정 복사' → 새로 쓰는 쪽에서 '설정 붙여넣기'로 Firebase 설정과 OAuth 클라이언트 ID를 한 번에 옮긴다.
+// (이 두 값은 비밀번호가 아니라 앱 주소 같은 공개 식별값이다. 기록을 볼 수 있는지는 Google 로그인이 결정한다)
+const SETUP_PREFIX = 'MYLIFE1:';
+function appStandalone() { return !!(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone); }
+function cloudSetupCode() {
+  const cfg = cloudGetConfig();
+  if (!cfg) return '';
+  return SETUP_PREFIX + btoa(unescape(encodeURIComponent(JSON.stringify({ c: cfg, i: cloudGetClientId() }))));
+}
+function cloudReadSetupCode(text) {
+  const m = (text || '').replace(/\s+/g, '').match(/MYLIFE1:([A-Za-z0-9+/=]+)/);
+  if (!m) return null;
+  try {
+    const o = JSON.parse(decodeURIComponent(escape(atob(m[1]))));
+    return (o && o.c && typeof o.c === 'object' && o.c.apiKey && o.c.projectId) ? o : null;
+  } catch (e) { return null; }
+}
+window.cloudCopySetup = async function() {
+  const code = cloudSetupCode();
+  if (!code) { toast('먼저 Firebase 설정을 저장하세요'); return; }
+  let copied = false;
+  try { await navigator.clipboard.writeText(code); copied = true; } catch (e) {}
+  const out = $('#setup-code-out');
+  if (out) {
+    out.value = code;
+    out.style.display = 'block';
+    if (!copied) { out.focus(); out.select(); }
+  }
+  toast(copied ? '설정을 복사했습니다. 새로 쓸 곳에서 붙여넣으세요' : '아래 코드를 길게 눌러 전체 복사하세요');
+};
+window.cloudPasteSetup = async function() {
+  const input = $('#setup-code-in');
+  let text = (input && input.value || '').trim();
+  if (!text) { try { text = (await navigator.clipboard.readText()) || ''; } catch (e) { text = ''; } }
+  const got = cloudReadSetupCode(text);
+  if (!got) {
+    if (currentPage !== 'backup') { currentPage = 'backup'; $$('.tab-item').forEach(t => t.classList.remove('active')); await renderPage(); }
+    const box = $('#setup-code-in');
+    if (box) { box.scrollIntoView({ block: 'center' }); box.focus(); }
+    toast(text.trim() ? '설정 코드가 아닙니다. 쓰던 곳에서 "설정 복사"를 다시 눌러주세요' : '복사한 코드를 아래 칸에 붙여넣고 다시 눌러주세요');
+    return;
+  }
+  const same = JSON.stringify(cloudGetConfig()) === JSON.stringify(got.c);
+  cloudSetConfig(got.c);
+  if (got.i) cloudSetClientId(got.i);
+  if (fbApp && !same) { location.reload(); return; } // 이미 다른 설정으로 연결돼 있으면 새로 시작해야 적용된다
+  const ok = await cloudInit();
+  await renderPage();
+  if (!ok) { toast('설정은 저장했지만 연결하지 못했습니다. 인터넷 연결을 확인해주세요'); return; }
+  if (cloudEnabled()) { toast('설정을 가져왔습니다'); return; }
+  toast('설정을 가져왔습니다. 이제 Google로 로그인하세요');
+  if (appStandalone() && cloudGetClientId()) cloudSignIn(); // 홈 화면 앱: 로그인 창을 바로 띄운다
+};
+
 // === MORE (더보기) ===
 async function renderBackup() {
   const cfg = cloudGetConfig();
   const cfgText = cfg ? JSON.stringify(cfg, null, 2) : '';
   const signed = cloudEnabled();
   const clientId = cloudGetClientId();
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  const isStandalone = appStandalone();
   $('#mainContent').innerHTML = `
     <div class="page-header"><h2>&#128190; 백업 / 동기화</h2></div>
     <div class="card">
@@ -2533,6 +2605,21 @@ async function renderBackup() {
           : `<button class="btn btn-primary btn-sm" onclick="cloudSignIn()">&#128272; Google로 로그인</button>`}
       </div>
       <div id="cloud-status" style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">${signed ? ('로그인됨: ' + (fbUser.email || fbUser.uid)) : (cfg ? '설정 저장됨 · 로그아웃 상태' : '설정 없음')}</div>
+      <div style="margin:4px 0 14px;padding:14px;background:var(--bg);border-radius:var(--radius-sm)">
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px">설정 옮기기</div>
+        <p style="color:var(--text-secondary);font-size:12px;line-height:1.7;margin-bottom:10px">
+          아이폰·아이패드의 <b>홈 화면 앱은 사파리와 저장 공간이 따로</b>라서, 처음에는 기록이 보이지 않습니다.
+          쓰던 곳에서 <b>설정 복사</b>를 누르고, 새로 쓸 곳에서 <b>설정 붙여넣기</b>를 누른 뒤 로그인하면 같은 기록이 보입니다.
+        </p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${cfg ? `<button class="btn btn-secondary btn-sm" onclick="cloudCopySetup()">설정 복사</button>` : ''}
+          <button class="btn btn-primary btn-sm" onclick="cloudPasteSetup()">설정 붙여넣기</button>
+        </div>
+        <textarea id="setup-code-out" class="form-textarea" readonly rows="3" style="display:none;margin-top:8px;font-family:monospace;font-size:11px"></textarea>
+        <input id="setup-code-in" class="form-input" style="margin-top:8px;font-size:12px" placeholder="붙여넣기가 안 되면 복사한 코드를 여기에 붙여넣으세요" autocomplete="off">
+        ${cfg && !signed ? `<p style="color:var(--text-secondary);font-size:12px;line-height:1.6;margin-top:8px">이 기기는 지금 로그아웃 상태입니다. 여기서 쓴 기록을 다른 곳에서도 보려면 먼저 위의 <b>Google로 로그인</b>을 눌러주세요.</p>` : ''}
+        ${cfg && !clientId ? `<p style="color:var(--text-secondary);font-size:12px;line-height:1.6;margin-top:8px">OAuth 클라이언트 ID가 비어 있습니다. 홈 화면 앱에서는 이 값이 있어야 로그인됩니다. 아래 <b>홈화면 PWA용</b> 항목을 먼저 채운 뒤 복사하세요.</p>` : ''}
+      </div>
       <details ${cfg ? '' : 'open'} style="margin-top:8px">
         <summary style="font-size:13px;font-weight:600;cursor:pointer;color:var(--text-secondary)">Firebase 설정 (처음 1회만)</summary>
         <p style="color:var(--text-secondary);font-size:12px;line-height:1.6;margin:10px 0">
