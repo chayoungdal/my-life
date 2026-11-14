@@ -413,13 +413,36 @@ body {
 .diary-content { white-space: pre-wrap; line-height: 1.8; font-size: 15px; }
 
 /* Sermon Editor (GoodNotes 스타일) */
-.se-topbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 12; background: var(--bg); padding: 8px 0 8px; margin-bottom: 8px; }
-.se-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.se-topbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; position: sticky; top: var(--safe-top); z-index: 12; background: var(--bg); padding: 8px 0 8px; margin-bottom: 8px; }
+.se-meta { display: grid; grid-template-columns: 2fr auto 1fr; gap: 8px; margin-bottom: 8px; }
+.se-ref { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 10px; }
+.se-ref #f-book { flex: 2 1 86px; }
+.se-ref #f-chap { flex: 1 1 54px; }
+.se-ref #f-vs { flex: 0 0 50px; width: 50px; }
+.se-ref #f-ref { flex: 4 1 120px; }
+.se-ref .btn { flex-shrink: 0; }
+.se-ref > * { min-width: 0; } /* 책 이름이 길어도 한 줄에 들어가게 */
+/* 틀고정: 저장 줄 · 제목 · 설교자 · 본문 · 도구 줄을 불투명한 한 덩어리로 화면 위에 붙여 둔다 (패드·넓은 화면) */
+.se-frozen { position: sticky; top: var(--safe-top); z-index: 12; background: var(--bg); margin: 0 -8px 12px; padding: 0 8px 10px; border-bottom: 1px solid var(--border); box-shadow: 0 8px 12px -10px rgba(0,0,0,0.25); }
+.se-frozen::before, .se-topbar::before { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: calc(var(--safe-top) + 40px); background: var(--bg); } /* 고정 영역 위쪽(상태 표시줄 자리)으로 글이 비치지 않게 */
+.se-frozen .se-topbar, .se-frozen .se-toolbar { position: static; }
+.se-frozen .se-topbar::before { display: none; }
+.se-frozen .se-toolbar { margin-bottom: 0; box-shadow: none; }
+/* 고정 영역은 높이를 아껴 쓴다 (글 쓸 자리를 넓게) */
+.se-frozen .form-input, .se-frozen .form-select { padding: 8px 10px; } /* 글자 크기는 16px 유지: 더 작으면 아이패드가 입력할 때 화면을 확대한다 */
+.se-frozen .se-topbar { padding: 6px 0; margin-bottom: 6px; }
+.se-frozen .se-meta { margin-bottom: 6px; }
+.se-frozen .se-ref { margin-bottom: 8px; }
+.se-frozen .se-toolbar { padding: 6px 8px; gap: 5px; }
+.se-frozen .se-tool { padding: 6px 8px; }
+.se-frozen .se-color { width: 24px; height: 24px; }
 .se-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; margin-bottom: 10px; position: sticky; top: 54px; z-index: 11; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 .se-pin-btn { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
 .se-pin-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 body.se-unfrozen .se-topbar,
 body.se-unfrozen .se-toolbar { position: static; box-shadow: none; }
+body.se-unfrozen .se-frozen { position: static; box-shadow: none; border-bottom: none; }
+body.se-unfrozen .se-frozen::before, body.se-unfrozen .se-topbar::before, body.se-unfrozen .se-topbar::after { display: none; }
 .se-tool { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text); }
 .se-tool.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 .se-color { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border); cursor: pointer; flex-shrink: 0; }
@@ -430,7 +453,18 @@ body.se-unfrozen .se-toolbar { position: static; box-shadow: none; }
 .se-text:empty:before { content: attr(data-ph); color: var(--text-secondary); }
 .se-canvas { position: absolute; inset: 0; touch-action: none; }
 .se-pagenav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; }
-@media (max-width: 767px) { .se-meta { grid-template-columns: 1fr; } }
+@media (max-width: 767px) {
+  /* 폰: 화면이 작아 전부 고정하면 쓸 자리가 없다. 저장 줄과 도구 줄만 고정하고 제목·본문 칸은 함께 스크롤된다 */
+  .se-frozen { display: contents; }
+  .se-frozen::before { display: none; }
+  .se-frozen .se-topbar, .se-frozen .se-toolbar { position: sticky; }
+  .se-frozen .se-topbar::before { display: block; }
+  .se-frozen .se-topbar::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 12px; background: var(--bg); } /* 저장 줄과 도구 줄 사이 틈으로 글이 비치지 않게 */
+  .se-frozen .se-toolbar { top: calc(var(--safe-top) + 54px); margin-bottom: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .se-topbar { position: sticky; }
+  .se-meta { grid-template-columns: 1fr; }
+  .se-ref #f-ref { flex-basis: 100%; }
+}
 
 /* Calendar */
 .cal-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
@@ -1323,6 +1357,7 @@ window.goToday = function() {
 };
 
 async function renderPage() {
+  document.documentElement.style.scrollPaddingTop = ''; // 설교노트 편집 화면에서 준 스크롤 여백 해제
   const pages = {
     dashboard: renderDashboard,
     schedule: renderSchedule,
@@ -2938,6 +2973,7 @@ function renderSermonEditor() {
   const p = SE.pages[SE.cur];
   const pageH = 1000;
   $('#mainContent').innerHTML = `
+    <div class="se-frozen" id="se-frozen">
     <div class="se-topbar">
       <button class="btn btn-secondary btn-sm" onclick="closeSermonEditor()">&larr; 목록</button>
       <span id="se-status" style="font-size:12px;color:var(--text-secondary);flex:1;text-align:center">자동 저장</span>
@@ -2948,18 +2984,14 @@ function renderSermonEditor() {
       <input class="form-input" id="se-title" placeholder="설교 제목" value="${esc(SE.title)}">
       <input class="form-input" id="se-date" type="date" value="${SE.date}">
       <input class="form-input" id="se-preacher" placeholder="설교자 (선택)" value="${esc(SE.preacher)}">
-      <div style="display:flex;gap:6px">
-        <select class="form-select" id="f-book" onchange="onBookChange()" style="flex:2"><option value="">책</option>${BIBLE_BOOKS.map((b, i) => `<option value="${i}">${b[0]}</option>`).join('')}</select>
-        <select class="form-select" id="f-chap" onchange="updateRef()" style="flex:1"><option value="">장</option></select>
-        <input class="form-input" id="f-vs" type="number" min="1" placeholder="절" onchange="updateRef()" style="width:56px">
-      </div>
     </div>
-    <div style="margin-bottom:12px">
+    <div class="se-ref">
+      <select class="form-select" id="f-book" onchange="onBookChange()"><option value="">책</option>${BIBLE_BOOKS.map((b, i) => `<option value="${i}">${b[0]}</option>`).join('')}</select>
+      <select class="form-select" id="f-chap" onchange="updateRef()"><option value="">장</option></select>
+      <input class="form-input" id="f-vs" type="number" min="1" placeholder="절" onchange="updateRef()">
       <input class="form-input" id="f-ref" placeholder="본문 (예: 시편 1:1~2)" value="${esc(SE.reference)}">
-      <div style="display:flex;gap:6px;margin-top:6px">
-        <button class="btn btn-sm btn-primary" onclick="sermonInsertVerse()">&#11015; 본문 자동입력</button>
-        <button class="btn btn-sm btn-secondary" onclick="openBible()">&#128214; 성경찾기</button>
-      </div>
+      <button class="btn btn-sm btn-primary" onclick="sermonInsertVerse()">&#11015; 본문 자동입력</button>
+      <button class="btn btn-sm btn-secondary" onclick="openBible()">&#128214; 성경찾기</button>
     </div>
     <div class="se-toolbar">
       <button class="se-tool active" id="tool-type" onclick="sePen(false)">&#9000; 타이핑</button>
@@ -2972,6 +3004,7 @@ function renderSermonEditor() {
       <span style="width:1px;height:22px;background:var(--border);margin:0 2px"></span>
       ${SE_COLORS.map(c => `<span class="se-color ${c === SE.color ? 'active' : ''}" data-c="${c}" style="background:${c}" onmousedown="event.preventDefault();seColor('${c}')"></span>`).join('')}
       <button class="se-tool" style="margin-left:auto" onclick="seClearDraw()">필기 지우기</button>
+    </div>
     </div>
     <div class="se-page-wrap">
       <div class="se-page" style="height:${pageH}px">
@@ -3140,6 +3173,9 @@ function sePinOn() {
 function seApplyPin() {
   const on = sePinOn();
   document.body.classList.toggle('se-unfrozen', !on);
+  const fz = document.getElementById('se-frozen');
+  const fzH = (on && fz) ? fz.getBoundingClientRect().height : 0; // 폰에서는 0 (묶음이 풀려 있음)
+  document.documentElement.style.scrollPaddingTop = fzH ? Math.round(fzH + 12) + 'px' : '';
   const btn = document.getElementById('se-pin-btn');
   if (btn) { btn.classList.toggle('active', on); btn.setAttribute('aria-pressed', on ? 'true' : 'false'); }
 }
