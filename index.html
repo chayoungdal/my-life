@@ -1700,23 +1700,54 @@ window.fillVerseFromRef = function() {
   toast('본문을 입력했습니다');
 };
 
-// 설교노트(서식 입력)에 본문 텍스트를 커서 위치에 삽입
+// 설교노트 글 칸에서 마지막으로 커서를 둔 자리를 기억해 둔다.
+// (본문 칸이나 책·장·절을 건드리면 글 칸의 커서가 사라지므로, 사라지기 전 위치를 저장)
+let seLastRange = null;
+document.addEventListener('selectionchange', () => {
+  const el = document.getElementById('se-text');
+  const sel = window.getSelection();
+  if (el && sel && sel.rangeCount && el.contains(sel.anchorNode)) seLastRange = sel.getRangeAt(0).cloneRange();
+});
+// 글의 맨 끝이 줄바꿈으로 끝나는가 (아니면 새 내용이 마지막 줄에 이어 붙는다)
+function seEndsWithBreak(el) {
+  let n = el.lastChild;
+  while (n && n.nodeType === Node.TEXT_NODE && !n.textContent.trim()) n = n.previousSibling;
+  if (!n) return true; // 빈 글
+  if (n.nodeType !== Node.ELEMENT_NODE) return false;
+  return n.tagName === 'BR' || /^(DIV|P|H[1-6]|UL|OL|LI|BLOCKQUOTE|PRE|TABLE|HR)$/.test(n.tagName);
+}
+// 설교노트(서식 입력)에 본문 텍스트를 넣는다.
+// · 글 칸에 커서를 둔 적이 있으면 그 자리에
+// · 한 번도 누르지 않았으면 작성된 글의 맨 아래에
 function insertIntoSermon(txt) {
   if (SE && SE.pen) sePen(false); // 타이핑 모드로 전환
   const el = $('#se-text');
   if (!el) return;
-  el.focus();
-  const html = esc(txt).replace(/\n/g, '<br>') + '<br>';
-  const sel = window.getSelection();
-  if (sel && sel.rangeCount && el.contains(sel.anchorNode)) {
-    const range = sel.getRangeAt(0);
-    range.deleteContents();
-    const frag = range.createContextualFragment(html);
-    const last = frag.lastChild;
-    range.insertNode(frag);
-    if (last) { range.setStartAfter(last); range.collapse(true); sel.removeAllRanges(); sel.addRange(range); }
-  } else {
-    el.innerHTML += html;
+  // 커서 위치는 focus() 전에 정한다: focus()는 커서를 글 맨 앞에 놓아 버린다
+  let range = null;
+  if (seLastRange && el.contains(seLastRange.startContainer) && el.contains(seLastRange.endContainer)) {
+    range = seLastRange.cloneRange();
+  }
+  let html = esc(txt).replace(/\n/g, '<br>') + '<br>';
+  if (!range) {
+    range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false); // 글의 맨 끝
+    if (!seEndsWithBreak(el)) html = '<br>' + html;
+  }
+  try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+  range.deleteContents();
+  const frag = range.createContextualFragment(html);
+  const last = frag.lastChild;
+  range.insertNode(frag);
+  if (last) {
+    range.setStartAfter(last);
+    range.collapse(true);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    seLastRange = range.cloneRange(); // 이어서 넣으면 바로 뒤에 붙는다
+    if (last.scrollIntoView) last.scrollIntoView({ block: 'nearest' }); // 넣은 곳이 보이게
   }
   seCapture(); seAutosave();
   toast('본문을 입력했습니다');
@@ -2970,6 +3001,7 @@ window.openSermonEditor = async function(id) {
 };
 
 function renderSermonEditor() {
+  seLastRange = null;
   const p = SE.pages[SE.cur];
   const pageH = 1000;
   $('#mainContent').innerHTML = `
