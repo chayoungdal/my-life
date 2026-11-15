@@ -635,6 +635,55 @@ body.se-unfrozen .se-frozen::before, body.se-unfrozen .se-topbar::before, body.s
 .hm-word-btn { margin-left: auto; border: none; background: rgba(255,255,255,0.18); color: #fff; font-size: 12px; font-weight: 600; padding: 7px 12px; border-radius: 999px; cursor: pointer; font-family: inherit; }
 .app-update { position: fixed; left: 50%; bottom: calc(84px + var(--safe-bottom)); transform: translateX(-50%); z-index: 250; display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 18px; background: var(--text); color: #fff; border-radius: 999px; font-size: 13px; font-weight: 500; white-space: nowrap; box-shadow: var(--shadow-md); }
 .app-update button { border: none; background: #fff; color: var(--text); font-size: 13px; font-weight: 700; padding: 7px 14px; border-radius: 999px; cursor: pointer; font-family: inherit; }
+/* 오늘의 배움 */
+.lr-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 16px; } /* 폰에서도 다섯 분야가 한 줄에 */
+.lr-tab { border: none; background: var(--bg); color: var(--text-secondary); padding: 8px 0; text-align: center; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.lr-tab.on { background: var(--text); color: #fff; }
+.lr-quote { padding-left: 14px; border-left: 2px solid var(--primary); font-size: 16px; line-height: 1.85; word-break: keep-all; overflow-wrap: anywhere; }
+.lr-src { margin-top: 10px; padding-left: 16px; font-size: 13px; color: var(--text-secondary); }
+.lr-note { margin-top: 10px; font-size: 13px; line-height: 1.6; color: var(--text-secondary); word-break: keep-all; }
+.lr-text { font-size: 16px; line-height: 1.8; word-break: keep-all; overflow-wrap: anywhere; }
+.lr-answer { margin-top: 10px; font-size: 18px; font-weight: 800; color: var(--primary); }
+.lr-en { font-size: 21px; font-weight: 800; letter-spacing: -0.3px; line-height: 1.4; overflow-wrap: anywhere; }
+.lr-pron, .lr-mean { margin-top: 8px; font-size: 15px; line-height: 1.6; }
+.lr-pron span, .lr-mean span { display: inline-block; min-width: 34px; margin-right: 8px; font-size: 11px; font-weight: 700; color: var(--text-secondary); }
+.lr-pron { color: var(--primary); font-weight: 600; }
+/* 스케줄: 월/주 전환과 주간 보기 (하루를 한 줄씩 크게) */
+.seg { display: inline-flex; padding: 2px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; }
+.seg button { border: none; background: none; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; font-family: inherit; }
+.seg button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.wk-list { background: var(--surface); border: 1px solid var(--border-light); border-radius: 16px; overflow: hidden; }
+.wk-day { display: flex; gap: 14px; padding: 14px 16px; border-top: 1px solid var(--border-light); }
+.wk-day:first-child { border-top: none; }
+.wk-day.today { background: var(--primary-light); }
+.wk-date { flex: 0 0 52px; text-align: center; cursor: pointer; }
+.wk-num { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; font-size: 19px; font-weight: 800; }
+.wk-day.today .wk-num { background: var(--primary); color: #fff; }
+.wk-wd { display: block; margin-top: 2px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.wk-date.red .wk-num, .wk-date.red .wk-wd { color: var(--danger); }
+.wk-day.today .wk-date.red .wk-num { color: #fff; }
+.wk-hol { display: block; margin-top: 2px; font-size: 10px; font-weight: 600; color: var(--danger); line-height: 1.3; word-break: keep-all; }
+.wk-items { flex: 1; min-width: 0; }
+.wk-item { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--border-light); }
+.wk-item:first-child { border-top: none; padding-top: 4px; }
+.wk-time { flex: 0 0 48px; font-size: 14px; font-weight: 600; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.wk-body { flex: 1; min-width: 0; cursor: pointer; }
+.wk-title { font-size: 16px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.wk-meta { margin-top: 2px; font-size: 13px; line-height: 1.5; color: var(--text-secondary); overflow-wrap: anywhere; }
+.wk-item.done .wk-title { color: var(--text-secondary); text-decoration: line-through; }
+.wk-item.done .hm-check { background: var(--primary); border-color: var(--primary); color: #fff; }
+.wk-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 6px; }
+.wk-none { font-size: 14px; color: var(--text-secondary); }
+.wk-add { border: none; background: none; padding: 4px 0; font-size: 13px; font-weight: 600; color: var(--primary); cursor: pointer; font-family: inherit; }
+@media (max-width: 767px) {
+  /* 폰: 제목 자리를 넓히려고 시간을 제목 위로 올린다 */
+  .wk-day { gap: 12px; padding: 14px; }
+  .wk-date { flex-basis: 46px; }
+  .wk-item { display: grid; grid-template-columns: 1fr auto; column-gap: 12px; align-items: center; }
+  .wk-time { grid-column: 1; grid-row: 1; font-size: 13px; }
+  .wk-body { grid-column: 1; grid-row: 2; }
+  .wk-item .hm-check { grid-column: 2; grid-row: 1 / span 2; }
+}
 .tab-item .tab-icon svg { width: 22px; height: 22px; display: block; }
 @media (min-width: 768px) {
   .hm-hello { font-size: 32px; }
@@ -1340,7 +1389,7 @@ document.addEventListener('touchend', e => {
   const t = e.target;
   if (t.closest && t.closest('.se-canvas, .se-text, .rich-input, textarea, input, select')) return;
   const dir = dx < 0 ? 1 : -1; // 왼쪽으로 밀면 다음
-  if (currentPage === 'schedule') changeMonth(dir);
+  if (currentPage === 'schedule') schedMove(dir);
   else if (currentPage === 'sermons' && SE) sePage(dir);
   else if (['scripture', 'prayer', 'diary', 'routine'].includes(currentPage)) changeDate(dir);
 }, { passive: true });
@@ -1987,6 +2036,250 @@ window.dailyNext = function() {
   if (box) box.innerHTML = dailyWordHTML();
 };
 
+// === 오늘의 배움 (문학 · 상식 · 유머 · 명언 · 영어: 분야마다 하루에 하나씩) ===
+// 문학은 저작권이 끝난 작품의 짧은 구절만 싣는다. 외국 작품은 직접 옮긴 문장이다.
+const LEARN_LIT = [ // [구절, 출처, 한 줄 설명]
+  ['죽는 날까지 하늘을 우러러\n한 점 부끄럼이 없기를', '윤동주, 「서시」', '부끄럽지 않게 살고 싶다는 다짐을 담은 시의 첫머리입니다.'],
+  ['별 하나에 추억과\n별 하나에 사랑과\n별 하나에 쓸쓸함과', '윤동주, 「별 헤는 밤」', '가을밤 별을 세며 그리운 이름을 하나씩 불러 보는 시입니다.'],
+  ['내를 건너서 숲으로\n고개를 넘어서 마을로', '윤동주, 「새로운 길」', '날마다 걷는 같은 길도 늘 새로운 길이라고 노래합니다.'],
+  ['나 보기가 역겨워\n가실 때에는\n말없이 고이 보내 드리우리다', '김소월, 「진달래꽃」', '떠나는 임을 원망하지 않고 보내겠다는, 슬픔을 누른 이별의 시입니다.'],
+  ['산에는 꽃 피네\n꽃이 피네\n갈 봄 여름 없이\n꽃이 피네', '김소월, 「산유화」', '저만치 혼자 피고 지는 꽃에 삶의 외로움을 겹쳐 보았습니다.'],
+  ['엄마야 누나야 강변 살자\n뜰에는 반짝이는 금모래빛', '김소월, 「엄마야 누나야」', '평화로운 삶을 바라는 마음을 아이의 목소리로 노래한 시입니다.'],
+  ['산산이 부서진 이름이여!\n허공 중에 헤어진 이름이여!', '김소월, 「초혼」', '세상을 떠난 이를 애타게 부르는 시입니다. 초혼은 죽은 이의 혼을 부른다는 뜻입니다.'],
+  ['님은 갔습니다. 아아, 사랑하는 나의 님은 갔습니다.', '한용운, 「님의 침묵」', '이별의 슬픔을 다시 만날 희망으로 바꾸는 시입니다.'],
+  ['타고 남은 재가 다시 기름이 됩니다.', '한용운, 「알 수 없어요」', '끝난 것처럼 보이는 것이 다시 시작이 된다는 믿음을 담았습니다.'],
+  ['내 고장 칠월은\n청포도가 익어 가는 시절', '이육사, 「청포도」', '고향의 풍요로운 여름을 그리며 기다리는 손님을 노래합니다.'],
+  ['지금 눈 내리고\n매화 향기 홀로 아득하니\n내 여기 가난한 노래의 씨를 뿌려라', '이육사, 「광야」', '어두운 시대에도 미래를 위해 씨를 뿌리겠다는 의지의 시입니다.'],
+  ['겨울은 강철로 된 무지갠가 보다.', '이육사, 「절정」', '가장 혹독한 순간에서 오히려 아름다움과 희망을 발견합니다.'],
+  ['지금은 남의 땅 — 빼앗긴 들에도 봄은 오는가?', '이상화, 「빼앗긴 들에도 봄은 오는가」', '나라를 잃은 슬픔과 봄을 향한 간절함을 함께 담았습니다.'],
+  ['돌담에 속삭이는 햇발같이\n풀 아래 웃음 짓는 샘물같이', '김영랑, 「돌담에 속삭이는 햇발」', '우리말의 고운 소리를 살려 봄날의 맑은 마음을 그렸습니다.'],
+  ['모란이 피기까지는\n나는 아직 나의 봄을 기다리고 있을 테요', '김영랑, 「모란이 피기까지는」', '기다림 자체를 삶의 보람으로 삼는 마음을 노래합니다.'],
+  ['넓은 벌 동쪽 끝으로\n옛이야기 지줄대는 실개천이 회돌아 나가고', '정지용, 「향수」', '눈앞에 그려지듯 고향 풍경을 묘사한 시입니다. 노래로도 널리 불립니다.'],
+  ['그날이 오면, 그날이 오면은\n삼각산이 일어나 더덩실 춤이라도 추고', '심훈, 「그날이 오면」', '광복의 날을 향한 벅찬 기다림을 터뜨리듯 쓴 시입니다.'],
+  ['박제가 되어 버린 천재를 아시오?', '이상, 「날개」', '1936년에 발표된 소설의 첫 문장입니다. 무기력한 지식인의 내면을 그렸습니다.'],
+  ['산허리는 온통 메밀밭이어서 피기 시작한 꽃이 소금을 뿌린 듯이 흐뭇한 달빛에 숨이 막힐 지경이다.', '이효석, 「메밀꽃 필 무렵」', '달밤의 메밀밭을 그린, 우리 소설에서 가장 아름답다고 꼽히는 문장입니다.'],
+  ['이 몸이 죽고 죽어 일백 번 고쳐 죽어\n백골이 진토 되어 넋이라도 있고 없고\n님 향한 일편단심이야 가실 줄이 있으랴', '정몽주, 「단심가」', '고려에 대한 변함없는 충성을 노래한 시조입니다.'],
+  ['동짓달 기나긴 밤을 한 허리를 베어 내어\n춘풍 이불 아래 서리서리 넣었다가\n어론 님 오신 날 밤이어든 굽이굽이 펴리라', '황진이의 시조', '긴 겨울밤을 잘라 두었다가 임이 오신 날 펼치겠다는 기발한 상상입니다.'],
+  ['태산이 높다 하되 하늘 아래 뫼이로다\n오르고 또 오르면 못 오를 리 없건마는\n사람이 제 아니 오르고 뫼만 높다 하더라', '양사언의 시조', '해 보지도 않고 어렵다고만 하는 태도를 꼬집습니다.'],
+  ['행복한 가정은 모두 비슷하지만, 불행한 가정은 저마다의 이유로 불행하다.', '톨스토이, 『안나 카레니나』', '세계 문학에서 가장 유명한 첫 문장 가운데 하나입니다.'],
+  ['사느냐 죽느냐, 그것이 문제로다.', '셰익스피어, 『햄릿』', '삶의 고통 앞에서 망설이는 햄릿의 독백입니다.'],
+  ['가장 중요한 것은 눈에 보이지 않아.', '생텍쥐페리, 『어린 왕자』', '여우가 어린 왕자에게 알려 준 비밀입니다. 마음으로 보아야 보인다는 뜻입니다.'],
+  ['최고의 시절이자 최악의 시절이었다.', '찰스 디킨스, 『두 도시 이야기』', '프랑스 혁명기의 혼란을 한 문장에 담은 첫머리입니다.'],
+  ['인생길 한가운데에서 나는 바른길을 잃고 어두운 숲속에 서 있었네.', '단테, 『신곡』', '지옥·연옥·천국을 지나는 긴 여정이 이 문장에서 시작됩니다.'],
+  ['나를 이슈메일이라 불러 주오.', '허먼 멜빌, 『모비 딕』', '흰 고래를 쫓는 항해 이야기의 첫 문장입니다.'],
+];
+const LEARN_FACT = [
+  '꿀은 잘 밀봉해 두면 아주 오래 지나도 거의 상하지 않습니다. 수분이 적고 산성이어서 세균이 살기 어렵기 때문입니다.',
+  '문어는 심장이 세 개이고 피가 푸른색입니다. 피 속에 철 대신 구리가 들어 있기 때문입니다.',
+  '햇빛이 태양을 떠나 지구에 닿기까지는 약 8분 20초가 걸립니다.',
+  '어른의 뼈는 206개지만 갓난아기는 300개쯤 됩니다. 자라면서 여러 뼈가 하나로 붙습니다.',
+  '지구 표면의 약 71%는 물로 덮여 있고, 그 물의 약 97%는 바닷물입니다.',
+  '훈민정음은 1443년에 만들어져 1446년에 반포되었습니다. 한글날인 10월 9일은 반포를 기념하는 날입니다.',
+  '식물학적으로 바나나는 장과(베리)에 속하지만, 딸기는 장과가 아닙니다.',
+  '에베레스트산의 높이는 8,848.86m입니다. 2020년에 네팔과 중국이 함께 다시 재어 발표했습니다.',
+  '금성은 한 번 자전하는 데 약 243일, 태양을 한 바퀴 도는 데 약 225일이 걸립니다. 자전이 공전보다 오래 걸리는 행성입니다.',
+  '달은 해마다 약 3.8cm씩 지구에서 멀어지고 있습니다.',
+  '물은 약 4℃일 때 가장 무겁습니다. 그래서 호수는 위에서부터 얼고, 물고기는 얼음 아래에서 겨울을 납니다.',
+  '빛은 1초에 약 30만 km를 갑니다. 지구를 일곱 바퀴 반 도는 거리입니다.',
+  '사람 몸에서 가장 큰 기관은 피부입니다. 어른의 피부 넓이는 약 1.5~2㎡입니다.',
+  '기린의 목뼈는 사람과 똑같이 7개입니다. 뼈 하나하나가 길 뿐입니다.',
+  '북극에는 펭귄이 없습니다. 야생 펭귄은 거의 모두 남반구에 삽니다.',
+  '북극곰의 털은 흰색이 아니라 속이 빈 투명한 털이고, 그 아래 피부는 검은색입니다.',
+  '태양계에서 가장 큰 행성은 목성입니다. 지름이 지구의 약 11배입니다.',
+  '커피콩은 콩이 아니라 커피체리라는 열매의 씨앗입니다.',
+  '세계에서 가장 넓은 사막은 사하라가 아니라 남극입니다. 사막은 비나 눈이 거의 내리지 않는 곳을 뜻합니다.',
+  '윤년은 4로 나누어떨어지는 해입니다. 다만 100으로 나누어떨어지면 평년이고, 400으로 나누어떨어지면 다시 윤년입니다.',
+  '심장은 하루에 약 10만 번 뜁니다.',
+  '태극기 네 모서리의 괘는 건·곤·감·리이고, 각각 하늘·땅·물·불을 뜻합니다.',
+  '번개가 지나가는 길의 온도는 약 3만 ℃로, 태양 표면(약 5,500℃)보다 훨씬 뜨겁습니다.',
+  '소리는 공기 중에서 1초에 약 340m를 가고, 물속에서는 그보다 네 배 넘게 빠릅니다.',
+  '지구에서 가장 깊은 바다는 태평양의 마리아나 해구로, 깊이가 약 11,000m입니다.',
+  '토마토는 식물학적으로는 열매(과일)이지만 요리에서는 채소로 다룹니다.',
+  'ABO식 혈액형은 1901년 오스트리아의 카를 란트슈타이너가 발견했습니다.',
+  '1인치는 2.54cm, 1마일은 약 1.6km, 1파운드는 약 454g입니다.',
+  '국제우주정거장은 약 90분마다 지구를 한 바퀴 돕니다. 그 안에서는 하루에 해돋이를 열여섯 번쯤 봅니다.',
+  '우리나라 지폐의 인물은 천 원 퇴계 이황, 오천 원 율곡 이이, 만 원 세종대왕, 오만 원 신사임당입니다.',
+  '낙타의 혹에는 물이 아니라 지방이 들어 있습니다.',
+  '다이아몬드와 연필심(흑연)은 둘 다 탄소로만 이루어져 있습니다. 원자가 늘어선 모양이 다를 뿐입니다.',
+  '벌새는 뒤로도 날 수 있는 새입니다.',
+  '상어의 뼈대는 단단한 뼈가 아니라 물렁뼈(연골)로 되어 있습니다.',
+];
+const LEARN_JOKE = [ // [질문, 답]
+  ['세상에서 가장 뜨거운 과일은?', '천도복숭아'], ['왕이 넘어지면?', '킹콩'], ['소가 웃으면?', '우하하'],
+  ['반성문을 영어로 하면?', '글로벌 (글로 벌)'], ['자동차가 놀라면?', '카놀라유'], ['오리가 얼면?', '언덕'],
+  ['아몬드가 죽으면?', '다이아몬드'], ['물고기의 반대말은?', '불고기'], ['토끼가 쓰는 빗은?', '래빗'],
+  ['얼음이 죽으면?', '다이빙'], ['세상에서 가장 쉬운 숫자는?', '190,000 (쉽구만)'], ['딸기가 직장을 잃으면?', '딸기시럽'],
+  ['바나나가 웃으면?', '바나나킥'], ['신이 낳은 아이는?', '갓난아기'], ['고기를 먹을 때마다 따라오는 개는?', '이쑤시개'],
+  ['왕이 궁에 들어가기 싫을 때 하는 말은?', '궁시렁궁시렁'], ['맥주가 죽기 전에 남긴 말은?', '유언비어'], ['개가 사람을 가르치면?', '개인지도'],
+  ['미소의 반대말은?', '당기소'], ['차가 울면?', '잉카'], ['우유가 넘어지면?', '아야'],
+  ['사과가 웃으면?', '풋사과'], ['별 중에 가장 슬픈 별은?', '이별'], ['세상에서 가장 빠른 닭은?', '후다닥'],
+  ['도둑이 가장 싫어하는 아이스크림은?', '누가바'], ['비가 한 시간 동안 내리면?', '추적 60분'], ['싸움을 가장 좋아하는 나라는?', '칠레'],
+  ['가장 지루한 중학교는?', '로딩중'], ['눈이 녹으면?', '눈물'], ['꽃가게 주인이 가장 싫어하는 도시는?', '시드니'],
+  ['전화기로 세운 건물은?', '콜로세움'], ['곰돌이 푸가 여러 마리 모이면?', '푸들'], ['인천 앞바다의 반대말은?', '인천 엄마다'],
+  ['가장 달콤한 술은?', '입술'], ['콩이 바쁘면?', '콩비지'],
+];
+const LEARN_QUOTE = [ // [말, 누구]
+  ['배우고 때때로 익히면 또한 기쁘지 아니한가.', '공자, 『논어』'],
+  ['아는 것을 안다 하고 모르는 것을 모른다 하는 것, 이것이 아는 것이다.', '공자, 『논어』'],
+  ['세 사람이 길을 가면 그 가운데 반드시 내 스승이 있다.', '공자, 『논어』'],
+  ['천 리 길도 발밑의 한 걸음에서 시작된다.', '노자, 『도덕경』'],
+  ['남을 아는 사람은 지혜롭고, 자신을 아는 사람은 밝다.', '노자, 『도덕경』'],
+  ['하늘이 큰일을 맡기려 할 때는 반드시 먼저 그 마음을 괴롭게 한다.', '맹자'],
+  ['성찰하지 않는 삶은 살 가치가 없다.', '소크라테스 (플라톤, 『변론』)'],
+  ['너 자신을 알라.', '델포이 아폴론 신전에 새겨진 글귀'],
+  ['인간은 본래 사회적 동물이다.', '아리스토텔레스'],
+  ['인생은 짧고 기술은 길다.', '히포크라테스'],
+  ['살아 있는 한 희망은 있다.', '키케로'],
+  ['오늘을 붙잡아라. (카르페 디엠)', '호라티우스'],
+  ['우리에게 주어진 시간이 짧은 것이 아니라, 우리가 많은 시간을 낭비하는 것이다.', '세네카'],
+  ['나는 생각한다, 그러므로 존재한다.', '데카르트'],
+  ['인간은 생각하는 갈대이다.', '파스칼, 『팡세』'],
+  ['아는 것이 힘이다.', '프랜시스 베이컨'],
+  ['오늘 할 수 있는 일을 내일로 미루지 마라.', '벤저민 프랭클린'],
+  ['서두르지 말고, 그러나 쉬지도 말고.', '괴테'],
+  ['가장 큰 행복은 사랑받고 있다는 확신이다.', '빅토르 위고, 『레 미제라블』'],
+  ['모두가 세상을 바꾸려 하지만, 자기 자신을 바꾸려는 사람은 없다.', '톨스토이'],
+  ['나를 죽이지 못하는 것은 나를 더 강하게 만든다.', '니체'],
+  ['천재는 1퍼센트의 영감과 99퍼센트의 노력으로 이루어진다.', '토머스 에디슨'],
+  ['상상력은 지식보다 중요하다.', '아인슈타인'],
+  ['세상에서 가장 아름다운 것들은 보이지도 만져지지도 않는다. 마음으로 느껴야 한다.', '헬렌 켈러'],
+  ['약한 사람은 용서하지 못한다. 용서는 강한 사람의 것이다.', '마하트마 간디'],
+  ['사랑이란 서로 마주 보는 것이 아니라 함께 같은 방향을 바라보는 것이다.', '생텍쥐페리, 『인간의 대지』'],
+  ['국민의, 국민에 의한, 국민을 위한 정부.', '에이브러햄 링컨, 게티즈버그 연설'],
+  ['우리가 두려워해야 할 것은 두려움 그 자체뿐이다.', '프랭클린 루스벨트, 1933년 취임 연설'],
+  ['절대로 굴복하지 마십시오. 절대로, 절대로.', '윈스턴 처칠'],
+  ['나에게는 꿈이 있습니다.', '마틴 루서 킹'],
+  ['과거를 기억하지 못하는 사람은 그 과거를 되풀이하게 된다.', '조지 산타야나'],
+  ['죽고자 하면 살 것이요, 살고자 하면 죽을 것이다.', '이순신'],
+  ['하루라도 책을 읽지 않으면 입안에 가시가 돋는다.', '안중근 의사의 유묵'],
+  ['오직 한없이 가지고 싶은 것은 높은 문화의 힘이다.', '김구, 「나의 소원」'],
+  ['낙망은 청년의 죽음이요, 청년이 죽으면 민족이 죽는다.', '안창호'],
+];
+const LEARN_EN = [ // [영어, 한글 발음, 뜻, 쓰임]
+  ["How's it going?", '하우즈 잇 고잉', '어떻게 지내요?', '가볍게 안부를 물을 때 씁니다.'],
+  ['Long time no see.', '롱 타임 노 씨', '오랜만이에요.', '오랜만에 만난 사람에게 건네는 인사입니다.'],
+  ['Nice to meet you.', '나이스 투 밋 츄', '만나서 반가워요.', '처음 만났을 때 하는 인사입니다.'],
+  ['What do you do?', '왓 두 유 두', '무슨 일을 하세요?', '직업을 물을 때 쓰는 표현입니다.'],
+  ['Could you say that again?', '쿠 쥬 세이 댓 어겐', '다시 말씀해 주시겠어요?', '잘 못 들었을 때 정중하게 부탁합니다.'],
+  ['Could you speak more slowly?', '쿠 쥬 스픽 모어 슬로울리', '좀 더 천천히 말씀해 주시겠어요?', '말이 빨라 알아듣기 어려울 때 씁니다.'],
+  ["I'm sorry, I didn't catch that.", '아임 쏘리, 아이 디든 캐치 댓', '죄송해요, 잘 못 들었어요.', 'catch는 여기서 "알아듣다"라는 뜻입니다.'],
+  ['What does that mean?', '왓 더즈 댓 민', '그게 무슨 뜻이에요?', '모르는 말이 나왔을 때 묻습니다.'],
+  ['How do you say this in English?', '하우 두 유 세이 디스 인 잉글리시', '이건 영어로 뭐라고 해요?', '물건을 가리키며 물어볼 수 있습니다.'],
+  ['Excuse me.', '익스큐즈 미', '실례합니다.', '말을 걸거나 지나갈 때 씁니다.'],
+  ['Thank you so much.', '땡 큐 쏘 머치', '정말 감사합니다.', 'Thank you보다 마음을 더 담은 표현입니다.'],
+  ["You're welcome.", '유어 웰컴', '천만에요.', '감사 인사에 대한 대답입니다.'],
+  ['No problem.', '노 프라블럼', '괜찮아요. 별말씀을요.', '감사나 사과에 편하게 답할 때 씁니다.'],
+  ["I'm sorry I'm late.", '아임 쏘리 아임 레이트', '늦어서 죄송해요.', '약속에 늦었을 때 먼저 건네는 말입니다.'],
+  ["That's okay.", '댓츠 오케이', '괜찮아요.', '상대의 사과를 받아 줄 때 씁니다.'],
+  ['Take your time.', '테이크 유어 타임', '천천히 하세요.', '서두르지 않아도 된다고 말해 줄 때 씁니다.'],
+  ['After you.', '애프터 유', '먼저 가세요.', '문 앞이나 엘리베이터에서 양보할 때 씁니다.'],
+  ['Can I help you?', '캔 아이 헬프 유', '도와드릴까요?', '도움이 필요해 보이는 사람에게 건넵니다.'],
+  ['Can you help me?', '캔 유 헬프 미', '좀 도와주실래요?', '도움을 청할 때 씁니다.'],
+  ['Where is the restroom?', '웨어 이즈 더 레스트룸', '화장실이 어디예요?', '미국에서는 restroom, 영국에서는 toilet을 많이 씁니다.'],
+  ['How much is this?', '하우 머치 이즈 디스', '이거 얼마예요?', '가격을 물을 때 씁니다.'],
+  ['Can I have the bill, please?', '캔 아이 해브 더 빌, 플리즈', '계산서 주시겠어요?', '식당에서 계산할 때 씁니다. 미국에서는 check라고도 합니다.'],
+  ["I'd like a coffee, please.", '아이드 라이크 어 커피, 플리즈', '커피 한 잔 주세요.', "I'd like는 I want보다 공손합니다."],
+  ['For here or to go?', '포 히어 오어 투 고', '드시고 가세요, 가져가세요?', '카페에서 점원이 묻는 말입니다.'],
+  ['To go, please.', '투 고, 플리즈', '포장해 주세요.', '가져갈 때 하는 대답입니다.'],
+  ['Can I pay by card?', '캔 아이 페이 바이 카드', '카드로 계산해도 되나요?', '현금은 by 대신 in cash라고 합니다.'],
+  ["I'm just looking.", '아임 저스트 루킹', '그냥 구경하는 중이에요.', '가게에서 점원이 도와줄지 물을 때 답합니다.'],
+  ['Do you have this in a different size?', '두 유 해브 디스 인 어 디퍼런트 사이즈', '이거 다른 사이즈 있어요?', 'size 자리에 color를 넣으면 색을 묻는 말이 됩니다.'],
+  ['How do I get to the station?', '하우 두 아이 겟 투 더 스테이션', '역까지 어떻게 가나요?', 'station 자리에 가려는 곳을 넣으면 됩니다.'],
+  ['Is it far from here?', '이즈 잇 파 프럼 히어', '여기서 먼가요?', '길을 물은 뒤 이어서 묻기 좋습니다.'],
+  ["I'm lost.", '아임 로스트', '길을 잃었어요.', '도움을 청하기 전에 상황을 알립니다.'],
+  ['What time is it?', '왓 타임 이즈 잇', '지금 몇 시예요?', '시간을 물을 때 씁니다.'],
+  ['What time does it open?', '왓 타임 더즈 잇 오픈', '몇 시에 열어요?', 'open 대신 close를 쓰면 닫는 시간을 묻습니다.'],
+  ['I have a reservation.', '아이 해브 어 레저베이션', '예약했어요.', '식당이나 호텔에 도착해서 말합니다.'],
+  ['A table for two, please.', '어 테이블 포 투, 플리즈', '두 명 자리 부탁해요.', 'two 자리에 인원수를 넣습니다.'],
+  ['What do you recommend?', '왓 두 유 레커멘드', '뭘 추천하세요?', '메뉴를 고르기 어려울 때 묻습니다.'],
+  ['It was delicious.', '잇 워즈 딜리셔스', '맛있었어요.', '식사를 마치고 건네는 인사입니다.'],
+  ["I'm full.", '아임 풀', '배불러요.', '더 권할 때 정중히 사양하는 말로도 씁니다.'],
+  ['Sounds good.', '사운즈 굿', '좋아요.', '제안에 찬성할 때 씁니다.'],
+  ['I think so, too.', '아이 띵크 쏘, 투', '저도 그렇게 생각해요.', '상대의 말에 동의할 때 씁니다.'],
+  ["I'm not sure.", '아임 낫 슈어', '잘 모르겠어요.', '확신이 없을 때 부드럽게 말합니다.'],
+  ['Let me think about it.', '렛 미 띵크 어바웃 잇', '생각 좀 해볼게요.', '바로 답하기 어려울 때 씁니다.'],
+  ["It's up to you.", '잇츠 업 투 유', '당신이 정하세요.', '결정을 상대에게 맡길 때 씁니다.'],
+  ['That makes sense.', '댓 메이크스 센스', '일리가 있네요.', '설명을 듣고 이해가 됐을 때 씁니다.'],
+  ['What do you think?', '왓 두 유 띵크', '어떻게 생각하세요?', '상대의 의견을 물을 때 씁니다.'],
+  ["I'm on my way.", '아임 온 마이 웨이', '지금 가는 중이에요.', '약속 장소로 가고 있다고 알릴 때 씁니다.'],
+  ["I'll be right back.", '아일 비 라잇 백', '금방 돌아올게요.', '잠깐 자리를 비울 때 씁니다.'],
+  ['See you later.', '씨 유 레이터', '나중에 봐요.', '헤어질 때 하는 가벼운 인사입니다.'],
+  ['Have a nice day.', '해브 어 나이스 데이', '좋은 하루 보내세요.', '가게를 나서거나 헤어질 때 씁니다.'],
+  ['Take care.', '테이크 케어', '잘 지내요. 조심히 가세요.', '헤어질 때 건네는 따뜻한 인사입니다.'],
+  ['Good luck.', '굿 럭', '행운을 빌어요.', '시험이나 중요한 일을 앞둔 사람에게 씁니다.'],
+  ['Congratulations!', '컨그래출레이션즈', '축하해요!', '끝의 s를 꼭 붙여 말합니다.'],
+  ['Cheer up.', '치어 업', '힘내요.', '풀이 죽은 사람을 격려할 때 씁니다.'],
+  ["Don't worry about it.", '돈 워리 어바웃 잇', '걱정하지 마세요.', '상대가 미안해하거나 걱정할 때 씁니다.'],
+  ["I'm proud of you.", '아임 프라우드 오브 유', '네가 자랑스러워.', '가족이나 가까운 사람을 칭찬할 때 씁니다.'],
+  ['I appreciate it.', '아이 어프리시에이트 잇', '감사하게 생각해요.', 'Thank you보다 격식 있는 감사 표현입니다.'],
+  ["Let's keep in touch.", '렛츠 킵 인 터치', '계속 연락하고 지내요.', '헤어지며 또 연락하자고 할 때 씁니다.'],
+  ['How was your day?', '하우 워즈 유어 데이', '오늘 하루 어땠어요?', '저녁에 가족에게 묻기 좋은 말입니다.'],
+  ["I'm a little tired today.", '아임 어 리틀 타이어드 투데이', '오늘 좀 피곤해요.', 'a little은 "조금"이라는 뜻입니다.'],
+  ['God bless you.', '갓 블레스 유', '하나님의 축복이 있기를 빕니다.', '축복의 인사로, 재채기한 사람에게도 씁니다.'],
+];
+const LEARN_TABS = [['lit', '문학'], ['fact', '상식'], ['joke', '유머'], ['quote', '명언'], ['en', '영어']];
+const LEARN_DATA = { lit: LEARN_LIT, fact: LEARN_FACT, joke: LEARN_JOKE, quote: LEARN_QUOTE, en: LEARN_EN };
+let learnShift = {}, learnOpen = false; // 분야별 '다른 것 보기' 횟수, 유머 답을 열었는지
+function learnTab() {
+  let t = 'lit';
+  try { t = localStorage.getItem('learnTab') || 'lit'; } catch (e) {}
+  return LEARN_DATA[t] ? t : 'lit';
+}
+function learnIndex(tab) {
+  const n = LEARN_DATA[tab].length;
+  const day = Math.floor(new Date(toLocalYMD(new Date()) + 'T00:00:00').getTime() / 86400000);
+  return (((day + (learnShift[tab] || 0)) % n) + n) % n;
+}
+function learnHTML() {
+  const tab = learnTab(), i = learnIndex(tab), it = LEARN_DATA[tab][i];
+  let body = '';
+  if (tab === 'lit') {
+    body = '<div class="lr-quote">' + esc(it[0]).replace(/\n/g, '<br>') + '</div><div class="lr-src">' + esc(it[1]) + '</div><div class="lr-note">' + esc(it[2]) + '</div>';
+  } else if (tab === 'fact') {
+    body = '<div class="lr-text">' + esc(it) + '</div>';
+  } else if (tab === 'joke') {
+    body = '<div class="lr-text"><b>' + esc(it[0]) + '</b></div>' + (learnOpen
+      ? '<div class="lr-answer">' + esc(it[1]) + '</div>'
+      : '<button class="btn btn-sm btn-secondary" style="margin-top:12px" onclick="learnReveal()">답 보기</button>');
+  } else if (tab === 'quote') {
+    body = '<div class="lr-quote">' + esc(it[0]) + '</div><div class="lr-src">' + esc(it[1]) + '</div>';
+  } else {
+    body = '<div class="lr-en">' + esc(it[0]) + '</div>'
+      + '<div class="lr-pron"><span>발음</span>' + esc(it[1]) + '</div>'
+      + '<div class="lr-mean"><span>뜻</span>' + esc(it[2]) + '</div>'
+      + '<div class="lr-note">' + esc(it[3]) + '</div>'
+      + '<button class="btn btn-sm btn-secondary" style="margin-top:12px" onclick="learnSpeak()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>소리로 듣기</button>';
+  }
+  return '<div class="hm-top"><span class="hm-label">오늘의 배움</span><button class="hm-more" onclick="learnNext()">다른 것 보기 &rsaquo;</button></div>'
+    + '<div class="lr-tabs">' + LEARN_TABS.map(t => '<button class="lr-tab' + (t[0] === tab ? ' on' : '') + '" onclick="learnSet(\'' + t[0] + '\')">' + t[1] + '</button>').join('') + '</div>'
+    + body;
+}
+function learnDraw() { const box = $('#hm-learn'); if (box) box.innerHTML = learnHTML(); }
+window.learnSet = function(tab) {
+  if (!LEARN_DATA[tab]) return;
+  try { localStorage.setItem('learnTab', tab); } catch (e) {}
+  learnOpen = false;
+  learnDraw();
+};
+window.learnNext = function() {
+  const tab = learnTab();
+  learnShift[tab] = (learnShift[tab] || 0) + 1;
+  learnOpen = false;
+  learnDraw();
+};
+window.learnReveal = function() { learnOpen = true; learnDraw(); };
+window.learnSpeak = function() {
+  if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') { toast('이 기기에서는 소리 듣기를 지원하지 않습니다'); return; }
+  const it = LEARN_EN[learnIndex('en')];
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(it[0]);
+    u.lang = 'en-US';
+    u.rate = 0.85; // 조금 천천히
+    window.speechSynthesis.speak(u);
+  } catch (e) { toast('소리를 재생하지 못했습니다'); }
+};
+
 // === DASHBOARD (홈: 단색 · 단순) ===
 window.homeGo = function(page) { // 오늘 날짜로 맞춘 뒤 그 화면으로 이동
   currentDate = toLocalYMD(new Date());
@@ -2052,6 +2345,8 @@ async function renderDashboard() {
       </div>
     </div>
 
+    <div class="hm-card" id="hm-learn">${learnHTML()}</div>
+
     <div class="hm-grid">
       <div class="hm-card">
         <div class="hm-top"><span class="hm-label">오늘의 일정</span><button class="hm-more" onclick="homeGo('schedule')">달력 &rsaquo;</button></div>
@@ -2088,7 +2383,110 @@ function coversDay(s, ds) {
   const end = s.end_date || s.date;
   return start <= ds && ds <= end;
 }
+// 스케줄 보기 방식: 월(달력) 또는 주(하루 한 줄씩). 고른 방식은 기기에 기억한다.
+function schedView() {
+  try { return localStorage.getItem('schedView') === 'week' ? 'week' : 'month'; } catch (e) { return 'month'; }
+}
+window.schedSetView = function(v) {
+  try { localStorage.setItem('schedView', v === 'week' ? 'week' : 'month'); } catch (e) {}
+  renderPage();
+};
+function schedHeaderHTML() {
+  const v = schedView();
+  return `
+    <div class="page-header">
+      <h2>스케줄</h2>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="seg">
+          <button class="${v === 'month' ? 'on' : ''}" onclick="schedSetView('month')">월</button>
+          <button class="${v === 'week' ? 'on' : ''}" onclick="schedSetView('week')">주</button>
+        </div>
+        <button class="btn btn-primary" onclick="showScheduleModal()">+ 추가</button>
+      </div>
+    </div>`;
+}
+// 좌우로 밀거나 화살표를 누르면: 월 보기에서는 한 달, 주 보기에서는 한 주씩 이동
+window.schedMove = function(dir) {
+  if (schedView() === 'week') changeWeek(dir); else changeMonth(dir);
+};
+window.changeWeek = function(dir) {
+  const d = new Date(currentDate + 'T00:00:00');
+  d.setDate(d.getDate() + dir * 7);
+  currentDate = toLocalYMD(d);
+  renderPage();
+};
+async function renderScheduleWeek() {
+  const all = (await dbGetAll('schedules')).sort((x, y) => (x.time || '').localeCompare(y.time || ''));
+  const base = new Date(currentDate + 'T00:00:00');
+  const start = new Date(base.getFullYear(), base.getMonth(), base.getDate() - base.getDay()); // 그 주의 일요일
+  const days = [];
+  for (let i = 0; i < 7; i++) days.push(toLocalYMD(new Date(start.getFullYear(), start.getMonth(), start.getDate() + i)));
+  const todayStr = toLocalYMD(new Date());
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+  const part = ds => ({ y: Number(ds.slice(0, 4)), m: Number(ds.slice(5, 7)), d: Number(ds.slice(8, 10)) });
+  const a = part(days[0]), b = part(days[6]);
+  const thisYear = new Date().getFullYear();
+  const label = `${(a.y !== thisYear || b.y !== thisYear) ? a.y + '년 ' : ''}${a.m}월 ${a.d}일 ~ ${b.y !== a.y ? b.y + '년 ' : ''}${(b.m !== a.m || b.y !== a.y) ? b.m + '월 ' : ''}${b.d}일`;
+  const md = ds => { const x = part(ds); return x.m + '/' + x.d; };
+  if (currentPage !== 'schedule') return;
+  $('#mainContent').innerHTML = `
+    ${schedHeaderHTML()}
+    <div class="cal-nav">
+      <button class="btn-icon" onclick="changeWeek(-1)">&larr;</button>
+      <span class="cal-month" style="white-space:nowrap;font-size:clamp(14px, 4.2vw, 17px)">${label}</span>
+      <button class="btn-icon" onclick="changeWeek(1)">&rarr;</button>
+      <button class="btn btn-sm btn-secondary" onclick="goToday()">오늘</button>
+    </div>
+    <div class="wk-list">
+      ${days.map((ds, i) => {
+        const items = all.filter(s => coversDay(s, ds));
+        const hol = HOLIDAYS[ds];
+        return `<div class="wk-day ${ds === todayStr ? 'today' : ''}">
+          <div class="wk-date ${(i === 0 || hol) ? 'red' : ''}" onclick="openDay('${ds}')">
+            <span class="wk-num">${part(ds).d}</span>
+            <span class="wk-wd">${weekdays[i]}요일</span>
+            ${hol ? `<span class="wk-hol">${esc(hol)}</span>` : ''}
+          </div>
+          <div class="wk-items">
+            ${items.length ? items.map(s => {
+              const span = (s.end_date && s.end_date !== s.date) ? `${md(s.date)}~${md(s.end_date)}` : '';
+              const meta = [span, s.description ? esc(s.description) : ''].filter(Boolean).join(' · ');
+              return `<div class="wk-item ${s.completed ? 'done' : ''}">
+                <span class="wk-time">${esc(s.time || '종일')}</span>
+                <div class="wk-body" onclick="weekEdit(${s.id}, '${ds}')">
+                  <div class="wk-title">${esc(s.title)}</div>
+                  ${meta ? `<div class="wk-meta">${meta}</div>` : ''}
+                </div>
+                <span class="hm-check" onclick="weekToggle(${s.id})">&#10003;</span>
+              </div>`;
+            }).join('') : ''}
+            <div class="wk-foot">
+              <span class="wk-none">${items.length ? '' : '일정 없음'}</span>
+              <button class="wk-add" onclick="weekAdd('${ds}')">+ 추가</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+window.weekToggle = async function(id) {
+  const item = await dbGet('schedules', id);
+  if (!item) return;
+  item.completed = item.completed ? 0 : 1;
+  await dbPut('schedules', item);
+  renderPage();
+};
+window.weekEdit = function(id, ds) {
+  currentDate = ds; // 고친 뒤에도 같은 주에 머문다
+  showScheduleModal(id);
+};
+window.weekAdd = function(ds) {
+  currentDate = ds; // 추가 창의 시작일이 이 날로 채워진다
+  showScheduleModal();
+};
+
 async function renderSchedule() {
+  if (schedView() === 'week') return renderScheduleWeek();
   const all = await dbGetAll('schedules');
   const base = new Date(currentDate + 'T00:00:00');
   const year = base.getFullYear();
@@ -2107,10 +2505,7 @@ async function renderSchedule() {
   const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
 
   $('#mainContent').innerHTML = `
-    <div class="page-header">
-      <h2>스케줄</h2>
-      <button class="btn btn-primary" onclick="showScheduleModal()">+ 추가</button>
-    </div>
+    ${schedHeaderHTML()}
     <div class="cal-nav">
       <button class="btn-icon" onclick="changeMonth(-1)">&larr;</button>
       <span class="cal-month">${year}년 ${month + 1}월</span>
