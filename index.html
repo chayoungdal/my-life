@@ -494,7 +494,7 @@ body.se-unfrozen .se-frozen::before, body.se-unfrozen .se-topbar::before, body.s
 .cal-daynum.sat { color: var(--primary); }
 .cal-items { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
 .cal-event {
-  font-size: 10px;
+  font-size: 9px;
   background: var(--primary-light);
   color: var(--primary-dark);
   border-radius: 4px;
@@ -509,7 +509,7 @@ body.se-unfrozen .se-frozen::before, body.se-unfrozen .se-topbar::before, body.s
 .cal-holiday { font-size: 10px; font-weight: 600; color: var(--danger); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (min-width: 768px) {
   .cal-cell { min-height: 120px; padding: 8px; }
-  .cal-event { font-size: 12px; padding: 2px 6px; }
+  .cal-event { font-size: 10.5px; padding: 2px 5px; }
   .cal-daynum { font-size: 15px; }
 }
 
@@ -666,21 +666,21 @@ body.se-unfrozen .se-frozen::before, body.se-unfrozen .se-topbar::before, body.s
 .wk-items { flex: 1; min-width: 0; }
 .wk-item { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--border-light); }
 .wk-item:first-child { border-top: none; padding-top: 4px; }
-.wk-time { flex: 0 0 48px; font-size: 14px; font-weight: 600; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.wk-time { flex: 0 0 44px; font-size: 12px; font-weight: 600; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 .wk-body { flex: 1; min-width: 0; cursor: pointer; }
-.wk-title { font-size: 16px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
-.wk-meta { margin-top: 2px; font-size: 13px; line-height: 1.5; color: var(--text-secondary); overflow-wrap: anywhere; }
+.wk-title { font-size: 14px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.wk-meta { margin-top: 1px; font-size: 12px; line-height: 1.5; color: var(--text-secondary); overflow-wrap: anywhere; }
 .wk-item.done .wk-title { color: var(--text-secondary); text-decoration: line-through; }
 .wk-item.done .hm-check { background: var(--primary); border-color: var(--primary); color: #fff; }
 .wk-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 6px; }
-.wk-none { font-size: 14px; color: var(--text-secondary); }
+.wk-none { font-size: 13px; color: var(--text-secondary); }
 .wk-add { border: none; background: none; padding: 4px 0; font-size: 13px; font-weight: 600; color: var(--primary); cursor: pointer; font-family: inherit; }
 @media (max-width: 767px) {
   /* 폰: 제목 자리를 넓히려고 시간을 제목 위로 올린다 */
   .wk-day { gap: 12px; padding: 14px; }
   .wk-date { flex-basis: 46px; }
   .wk-item { display: grid; grid-template-columns: 1fr auto; column-gap: 12px; align-items: center; }
-  .wk-time { grid-column: 1; grid-row: 1; font-size: 13px; }
+  .wk-time { grid-column: 1; grid-row: 1; font-size: 12px; }
   .wk-body { grid-column: 1; grid-row: 2; }
   .wk-item .hm-check { grid-column: 2; grid-row: 1 / span 2; }
 }
