@@ -2347,6 +2347,10 @@ window.openChannel = function(i) {
 };
 
 // === DASHBOARD (홈: 단색 · 단순) ===
+window.homeSchedToggle = async function(id) {
+  await schedToggle(id, toLocalYMD(new Date()));
+  renderPage();
+};
 window.homeGo = function(page) { // 오늘 날짜로 맞춘 뒤 그 화면으로 이동
   currentDate = toLocalYMD(new Date());
   navigateTo(page);
@@ -2423,10 +2427,10 @@ async function renderDashboard() {
             <span class="hm-title" data-gid="${esc(s.gid)}" onclick="gcalShow(this.dataset.gid)" style="cursor:pointer">${esc(s.title)}</span>
             <span class="gc-tag">구글</span>
           </div>` : `
-          <div class="hm-row ${s.completed ? 'done' : ''}">
+          <div class="hm-row ${schedDone(s, today) ? 'done' : ''}">
             <span class="hm-time">${esc(s.time || '종일')}</span>
             <span class="hm-title">${esc(s.title)}</span>
-            <span class="hm-check" onclick="toggleField('schedules',${s.id},'completed',${s.completed ? 1 : 0})">&#10003;</span>
+            <span class="hm-check" onclick="homeSchedToggle(${s.id})">&#10003;</span>
           </div>`).join('')}</div>` : '<div class="hm-empty">오늘은 일정이 없습니다.</div>'}
       </div>
       <div class="hm-card">
@@ -2452,11 +2456,98 @@ async function renderDashboard() {
 }
 
 // === SCHEDULE (월 달력) ===
-function coversDay(s, ds) {
+// --- 반복 일정 ---
+// 일정에 repeat('weekly' | 'monthly' | 'yearly')가 있으면 시작일을 기준으로 되풀이된다.
+// 되풀이되는 날을 하나하나 저장하지 않고, 화면에 그릴 때 계산한다.
+//   repeat_until : 반복 종료일 (없으면 계속)
+//   done_dates   : 완료 체크한 회차의 시작일 목록 (회차마다 따로 체크)
+//   skip_dates   : '이 날만 삭제'한 회차의 시작일 목록
+const SCHED_REPEAT = { weekly: '매주', monthly: '매월', yearly: '매년' };
+function schedDays(a, b) { return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000); }
+// ds(날짜)를 포함하는 회차의 시작일. 그날 해당이 없으면 null. 반복이 아닌 일정은 시작일을 그대로 돌려준다.
+function schedOccStart(s, ds) {
   const start = s.date;
-  const end = s.end_date || s.date;
-  return start <= ds && ds <= end;
+  if (!start || !ds) return null;
+  const end = (s.end_date && s.end_date > start) ? s.end_date : start;
+  if (!SCHED_REPEAT[s.repeat]) return (start <= ds && ds <= end) ? start : null;
+  if (ds < start) return null;
+  const span = schedDays(start, end); // 여러 날 일정이면 그 길이
+  const fits = o => !!o && o >= start && o <= ds && schedDays(o, ds) <= span
+    && (!s.repeat_until || o <= s.repeat_until) && !(s.skip_dates || []).includes(o);
+  const y1 = Number(start.slice(0, 4)), m1 = Number(start.slice(5, 7)), y2 = Number(ds.slice(0, 4)), m2 = Number(ds.slice(5, 7));
+  const cands = [];
+  if (s.repeat === 'weekly') {
+    const k = Math.floor(schedDays(start, ds) / 7);
+    for (let i = k; i >= 0 && i >= k - Math.ceil(span / 7); i--) cands.push(ymdShift(start, { d: i * 7 }));
+  } else if (s.repeat === 'monthly') {
+    const k = (y2 - y1) * 12 + (m2 - m1);
+    for (let i = k; i >= 0 && i >= k - 1 - Math.floor(span / 28); i--) cands.push(ymdShift(start, { m: i })); // 그 달에 없는 날(31일 등)은 건너뛴다
+  } else {
+    const k = y2 - y1;
+    for (let i = k; i >= 0 && i >= k - 1; i--) cands.push(ymdShift(start, { y: i })); // 2월 29일은 윤년에만
+  }
+  return cands.find(fits) || null;
 }
+function coversDay(s, ds) { return !!schedOccStart(s, ds); }
+// 그날(회차)의 일정을 완료했는가
+function schedDone(s, ds) {
+  if (!SCHED_REPEAT[s.repeat]) return !!s.completed;
+  const o = schedOccStart(s, ds);
+  return !!o && (s.done_dates || []).includes(o);
+}
+// 완료 체크를 켜고 끈다. 반복 일정은 그 회차만 바뀐다.
+async function schedToggle(id, ds) {
+  const item = await dbGet('schedules', id);
+  if (!item) return;
+  if (SCHED_REPEAT[item.repeat]) {
+    const o = schedOccStart(item, ds);
+    if (!o) return;
+    const list = (item.done_dates || []).slice();
+    const at = list.indexOf(o);
+    if (at >= 0) list.splice(at, 1); else list.push(o);
+    item.done_dates = list;
+  } else {
+    item.completed = item.completed ? 0 : 1;
+  }
+  await dbPut('schedules', item);
+}
+// "매주 월요일", "매월 16일", "매년 11월 16일"
+function schedRepeatLabel(s) {
+  if (!SCHED_REPEAT[s.repeat] || !s.date) return '';
+  const d = new Date(s.date + 'T00:00:00');
+  const what = s.repeat === 'weekly' ? '일월화수목금토'[d.getDay()] + '요일'
+    : s.repeat === 'monthly' ? d.getDate() + '일'
+    : (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
+  return SCHED_REPEAT[s.repeat] + ' ' + what;
+}
+// 반복 일정을 지울 때: 이 날만 지울지, 전체를 지울지 묻는다
+function schedAskDelete(id, ds, back) {
+  showModal(`
+    <div class="modal-header"><span class="modal-title">반복 일정 삭제</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <p style="line-height:1.7;margin-bottom:16px">반복되는 일정입니다. 어디까지 지울까요?</p>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-secondary" style="justify-content:center" onclick="schedDeleteOne(${id}, '${ds}', ${back ? 1 : 0})">${formatDate(ds)} 일정만 삭제</button>
+      <button class="btn btn-secondary" style="justify-content:center;color:var(--danger)" onclick="schedDeleteAll(${id}, '${ds}', ${back ? 1 : 0})">반복 일정 전체 삭제</button>
+      <button class="btn btn-secondary" style="justify-content:center" onclick="closeModal()">취소</button>
+    </div>
+  `);
+}
+window.schedDeleteOne = async function(id, ds, back) {
+  const item = await dbGet('schedules', id);
+  const o = item && schedOccStart(item, ds);
+  if (!o) { closeModal(); return; }
+  item.skip_dates = (item.skip_dates || []).concat([o]);
+  await dbPut('schedules', item);
+  closeModal(); toast('이 날 일정만 삭제했습니다');
+  await renderPage();
+  if (back) openDay(ds);
+};
+window.schedDeleteAll = async function(id, ds, back) {
+  await dbDelete('schedules', id);
+  closeModal(); toast('반복 일정을 모두 삭제했습니다');
+  await renderPage();
+  if (back) openDay(ds);
+};
 // === 구글 캘린더 함께 보기 (읽기 전용) ===
 // 구글 캘린더의 일정을 가져와 앱의 스케줄(월·주 보기)과 홈의 오늘 일정에 함께 보여준다.
 // · 앱은 구글 캘린더를 읽기만 한다 (calendar.readonly). 고치거나 지우지 않는다.
@@ -2739,8 +2830,10 @@ async function renderScheduleWeek() {
           </div>
           <div class="wk-items">
             ${items.length ? items.map(s => {
-              const span = (s.end_date && s.end_date !== s.date) ? `${md(s.date)}~${md(s.end_date)}` : '';
-              const meta = [span, s.g ? esc(s.place || '') : (s.description ? esc(s.description) : '')].filter(Boolean).join(' · ');
+              const occ = schedOccStart(s, ds) || s.date; // 반복 일정이면 이번 회차의 시작일
+              const len = (s.end_date && s.end_date > s.date) ? schedDays(s.date, s.end_date) : 0;
+              const span = len ? `${md(occ)}~${md(ymdShift(occ, { d: len }))}` : '';
+              const meta = [schedRepeatLabel(s), span, s.g ? esc(s.place || '') : (s.description ? esc(s.description) : '')].filter(Boolean).join(' · ');
               if (s.g) return `<div class="wk-item">
                 <span class="wk-time">${esc(s.time || '종일')}</span>
                 <div class="wk-body" data-gid="${esc(s.gid)}" onclick="gcalShow(this.dataset.gid)">
@@ -2749,13 +2842,13 @@ async function renderScheduleWeek() {
                 </div>
                 <span class="gc-tag">구글</span>
               </div>`;
-              return `<div class="wk-item ${s.completed ? 'done' : ''}">
+              return `<div class="wk-item ${schedDone(s, ds) ? 'done' : ''}">
                 <span class="wk-time">${esc(s.time || '종일')}</span>
                 <div class="wk-body" onclick="weekEdit(${s.id}, '${ds}')">
                   <div class="wk-title">${esc(s.title)}</div>
                   ${meta ? `<div class="wk-meta">${meta}</div>` : ''}
                 </div>
-                <span class="hm-check" onclick="weekToggle(${s.id})">&#10003;</span>
+                <span class="hm-check" onclick="weekToggle(${s.id}, '${ds}')">&#10003;</span>
               </div>`;
             }).join('') : ''}
             <div class="wk-foot">
@@ -2767,11 +2860,8 @@ async function renderScheduleWeek() {
       }).join('')}
     </div>`;
 }
-window.weekToggle = async function(id) {
-  const item = await dbGet('schedules', id);
-  if (!item) return;
-  item.completed = item.completed ? 0 : 1;
-  await dbPut('schedules', item);
+window.weekToggle = async function(id, ds) {
+  await schedToggle(id, ds);
   renderPage();
 };
 window.weekEdit = function(id, ds) {
@@ -2827,7 +2917,7 @@ async function renderSchedule() {
           <div class="cal-daynum ${(wd === 0 || hol) ? 'sun' : ''} ${wd === 6 ? 'sat' : ''}">${d}</div>
           ${hol ? `<div class="cal-holiday">${hol}</div>` : ''}
           <div class="cal-items">
-            ${items.slice(0, 3).map(s => `<div class="cal-event ${s.completed ? 'done' : ''} ${s.g ? 'g' : ''}">${s.time ? `<span class="cal-time">${esc(s.time)}</span> ` : ''}${esc(s.title)}</div>`).join('')}
+            ${items.slice(0, 3).map(s => `<div class="cal-event ${schedDone(s, ds) ? 'done' : ''} ${s.g ? 'g' : ''}">${s.time ? `<span class="cal-time">${esc(s.time)}</span> ` : ''}${esc(s.title)}</div>`).join('')}
             ${items.length > 3 ? `<div class="cal-more">+${items.length - 3}</div>` : ''}
           </div>
         </div>`;
@@ -2853,10 +2943,10 @@ window.openDay = async function(ds) {
     <div style="max-height:55vh;overflow-y:auto">
       ${items.length ? items.map(s => s.g ? gcalRowHTML(s) : `
         <div class="list-item">
-          <div class="checkbox ${s.completed ? 'checked' : ''}" onclick="dayToggle(${s.id}, ${s.completed}, '${ds}')">${s.completed ? '&#10003;' : ''}</div>
+          <div class="checkbox ${schedDone(s, ds) ? 'checked' : ''}" onclick="dayToggle(${s.id}, 0, '${ds}')">${schedDone(s, ds) ? '&#10003;' : ''}</div>
           <div class="item-content" onclick="showScheduleModal(${s.id}, '${ds}')" style="cursor:pointer">
-            <div class="item-title ${s.completed ? 'completed' : ''}">${esc(s.title)}</div>
-            <div class="item-meta">${s.time || '종일'} ${s.description ? '· ' + esc(s.description) : ''}</div>
+            <div class="item-title ${schedDone(s, ds) ? 'completed' : ''}">${esc(s.title)}</div>
+            <div class="item-meta">${s.time || '종일'} ${schedRepeatLabel(s) ? '· ' + schedRepeatLabel(s) : ''} ${s.description ? '· ' + esc(s.description) : ''}</div>
           </div>
           <button class="btn-icon" onclick="showScheduleModal(${s.id}, '${ds}')" title="수정">&#9998;</button>
           <button class="btn-icon" onclick="dayDelete(${s.id}, '${ds}')" title="삭제">&#128465;</button>
@@ -2867,14 +2957,14 @@ window.openDay = async function(ds) {
 };
 
 window.dayToggle = async function(id, current, ds) {
-  const item = await dbGet('schedules', id);
-  item.completed = current ? 0 : 1;
-  await dbPut('schedules', item);
+  await schedToggle(id, ds);
   await renderSchedule();
   openDay(ds);
 };
 
 window.dayDelete = async function(id, ds) {
+  const target = await dbGet('schedules', id);
+  if (target && SCHED_REPEAT[target.repeat]) { schedAskDelete(id, ds, true); return; }
   if (!confirm('이 일정을 삭제하시겠습니까?')) return;
   await dbDelete('schedules', id);
   await renderSchedule();
@@ -2889,6 +2979,8 @@ window.showScheduleModal = async function(id, backToDs) {
   const timeV = existing ? (existing.time || '') : '';
   const titleV = existing ? (existing.title || '') : '';
   const descV = existing ? (existing.description || '') : '';
+  const repV = existing && SCHED_REPEAT[existing.repeat] ? existing.repeat : '';
+  const untilV = existing ? (existing.repeat_until || '') : '';
   showModal(`
     <div class="modal-header"><span class="modal-title">${title}</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
     <div class="form-row">
@@ -2896,6 +2988,15 @@ window.showScheduleModal = async function(id, backToDs) {
       <div class="form-group"><label class="form-label">종료일 (선택)</label><input class="form-input" id="f-end" type="date" value="${endV}"></div>
     </div>
     <div class="form-group"><label class="form-label">시간</label><input class="form-input" id="f-time" type="time" value="${timeV}"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">반복</label>
+        <select class="form-select" id="f-repeat">
+          <option value="">반복 안 함</option>
+          ${Object.keys(SCHED_REPEAT).map(k => `<option value="${k}" ${repV === k ? 'selected' : ''}>${SCHED_REPEAT[k]}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">반복 종료일 (선택)</label><input class="form-input" id="f-until" type="date" value="${untilV}"></div>
+    </div>
     <div class="form-group"><label class="form-label">제목</label><input class="form-input" id="f-title" placeholder="스케줄 제목" value="${esc(titleV)}"></div>
     <div class="form-group"><label class="form-label">설명</label><textarea class="form-textarea" id="f-desc" rows="3" placeholder="상세 내용 (선택)">${esc(descV)}</textarea></div>
     <input type="hidden" id="f-id" value="${id || ''}">
@@ -2915,6 +3016,9 @@ window.saveSchedule = async function() {
   const start = $('#f-date').value;
   let end = $('#f-end').value || null;
   if (end && end < start) end = start;
+  const repeat = SCHED_REPEAT[$('#f-repeat').value] ? $('#f-repeat').value : '';
+  let until = repeat ? ($('#f-until').value || null) : null;
+  if (until && until < start) until = null; // 시작일보다 이른 종료일은 무시
   if (id) {
     const existing = await dbGet('schedules', id);
     if (existing) {
@@ -2923,12 +3027,14 @@ window.saveSchedule = async function() {
       existing.time = $('#f-time').value;
       existing.title = $('#f-title').value;
       existing.description = $('#f-desc').value;
+      existing.repeat = repeat;
+      existing.repeat_until = until;
       await dbPut('schedules', existing);
     }
     closeModal(); toast('스케줄이 수정되었습니다'); await renderSchedule();
     if (backDs) openDay(backDs);
   } else {
-    await dbAdd('schedules', { date: start, end_date: end, time: $('#f-time').value, title: $('#f-title').value, description: $('#f-desc').value, completed: 0 });
+    await dbAdd('schedules', { date: start, end_date: end, time: $('#f-time').value, title: $('#f-title').value, description: $('#f-desc').value, completed: 0, repeat, repeat_until: until });
     closeModal(); toast('스케줄이 저장되었습니다'); renderPage();
   }
 };
@@ -2938,6 +3044,8 @@ window.scheduleDeleteFromEdit = async function() {
   const id = idRaw ? parseInt(idRaw) : null;
   const backDs = $('#f-back') && $('#f-back').value;
   if (!id) return;
+  const target = await dbGet('schedules', id);
+  if (target && SCHED_REPEAT[target.repeat]) { schedAskDelete(id, backDs || currentDate, !!backDs); return; }
   if (!confirm('이 일정을 삭제하시겠습니까?')) return;
   await dbDelete('schedules', id);
   closeModal(); toast('삭제되었습니다'); await renderSchedule();
@@ -4205,7 +4313,7 @@ function spaceWeekHTML(d) {
     </div>
     <div class="sp-week">
       <div><b>${recDays}<span style="font-size:13px;font-weight:400"> / 7일</span></b>기록한 날</div>
-      <div><b>${sch.filter(s => s.completed).length}<span style="font-size:13px;font-weight:400"> / ${sch.length}</span></b>완료한 일정</div>
+      <div><b>${sch.filter(s => schedDone(s, days.find(ds => coversDay(s, ds)))).length}<span style="font-size:13px;font-weight:400"> / ${sch.length}</span></b>완료한 일정</div>
       <div><b>${rate === null ? '-' : rate + '%'}</b>하루 일과 달성</div>
       <div><b>${prayers.length}<span style="font-size:13px;font-weight:400">개${prayers.filter(p => p.answered).length ? ' · 응답 ' + prayers.filter(p => p.answered).length : ''}</span></b>기도</div>
       <div><b>${diaryDays}<span style="font-size:13px;font-weight:400">일</span></b>일기</div>
