@@ -2349,13 +2349,70 @@ function learnSplit(base, lv, mid, high) {
 }
 const LEARN_TABS = [['lit', '문학'], ['fact', '상식'], ['joke', '유머'], ['quote', '명언'], ['en', '영어']];
 const LEARN_LEVELS = [[1, '하'], [2, '중'], [3, '상']];
-const LEARN_DATA = {
+const LEARN_BASE = {
   lit: learnSplit(LEARN_LIT, LEARN_LV.lit),
   fact: learnSplit(LEARN_FACT, LEARN_LV.fact, null, LEARN_FACT_HIGH),
   joke: learnSplit(LEARN_JOKE, LEARN_LV.joke),
   quote: learnSplit(LEARN_QUOTE, LEARN_LV.quote, null, LEARN_QUOTE_HIGH),
   en: learnSplit(LEARN_EN, LEARN_LV.en, LEARN_EN_MID, LEARN_EN_HIGH),
 };
+// --- 매주 더해지는 내용 (learn-extra.json) ---
+// 앱 본체와 따로 있는 파일이다. 매주 새 묶음이 이 파일 끝에 더해진다.
+// 파일이 없거나 잘못돼도 앱은 기본 내용으로 그대로 동작한다. 형식에 맞지 않는 항목은 버린다.
+//   { "version": 1, "weeks": [ { "week": "2026-11-16"(그 주 월요일), "items": { "en": { "1": [...], "2": [...], "3": [...] }, ... } } ] }
+let LEARN_DATA = LEARN_BASE;
+let learnFresh = {}; // 이번 주에 새로 들어온 것: { 'en1': [...], ... } → 그 주 월요일부터 하루에 하나씩 먼저 보여준다
+function learnValid(tab, it) {
+  const str = (x, max) => typeof x === 'string' && x.trim().length > 0 && x.length <= max;
+  if (tab === 'fact') return str(it, 300);
+  const need = { lit: 3, joke: 2, quote: 2, en: 4 }[tab];
+  return Array.isArray(it) && it.length === need && it.every(x => str(x, 400));
+}
+function learnKey(tab, it) { return (tab === 'fact' ? it : it[0]).replace(/\s+/g, ' ').trim(); }
+function learnMonday(ymd) { // 그 날짜가 속한 주의 월요일
+  const d = new Date(ymd + 'T00:00:00');
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return toLocalYMD(d);
+}
+function learnApplyExtra(data) {
+  const out = {}, seen = {}, fresh = {};
+  Object.keys(LEARN_BASE).forEach(tab => {
+    out[tab] = {}; seen[tab] = new Set();
+    [1, 2, 3].forEach(lv => { out[tab][lv] = LEARN_BASE[tab][lv].slice(); out[tab][lv].forEach(it => seen[tab].add(learnKey(tab, it))); });
+  });
+  const thisWeek = learnMonday(toLocalYMD(new Date()));
+  const weeks = (data && Array.isArray(data.weeks)) ? data.weeks.slice(0, 600) : [];
+  weeks.forEach(w => {
+    if (!w || typeof w !== 'object' || !w.items || typeof w.items !== 'object') return;
+    Object.keys(out).forEach(tab => {
+      const byLevel = w.items[tab];
+      if (!byLevel || typeof byLevel !== 'object') return;
+      [1, 2, 3].forEach(lv => {
+        const list = Array.isArray(byLevel[lv]) ? byLevel[lv].slice(0, 50) : [];
+        list.forEach(it => {
+          if (!learnValid(tab, it)) return;
+          const k = learnKey(tab, it);
+          if (seen[tab].has(k)) return; // 이미 있는 내용
+          seen[tab].add(k);
+          out[tab][lv].push(it);
+          if (w.week === thisWeek) (fresh[tab + lv] = fresh[tab + lv] || []).push(it);
+        });
+      });
+    });
+  });
+  LEARN_DATA = out;
+  learnFresh = fresh;
+}
+// 기기에 저장해 둔 것을 먼저 쓰고(오프라인에서도 보이게), 서버에서 최신 파일을 받아 바꾼다
+function learnLoadExtra() {
+  try { const saved = JSON.parse(localStorage.getItem('learnExtra') || 'null'); if (saved) learnApplyExtra(saved); } catch (e) {}
+  fetch('./learn-extra.json', { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).then(data => {
+    if (!data || !Array.isArray(data.weeks)) return;
+    learnApplyExtra(data);
+    try { localStorage.setItem('learnExtra', JSON.stringify(data)); } catch (e) {}
+    learnDraw();
+  }).catch(() => {});
+}
 let learnShift = {}, learnOpen = false; // 분야·단계별 '다른 것 보기' 횟수, 유머 답을 열었는지
 function learnTab() {
   let t = 'lit';
@@ -2367,27 +2424,30 @@ function learnLevel() {
   try { v = parseInt(localStorage.getItem('learnLevel') || '1', 10); } catch (e) {}
   return (v === 2 || v === 3) ? v : 1;
 }
-function learnItems(tab) { return LEARN_DATA[tab][learnLevel()]; }
-function learnIndex(tab) {
-  const n = learnItems(tab).length;
+function learnPick(tab) {
+  const lv = learnLevel(), shift = learnShift[tab + lv] || 0;
+  const fresh = learnFresh[tab + lv] || [];
+  const pos = ((new Date().getDay() + 6) % 7) + shift; // 월요일=0
+  if (pos < fresh.length) return { it: fresh[pos], fresh: true };
+  const pool = LEARN_DATA[tab][lv], n = pool.length;
   const day = Math.floor(new Date(toLocalYMD(new Date()) + 'T00:00:00').getTime() / 86400000);
-  return (((day + (learnShift[tab + learnLevel()] || 0)) % n) + n) % n;
+  return { it: pool[(((day + shift) % n) + n) % n], fresh: false };
 }
 function learnHTML() {
-  const tab = learnTab(), lv = learnLevel(), it = learnItems(tab)[learnIndex(tab)];
-  let body = '';
+  const tab = learnTab(), lv = learnLevel(), pick = learnPick(tab), it = pick.it;
+  let body = pick.fresh ? '<div style="margin-bottom:8px"><span class="gc-tag">이번 주 새 내용</span></div>' : '';
   if (tab === 'lit') {
-    body = '<div class="lr-quote">' + esc(it[0]).replace(/\n/g, '<br>') + '</div><div class="lr-src">' + esc(it[1]) + '</div><div class="lr-note">' + esc(it[2]) + '</div>';
+    body += '<div class="lr-quote">' + esc(it[0]).replace(/\n/g, '<br>') + '</div><div class="lr-src">' + esc(it[1]) + '</div><div class="lr-note">' + esc(it[2]) + '</div>';
   } else if (tab === 'fact') {
-    body = '<div class="lr-text">' + esc(it) + '</div>';
+    body += '<div class="lr-text">' + esc(it) + '</div>';
   } else if (tab === 'joke') {
-    body = '<div class="lr-text"><b>' + esc(it[0]) + '</b></div>' + (learnOpen
+    body += '<div class="lr-text"><b>' + esc(it[0]) + '</b></div>' + (learnOpen
       ? '<div class="lr-answer">' + esc(it[1]) + '</div>'
       : '<button class="btn btn-sm btn-secondary" style="margin-top:12px" onclick="learnReveal()">답 보기</button>');
   } else if (tab === 'quote') {
-    body = '<div class="lr-quote">' + esc(it[0]) + '</div><div class="lr-src">' + esc(it[1]) + '</div>';
+    body += '<div class="lr-quote">' + esc(it[0]) + '</div><div class="lr-src">' + esc(it[1]) + '</div>';
   } else {
-    body = '<div class="lr-en">' + esc(it[0]) + '</div>'
+    body += '<div class="lr-en">' + esc(it[0]) + '</div>'
       + '<div class="lr-pron"><span>발음</span>' + esc(it[1]) + '</div>'
       + '<div class="lr-mean"><span>뜻</span>' + esc(it[2]) + '</div>'
       + '<div class="lr-note">' + esc(it[3]) + '</div>'
@@ -2421,7 +2481,7 @@ window.learnNext = function() {
 window.learnReveal = function() { learnOpen = true; learnDraw(); };
 window.learnSpeak = function() {
   if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') { toast('이 기기에서는 소리 듣기를 지원하지 않습니다'); return; }
-  const it = learnItems('en')[learnIndex('en')];
+  const it = learnPick('en').it;
   try {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(it[0]);
@@ -4721,6 +4781,7 @@ window.exportBackup = exportBackup;
 window.importBackup = importBackup;
 
 const APP_PAGES = ['dashboard', 'schedule', 'routine', 'scripture', 'prayer', 'diary', 'plans', 'ideas', 'sermons', 'memos', 'space', 'backup', 'bible'];
+learnLoadExtra(); // 매주 더해지는 '오늘의 배움' 내용
 (function start() {
   let resume = null;
   try { resume = JSON.parse(sessionStorage.getItem('appResume') || 'null'); sessionStorage.removeItem('appResume'); } catch (e) {}
