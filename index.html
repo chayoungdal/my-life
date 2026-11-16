@@ -4745,8 +4745,23 @@ cloudInit();
 
 // === 앱 업데이트: 새 버전을 알아서 받아 적용한다 ===
 // 서비스워커가 서버의 화면이 바뀐 것을 알려주면, 방금 앱을 열었거나 돌아온 직후이고
-// 작성 중인 것이 없을 때는 바로 새로 고친다. 그 밖에는 아래쪽에 작은 안내를 띄워 누를 때 적용한다.
+// 작성 중인 것이 없을 때는 바로 새로 고친다. 그 밖에는 아래쪽에 작은 안내를 띄우고,
+// 화면을 한동안 건드리지 않으면(작성 중이 아닐 때) 알아서 적용한다. 안내를 눌러 바로 적용할 수도 있다.
 let appUpdateReady = false, appReloading = false, appSeenAt = Date.now();
+const APP_IDLE_MS = 2 * 60 * 1000;       // 이만큼 손대지 않으면 새 버전을 알아서 적용
+const APP_CHECK_MS = 10 * 60 * 1000;     // 켜 둔 화면에서 새 버전을 확인하는 간격
+let appTouchedAt = Date.now();           // 마지막으로 화면을 건드린 때
+['pointerdown', 'keydown', 'touchstart', 'wheel', 'input'].forEach(type => {
+  document.addEventListener(type, () => { appTouchedAt = Date.now(); }, { passive: true, capture: true });
+});
+window.addEventListener('scroll', () => { appTouchedAt = Date.now(); }, { passive: true });
+// 새 버전이 준비돼 있고, 화면이 보이고, 작성 중이 아니고, 한동안 손대지 않았으면 적용한다
+function appApplyWhenIdle() {
+  if (!appUpdateReady || appReloading || document.hidden || appBusy()) return false;
+  if (Date.now() - appTouchedAt < APP_IDLE_MS) return false;
+  appReload();
+  return true;
+}
 function appBusy() { // 작성 중인 화면이나 창이 열려 있는가
   return editorOpen() || $('#modalOverlay').classList.contains('active');
 }
@@ -4789,7 +4804,8 @@ if ('serviceWorker' in navigator) {
     appCheckUpdate();
     if (appSwReg) appSwReg.update().catch(() => {});
   });
-  setInterval(() => { if (!document.hidden && !appUpdateReady) appCheckUpdate(); }, 30 * 60 * 1000); // 오래 켜 둔 경우
+  setInterval(() => { if (!document.hidden && !appUpdateReady) appCheckUpdate(); }, APP_CHECK_MS); // 켜 둔 화면에서도 주기적으로 확인
+  setInterval(appApplyWhenIdle, 20 * 1000); // 손대지 않고 있으면 알아서 적용
 }
 </script>
 </body>

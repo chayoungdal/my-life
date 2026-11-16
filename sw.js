@@ -6,9 +6,16 @@ const CACHE_NAME = 'my-life-v30';
 const PAGE = './index.html';
 const ASSETS = [PAGE, './manifest.json', './icon-192.png', './icon-512.png'];
 const PAGE_WAIT_MS = 3000; // 연결이 느리면 이만큼만 기다리고 저장된 화면을 보여준다
+const PAGE_TAG = './__page-tag'; // 마지막으로 받은 화면의 표식(ETag 등)을 적어 두는 자리
+function tagOf(res) { return res.headers.get('etag') || res.headers.get('last-modified') || ''; }
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS.map(u => new Request(u, { cache: 'reload' })))));
+  e.waitUntil(caches.open(CACHE_NAME).then(async c => {
+    await c.addAll(ASSETS.map(u => new Request(u, { cache: 'reload' })));
+    const page = await c.match(PAGE); // 처음 설치할 때 받은 화면의 표식도 적어 둔다
+    const tag = page ? tagOf(page) : '';
+    if (tag) await c.put(PAGE_TAG, new Response(tag));
+  }));
   self.skipWaiting();
 });
 
@@ -25,7 +32,21 @@ async function fetchPage() {
   const old = await cache.match(PAGE);
   const [fresh, saved] = await Promise.all([res.clone().text(), old ? old.text() : null]);
   await cache.put(PAGE, res.clone());
+  const tag = tagOf(res);
+  if (tag) await cache.put(PAGE_TAG, new Response(tag)); else await cache.delete(PAGE_TAG);
   return { res, changed: saved !== null && saved !== fresh };
+}
+
+// 가벼운 확인: 서버의 표식이 저장해 둔 것과 같으면 화면 파일을 내려받지 않는다 (데이터를 거의 쓰지 않음)
+async function pageUnchanged() {
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const saved = await cache.match(PAGE_TAG);
+    if (!saved) return false;
+    const tag = await saved.text();
+    const head = await fetch(PAGE, { method: 'HEAD', cache: 'no-store' });
+    return head.ok && !!tag && tagOf(head) === tag;
+  } catch (e) { return false; }
 }
 
 async function tellClients() {
@@ -66,5 +87,8 @@ self.addEventListener('fetch', e => {
 // 앱이 "새 버전 있는지 봐줘"라고 물으면 확인해서, 바뀌었으면 알린다
 self.addEventListener('message', e => {
   if (!e.data || e.data.type !== 'check-update') return;
-  e.waitUntil(fetchPage().then(got => { if (got.changed) return tellClients(); }).catch(() => {}));
+  e.waitUntil(pageUnchanged().then(same => {
+    if (same) return null;
+    return fetchPage().then(got => { if (got.changed) return tellClients(); });
+  }).catch(() => {}));
 });
