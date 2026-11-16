@@ -662,6 +662,7 @@ body.se-unfrozen .se-frozen::before, body.se-unfrozen .se-topbar::before, body.s
 .seg { display: inline-flex; padding: 2px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; }
 .seg button { border: none; background: none; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; font-family: inherit; }
 .seg button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.seg.sm button { padding: 4px 11px; font-size: 12px; }
 .wk-list { background: var(--surface); border: 1px solid var(--border-light); border-radius: 16px; overflow: hidden; }
 .wk-day { display: flex; gap: 14px; padding: 14px 16px; border-top: 1px solid var(--border-light); }
 .wk-day:first-child { border-top: none; }
@@ -2249,21 +2250,131 @@ const LEARN_EN = [ // [영어, 한글 발음, 뜻, 쓰임]
   ["I'm a little tired today.", '아임 어 리틀 타이어드 투데이', '오늘 좀 피곤해요.', 'a little은 "조금"이라는 뜻입니다.'],
   ['God bless you.', '갓 블레스 유', '하나님의 축복이 있기를 빕니다.', '축복의 인사로, 재채기한 사람에게도 씁니다.'],
 ];
+// --- 단계(하·중·상) ---
+// 위의 기본 목록은 번호로 단계를 나누고, 중·상 단계에 모자라는 내용은 아래에 따로 더한다.
+const LEARN_EN_MID = [ // 영어 '중': 조금 긴 일상 표현
+  ['Could you do me a favor?', '쿠 쥬 두 미 어 페이버', '부탁 하나 들어주실래요?', '부탁을 꺼내기 전에 먼저 하는 말입니다.'],
+  ["I'm looking forward to it.", '아임 루킹 포워드 투 잇', '기대하고 있어요.', 'to 뒤에는 명사나 -ing 형태가 옵니다.'],
+  ["It's been a long day.", '잇츠 빈 어 롱 데이', '긴 하루였어요.', '힘든 하루를 마치고 하는 말입니다.'],
+  ["I didn't mean to.", '아이 디든 민 투', '일부러 그런 게 아니에요.', '실수를 사과할 때 덧붙입니다.'],
+  ["Let's call it a day.", '렛츠 콜 잇 어 데이', '오늘은 여기까지 하죠.', '일이나 모임을 마무리할 때 씁니다.'],
+  ["I'll get back to you.", '아일 겟 백 투 유', '다시 연락드릴게요.', '바로 답하기 어려울 때 씁니다.'],
+  ['It depends.', '잇 디펜즈', '상황에 따라 달라요.', '한마디로 답하기 어려울 때 씁니다.'],
+  ["That's a good point.", '댓츠 어 굿 포인트', '좋은 지적이네요.', '상대의 의견을 인정할 때 씁니다.'],
+  ["I'm running late.", '아임 러닝 레이트', '좀 늦을 것 같아요.', '약속에 늦게 될 때 미리 알립니다.'],
+  ['Can I get a refund?', '캔 아이 겟 어 리펀드', '환불받을 수 있나요?', 'refund 대신 exchange를 쓰면 교환을 묻습니다.'],
+  ['What do you do for fun?', '왓 두 유 두 포 펀', '취미가 뭐예요?', 'What is your hobby보다 자연스러운 표현입니다.'],
+  ["I've been busy lately.", '아이브 빈 비지 레이틀리', '요즘 바빴어요.', 'lately는 "요즘"이라는 뜻입니다.'],
+  ['Would you mind if I sit here?', '우 쥬 마인드 이프 아이 싯 히어', '여기 앉아도 될까요?', '괜찮으면 Not at all이라고 답합니다.'],
+  ["I'll think it over.", '아일 띵크 잇 오버', '곰곰이 생각해 볼게요.', 'think about보다 신중하게 생각한다는 느낌입니다.'],
+  ['Let me know if you need anything.', '렛 미 노우 이프 유 니드 애니띵', '필요한 게 있으면 말씀하세요.', '손님이나 동료에게 건네는 배려의 말입니다.'],
+  ["I'm sorry to hear that.", '아임 쏘리 투 히어 댓', '안됐네요. 마음이 아프네요.', '안 좋은 소식을 들었을 때 위로하는 말입니다.'],
+  ["It's not a big deal.", '잇츠 낫 어 빅 딜', '별일 아니에요.', '상대가 미안해할 때 안심시키는 말입니다.'],
+  ["I couldn't agree more.", '아이 쿠든 어그리 모어', '전적으로 동의해요.', '"더 동의할 수 없을 만큼"이라는 강한 찬성입니다.'],
+  ['Make yourself at home.', '메이크 유어셀프 앳 홈', '편하게 계세요.', '집에 온 손님에게 하는 말입니다.'],
+  ['Thanks for having me.', '땡스 포 해빙 미', '초대해 주셔서 감사해요.', '초대받은 자리에서 인사로 씁니다.'],
+  ["I'm in the middle of something.", '아임 인 더 미들 오브 썸띵', '지금 뭘 좀 하는 중이에요.', '지금은 곤란하다고 부드럽게 말할 때 씁니다.'],
+  ['Can we reschedule?', '캔 위 리스케줄', '일정을 다시 잡을 수 있을까요?', '약속을 옮겨야 할 때 씁니다.'],
+  ['What brings you here?', '왓 브링즈 유 히어', '여긴 어쩐 일이세요?', 'Why are you here보다 훨씬 부드러운 표현입니다.'],
+  ["I'll keep that in mind.", '아일 킵 댓 인 마인드', '명심할게요.', '조언을 들었을 때 하는 대답입니다.'],
+];
+const LEARN_EN_HIGH = [ // 영어 '상': 관용 표현과 격식 있는 말
+  ["It's a blessing in disguise.", '잇츠 어 블레싱 인 디스가이즈', '전화위복이에요.', '나쁜 일처럼 보였지만 결과가 좋았을 때 씁니다.'],
+  ["Let's play it by ear.", '렛츠 플레이 잇 바이 이어', '상황을 보면서 정하죠.', '미리 정하지 않고 그때 가서 결정하자는 뜻입니다.'],
+  ["I'm on the fence.", '아임 온 더 펜스', '아직 마음을 못 정했어요.', '울타리 위에 앉아 어느 쪽으로도 못 간 모습입니다.'],
+  ['That rings a bell.', '댓 링즈 어 벨', '들어본 것 같아요.', '어렴풋이 기억날 때 씁니다.'],
+  ["Let's not beat around the bush.", '렛츠 낫 빗 어라운드 더 부시', '돌려 말하지 맙시다.', '본론으로 들어가자고 할 때 씁니다.'],
+  ["I'm feeling under the weather.", '아임 필링 언더 더 웨더', '몸이 좀 안 좋아요.', '심하게 아픈 것이 아니라 컨디션이 나쁠 때 씁니다.'],
+  ["We're on the same page.", '위어 온 더 세임 페이지', '우리 생각이 같네요.', '서로 같은 내용을 이해하고 있다는 뜻입니다.'],
+  ["It's easier said than done.", '잇츠 이지어 세드 댄 던', '말은 쉽지만 하기는 어려워요.', '실천이 어렵다는 것을 말할 때 씁니다.'],
+  ['Better late than never.', '베터 레이트 댄 네버', '늦더라도 안 하는 것보다 나아요.', '늦게라도 한 것을 격려할 때 씁니다.'],
+  ["I'll take a rain check.", '아일 테이크 어 레인 체크', '다음 기회로 미룰게요.', '초대를 정중히 사양하면서 다음을 기약합니다.'],
+  ['You can say that again.', '유 캔 세이 댓 어겐', '정말 그래요.', '다시 말하라는 뜻이 아니라 강한 동의입니다.'],
+  ["Let's get the ball rolling.", '렛츠 겟 더 볼 롤링', '이제 시작해 봅시다.', '일이나 회의를 시작하자고 할 때 씁니다.'],
+  ['It slipped my mind.', '잇 슬립트 마이 마인드', '깜빡했어요.', '"마음에서 미끄러져 나갔다"는 표현입니다.'],
+  ["I'm swamped with work.", '아임 스왐프트 위드 워크', '일이 산더미예요.', 'swamp는 늪으로, 일에 빠져 있다는 뜻입니다.'],
+  ["Let's touch base next week.", '렛츠 터치 베이스 넥스트 위크', '다음 주에 다시 이야기해요.', '업무에서 짧게 연락하자는 뜻으로 씁니다.'],
+  ['Actions speak louder than words.', '액션즈 스픽 라우더 댄 워즈', '말보다 행동이 중요해요.', '널리 쓰이는 영어 속담입니다.'],
+  ["I'm all ears.", '아임 올 이어즈', '잘 듣고 있어요. 말씀하세요.', '온몸이 귀가 됐다는 재미있는 표현입니다.'],
+  ["It's not my cup of tea.", '잇츠 낫 마이 컵 오브 티', '제 취향은 아니에요.', '싫다는 말을 부드럽게 돌려서 합니다.'],
+  ['Hang in there.', '행 인 데어', '조금만 더 버텨요.', '힘든 시기를 지나는 사람을 응원하는 말입니다.'],
+  ["That's the last straw.", '댓츠 더 라스트 스트로', '더는 못 참겠어요.', '낙타 등을 부러뜨린 마지막 지푸라기라는 속담에서 왔습니다.'],
+  ['Count your blessings.', '카운트 유어 블레싱즈', '받은 복을 세어 보세요.', '가진 것에 감사하라는 뜻입니다.'],
+  ['Every cloud has a silver lining.', '에브리 클라우드 해즈 어 실버 라이닝', '어려움 속에도 희망은 있어요.', '구름 가장자리의 은빛 테두리에서 온 속담입니다.'],
+  ["I'd appreciate it if you could let me know.", '아이드 어프리시에이트 잇 이프 유 쿠드 렛 미 노우', '알려 주시면 감사하겠습니다.', '메일이나 격식 있는 자리에서 쓰는 정중한 부탁입니다.'],
+  ['Could you elaborate on that?', '쿠 쥬 일래버레이트 온 댓', '좀 더 자세히 설명해 주시겠어요?', '회의나 토론에서 설명을 더 청할 때 씁니다.'],
+];
+const LEARN_FACT_HIGH = [ // 상식 '상'
+  '진공에서 빛의 속도는 초속 299,792,458m로 정해져 있습니다. 1미터의 길이가 바로 이 값으로 정의됩니다.',
+  '절대영도는 영하 273.15℃입니다. 이보다 낮은 온도는 있을 수 없습니다.',
+  '사람과 침팬지의 DNA는 약 98~99%가 같습니다.',
+  '원주율 π는 소수점 아래가 끝없이 이어지고, 같은 숫자 묶음이 되풀이되지 않는 무리수입니다.',
+  '지구의 자전축은 약 23.5도 기울어져 있습니다. 계절은 태양과의 거리가 아니라 이 기울기 때문에 생깁니다.',
+  '우리은하에는 별이 1,000억 개 넘게 있는 것으로 추정됩니다.',
+  '공기의 약 78%는 질소이고 산소는 약 21%입니다.',
+  '조선왕조실록은 태조부터 철종까지 25대 472년의 기록으로, 유네스코 세계기록유산입니다.',
+  '팔만대장경의 경판은 8만 1천여 장이며 합천 해인사 장경판전에 보관되어 있습니다.',
+  '직지심체요절은 1377년에 찍은 책으로, 지금 남아 있는 금속활자 인쇄본 가운데 가장 오래되었습니다. 구텐베르크 성서보다 70여 년 앞섭니다.',
+  '태양은 태양계 전체 질량의 약 99.8%를 차지합니다.',
+  '1광년은 빛이 1년 동안 가는 거리로, 약 9조 4,600억 km입니다.',
+  '72의 법칙: 72를 연 수익률(%)로 나누면 원금이 두 배가 되는 데 걸리는 햇수를 어림할 수 있습니다. 연 6%라면 약 12년입니다.',
+  '블랙홀의 모습이 처음 촬영되어 공개된 것은 2019년으로, 처녀자리 은하단의 M87 은하 중심에 있는 블랙홀이었습니다.',
+  '로마자(알파벳)는 페니키아 문자가 그리스 문자를 거쳐 전해지며 만들어졌습니다.',
+  '사람의 혈액은 몸무게의 약 8%를 차지합니다.',
+];
+const LEARN_QUOTE_HIGH = [ // 명언 '상'
+  ['가장 좋은 것은 물과 같다. 물은 만물을 이롭게 하면서도 다투지 않는다.', '노자, 『도덕경』'],
+  ['군자는 어울리되 같아지지 않고, 소인은 같아지되 어울리지 못한다.', '공자, 『논어』'],
+  ['지나친 것은 미치지 못한 것과 같다.', '공자, 『논어』'],
+  ['철학은 놀라움에서 시작된다.', '플라톤, 『테아이테토스』'],
+  ['주님, 당신께서 우리를 당신을 향해 지으셨으니, 우리 마음은 당신 안에서 쉬기까지 평안하지 않습니다.', '아우구스티누스, 『고백록』'],
+  ['마음에는 이성이 알지 못하는 이유가 있다.', '파스칼, 『팡세』'],
+  ['인생은 뒤돌아보아야 이해되지만, 앞을 보며 살아야 한다.', '키르케고르'],
+  ['말할 수 없는 것에 대해서는 침묵해야 한다.', '비트겐슈타인, 『논리철학 논고』'],
+];
+// 기본 목록 가운데 '중'과 '상'에 해당하는 번호 (0부터 셈). 여기에 없는 것은 '하'.
+const LEARN_LV = {
+  lit: { 2: [1, 6, 7, 12, 14, 15, 16, 22, 25, 27], 3: [8, 10, 11, 17, 18, 19, 20, 21, 26] },
+  fact: { 2: [3, 5, 6, 7, 9, 11, 15, 18, 22, 23, 24, 27, 31, 33], 3: [8, 10, 19, 26, 28] },
+  joke: { 2: [4, 5, 9, 11, 13, 14, 17, 19, 23, 24, 26, 29, 31, 34], 3: [3, 10, 15, 16, 18, 25, 27, 30, 32] },
+  quote: { 2: [1, 2, 4, 9, 12, 18, 19, 20, 23, 24, 25, 26, 27, 28, 34], 3: [5, 6, 8, 13, 14, 30, 33] },
+  en: { 2: [], 3: [] },
+};
+function learnSplit(base, lv, mid, high) {
+  const out = { 1: [], 2: [], 3: [] };
+  base.forEach((it, i) => out[lv[3].includes(i) ? 3 : lv[2].includes(i) ? 2 : 1].push(it));
+  (mid || []).forEach(it => out[2].push(it));
+  (high || []).forEach(it => out[3].push(it));
+  return out;
+}
 const LEARN_TABS = [['lit', '문학'], ['fact', '상식'], ['joke', '유머'], ['quote', '명언'], ['en', '영어']];
-const LEARN_DATA = { lit: LEARN_LIT, fact: LEARN_FACT, joke: LEARN_JOKE, quote: LEARN_QUOTE, en: LEARN_EN };
-let learnShift = {}, learnOpen = false; // 분야별 '다른 것 보기' 횟수, 유머 답을 열었는지
+const LEARN_LEVELS = [[1, '하'], [2, '중'], [3, '상']];
+const LEARN_DATA = {
+  lit: learnSplit(LEARN_LIT, LEARN_LV.lit),
+  fact: learnSplit(LEARN_FACT, LEARN_LV.fact, null, LEARN_FACT_HIGH),
+  joke: learnSplit(LEARN_JOKE, LEARN_LV.joke),
+  quote: learnSplit(LEARN_QUOTE, LEARN_LV.quote, null, LEARN_QUOTE_HIGH),
+  en: learnSplit(LEARN_EN, LEARN_LV.en, LEARN_EN_MID, LEARN_EN_HIGH),
+};
+let learnShift = {}, learnOpen = false; // 분야·단계별 '다른 것 보기' 횟수, 유머 답을 열었는지
 function learnTab() {
   let t = 'lit';
   try { t = localStorage.getItem('learnTab') || 'lit'; } catch (e) {}
   return LEARN_DATA[t] ? t : 'lit';
 }
+function learnLevel() {
+  let v = 1;
+  try { v = parseInt(localStorage.getItem('learnLevel') || '1', 10); } catch (e) {}
+  return (v === 2 || v === 3) ? v : 1;
+}
+function learnItems(tab) { return LEARN_DATA[tab][learnLevel()]; }
 function learnIndex(tab) {
-  const n = LEARN_DATA[tab].length;
+  const n = learnItems(tab).length;
   const day = Math.floor(new Date(toLocalYMD(new Date()) + 'T00:00:00').getTime() / 86400000);
-  return (((day + (learnShift[tab] || 0)) % n) + n) % n;
+  return (((day + (learnShift[tab + learnLevel()] || 0)) % n) + n) % n;
 }
 function learnHTML() {
-  const tab = learnTab(), i = learnIndex(tab), it = LEARN_DATA[tab][i];
+  const tab = learnTab(), lv = learnLevel(), it = learnItems(tab)[learnIndex(tab)];
   let body = '';
   if (tab === 'lit') {
     body = '<div class="lr-quote">' + esc(it[0]).replace(/\n/g, '<br>') + '</div><div class="lr-src">' + esc(it[1]) + '</div><div class="lr-note">' + esc(it[2]) + '</div>';
@@ -2282,9 +2393,11 @@ function learnHTML() {
       + '<div class="lr-note">' + esc(it[3]) + '</div>'
       + '<button class="btn btn-sm btn-secondary" style="margin-top:12px" onclick="learnSpeak()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>소리로 듣기</button>';
   }
-  return '<div class="hm-top"><span class="hm-label">오늘의 배움</span><button class="hm-more" onclick="learnNext()">다른 것 보기 &rsaquo;</button></div>'
+  return '<div class="hm-top"><span class="hm-label">오늘의 배움</span>'
+    + '<span class="seg sm" aria-label="단계">' + LEARN_LEVELS.map(l => '<button class="' + (l[0] === lv ? 'on' : '') + '" onclick="learnSetLevel(' + l[0] + ')">' + l[1] + '</button>').join('') + '</span></div>'
     + '<div class="lr-tabs">' + LEARN_TABS.map(t => '<button class="lr-tab' + (t[0] === tab ? ' on' : '') + '" onclick="learnSet(\'' + t[0] + '\')">' + t[1] + '</button>').join('') + '</div>'
-    + body;
+    + body
+    + '<div style="text-align:right;margin-top:10px"><button class="hm-more" onclick="learnNext()">다른 것 보기 &rsaquo;</button></div>';
 }
 function learnDraw() { const box = $('#hm-learn'); if (box) box.innerHTML = learnHTML(); }
 window.learnSet = function(tab) {
@@ -2293,21 +2406,27 @@ window.learnSet = function(tab) {
   learnOpen = false;
   learnDraw();
 };
+window.learnSetLevel = function(lv) {
+  if (![1, 2, 3].includes(lv)) return;
+  try { localStorage.setItem('learnLevel', String(lv)); } catch (e) {}
+  learnOpen = false;
+  learnDraw();
+};
 window.learnNext = function() {
-  const tab = learnTab();
-  learnShift[tab] = (learnShift[tab] || 0) + 1;
+  const key = learnTab() + learnLevel();
+  learnShift[key] = (learnShift[key] || 0) + 1;
   learnOpen = false;
   learnDraw();
 };
 window.learnReveal = function() { learnOpen = true; learnDraw(); };
 window.learnSpeak = function() {
   if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') { toast('이 기기에서는 소리 듣기를 지원하지 않습니다'); return; }
-  const it = LEARN_EN[learnIndex('en')];
+  const it = learnItems('en')[learnIndex('en')];
   try {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(it[0]);
     u.lang = 'en-US';
-    u.rate = 0.85; // 조금 천천히
+    u.rate = learnLevel() === 3 ? 0.8 : 0.85; // 조금 천천히 (상 단계는 문장이 길어 더 천천히)
     window.speechSynthesis.speak(u);
   } catch (e) { toast('소리를 재생하지 못했습니다'); }
 };
