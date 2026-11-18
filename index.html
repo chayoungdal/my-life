@@ -2814,8 +2814,6 @@ function stockAnalyze(it) {
     rows.push({ title: '이동평균선', value: upOrder ? '정배열' : dnOrder ? '역배열' : '혼조', side,
       text: upOrder ? '짧은 기간의 평균선이 긴 기간의 평균선 위에 차례로 놓여 있습니다.' : dnOrder ? '짧은 기간의 평균선이 긴 기간의 평균선 아래에 차례로 놓여 있습니다.' : `주가가 20일선(${f(m20)}) ${last >= m20 ? '위' : '아래'}, 60일선(${f(m60)}) ${last >= m60 ? '위' : '아래'}에 있습니다.`,
       note: '정배열은 보통 오름세가 이어지는 모습으로, 역배열은 내림세가 이어지는 모습으로 봅니다.' });
-    if (crossUp(ma[5], ma[20])) events.push('5일선이 20일선을 위로 넘었습니다 (골든크로스)');
-    if (crossDn(ma[5], ma[20])) events.push('5일선이 20일선 아래로 내려갔습니다 (데드크로스)');
     if (crossUp(ma[20], ma[60])) events.push('20일선이 60일선을 위로 넘었습니다 (중기 골든크로스)');
     if (crossDn(ma[20], ma[60])) events.push('20일선이 60일선 아래로 내려갔습니다 (중기 데드크로스)');
     if (crossUp(c, ma[20])) events.push('주가가 20일선 위로 올라섰습니다');
@@ -2847,8 +2845,6 @@ function stockAnalyze(it) {
     rows.push({ title: 'MACD', value: side === 'up' ? '시그널 위' : '시그널 아래', side,
       text: `MACD가 시그널선 ${side === 'up' ? '위' : '아래'}에 있고, 기준선(0) ${macd.line[i] >= 0 ? '위' : '아래'}입니다.`,
       note: 'MACD가 시그널선 위에 있으면 오르는 힘이, 아래에 있으면 내리는 힘이 우세한 것으로 봅니다.' });
-    if (crossUp(macd.line, macd.sig)) events.push('MACD가 시그널선을 위로 넘었습니다');
-    if (crossDn(macd.line, macd.sig)) events.push('MACD가 시그널선 아래로 내려갔습니다');
   }
   // 5) RSI
   if (rsi[i] != null) {
@@ -2921,9 +2917,15 @@ function stockAnalyze(it) {
   const sum = { up: rows.filter(x => x.side === 'up').length, down: rows.filter(x => x.side === 'down').length, flat: rows.filter(x => x.side === 'flat').length };
   // 기준별 사고파는 지점
   const rules = STOCK_RULES.map(r => Object.assign({ rule: r }, stockRuleRun(it, { ma, rsi, macd }, r.id)));
-  const ruleEv = { rsi: { buy: 'RSI가 30 위로 되돌아왔습니다', sell: 'RSI가 70 아래로 되돌아왔습니다' }, brk: { buy: '종가가 직전 20일 최고가를 넘었습니다', sell: '종가가 직전 10일 최저가 아래로 내려갔습니다' } };
-  rules.forEach(x => { const e = ruleEv[x.rule.id]; if (e && x.today) events.push(`${e[x.today]} ('${x.rule.name}' 기준의 ${x.today === 'buy' ? '사는' : '파는'} 조건)`); });
-  it._a = { last, prev, chg, pct, rows, info, events, candle, sup, res, sum, rules, ma, rsi, macd, bb, ich, vma };
+  // 가장 최근 거래일에 어느 기준의 사는 조건·파는 조건이 나왔는지 (signals)
+  const ruleEv = {
+    ma: { buy: '5일선이 20일선을 위로 넘었습니다 (골든크로스)', sell: '5일선이 20일선 아래로 내려갔습니다 (데드크로스)' },
+    macd: { buy: 'MACD가 시그널선을 위로 넘었습니다', sell: 'MACD가 시그널선 아래로 내려갔습니다' },
+    rsi: { buy: 'RSI가 30 위로 되돌아왔습니다', sell: 'RSI가 70 아래로 되돌아왔습니다' },
+    brk: { buy: '종가가 직전 20일 최고가를 넘었습니다', sell: '종가가 직전 10일 최저가 아래로 내려갔습니다' },
+  };
+  const signals = rules.filter(x => x.today).map(x => ({ s: x.today, text: `${ruleEv[x.rule.id][x.today]} · ${x.rule.name} 기준` }));
+  it._a = { last, prev, chg, pct, rows, info, events, signals, candle, sup, res, sum, rules, ma, rsi, macd, bb, ich, vma };
   return it._a;
 }
 // 내 알림 가격에 닿았는지
@@ -2938,11 +2940,15 @@ function stockTargetHits(it) {
 function stockAllEvents() {
   const out = [];
   (stockData ? stockData.items : []).forEach(it => {
+    const a = stockAnalyze(it);
     stockTargetHits(it).forEach(t => out.push({ it, text: t, mine: true }));
-    stockAnalyze(it).events.forEach(t => out.push({ it, text: t }));
+    a.signals.forEach(g => out.push({ it, text: g.text, sig: g.s }));
+    a.events.forEach(t => out.push({ it, text: t }));
   });
-  return out;
+  const rank = e => (e.mine ? 0 : e.sig ? 1 : 2); // 내 알림 가격 → 사는·파는 조건 → 그 밖의 변화
+  return out.map((e, k) => [e, k]).sort((x, y) => rank(x[0]) - rank(y[0]) || x[1] - y[1]).map(x => x[0]);
 }
+function stockSigTag(s) { return s ? `<span class="st-side ${s === 'buy' ? 'up' : 'down'}" style="margin-right:6px">${s === 'buy' ? '사는 조건' : '파는 조건'}</span>` : ''; }
 function stockUpdatedText() {
   if (!stockData || !stockData.updated_at) return '';
   const d = new Date(stockData.updated_at);
@@ -2957,7 +2963,7 @@ function stockHomeHTML() {
   const ev = stockAllEvents();
   return `<div class="hm-card" style="cursor:pointer" onclick="navigateTo('stocks')">
     <div class="hm-top"><span class="hm-label">증권 차트</span><span class="hm-label" style="font-weight:500">${stockUpdatedText()}</span></div>
-    ${ev.length ? `<div class="br-list" style="margin-top:0">${ev.slice(0, 3).map(e => `<div class="br-row"><span class="br-key">${esc(e.it.name)}</span><span class="br-val">${esc(e.text)}</span></div>`).join('')}</div>
+    ${ev.length ? `<div class="br-list" style="margin-top:0">${ev.slice(0, 3).map(e => `<div class="br-row"><span class="br-key">${esc(e.it.name)}</span><span class="br-val">${stockSigTag(e.sig)}${esc(e.text)}</span></div>`).join('')}</div>
       ${ev.length > 3 ? `<div class="hm-empty">그 밖에 ${ev.length - 3}건이 더 있습니다.</div>` : ''}` : '<div class="hm-empty">오늘 눈에 띄는 변화는 없습니다.</div>'}
     <div style="text-align:right;margin-top:10px"><span class="hm-more">차트 보기 &rsaquo;</span></div>
   </div>`;
@@ -2990,7 +2996,7 @@ async function renderStocks() {
     <div class="page-header"><h2>증권 차트</h2><span class="item-meta">${stockUpdatedText()}</span></div>
     <div class="hm-card">
       <div class="hm-top"><span class="hm-label">눈에 띄는 변화</span><span class="hm-label" style="font-weight:500">가장 최근 거래일 기준</span></div>
-      ${ev.length ? `<div class="br-list" style="margin-top:0">${ev.map(e => `<div class="br-row" style="cursor:pointer" onclick="stockOpen('${esc(e.it.id)}')"><span class="br-key">${esc(e.it.name)}</span><span style="flex:1;min-width:0;${e.mine ? 'color:var(--primary);font-weight:600' : ''}">${esc(e.text)}</span></div>`).join('')}</div>` : '<div class="hm-empty">눈에 띄는 변화가 없습니다.</div>'}
+      ${ev.length ? `<div class="br-list" style="margin-top:0">${ev.map(e => `<div class="br-row" style="cursor:pointer" onclick="stockOpen('${esc(e.it.id)}')"><span class="br-key">${esc(e.it.name)}</span><span style="flex:1;min-width:0;${e.mine ? 'color:var(--primary);font-weight:600' : ''}">${stockSigTag(e.sig)}${esc(e.text)}</span></div>`).join('')}</div>` : '<div class="hm-empty">눈에 띄는 변화가 없습니다.</div>'}
     </div>
     ${group('지수', items.filter(x => x.kind === 'index'))}
     ${group('국내 종목', items.filter(x => x.kind !== 'index' && x.market === 'KR'))}
@@ -3062,8 +3068,8 @@ function renderStockDetail() {
       ${ruleHTML}
       <p class="item-meta" style="margin-top:12px;line-height:1.6">널리 알려진 매매 기준 네 가지를 조건 그대로 계산한 것입니다. 줄을 누르면 조건과 지난 기록이 나오고, "차트에 표시"를 누르면 그 기준에서 사는 날(▲)과 파는 날(▼)이 차트에 찍힙니다. 기준마다 답이 다르고, 지난 기록이 좋았다고 앞으로도 맞는 것은 아닙니다. 수수료와 세금은 넣지 않았습니다.</p>
     </div>
-    ${hits.length || a.events.length ? `<div class="hm-card"><div class="hm-top"><span class="hm-label">눈에 띄는 변화</span></div>
-      ${hits.map(x => `<div class="st-ev" style="color:var(--primary);font-weight:600">${esc(x)}</div>`).join('')}${a.events.map(x => `<div class="st-ev">${esc(x)}</div>`).join('')}</div>` : ''}
+    ${hits.length || a.signals.length || a.events.length ? `<div class="hm-card"><div class="hm-top"><span class="hm-label">눈에 띄는 변화</span></div>
+      ${hits.map(x => `<div class="st-ev" style="color:var(--primary);font-weight:600">${esc(x)}</div>`).join('')}${a.signals.map(g => `<div class="st-ev">${stockSigTag(g.s)}${esc(g.text)}</div>`).join('')}${a.events.map(x => `<div class="st-ev">${esc(x)}</div>`).join('')}</div>` : ''}
     <div class="hm-card">
       <div class="hm-top"><span class="hm-label">지표 점검표</span><span class="hm-label" style="font-weight:500">상승 ${a.sum.up} · 하락 ${a.sum.down}${a.sum.flat ? ' · 중립 ' + a.sum.flat : ''}</span></div>
       <div class="st-bar"><i style="flex:${a.sum.up};background:${STOCK_UP}"></i><i style="flex:${a.sum.flat};background:var(--border)"></i><i style="flex:${a.sum.down};background:${STOCK_DOWN}"></i></div>
