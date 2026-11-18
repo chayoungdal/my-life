@@ -714,6 +714,34 @@ body.se-unfrozen .se-frozen::before, body.se-unfrozen .se-topbar::before, body.s
 .br-ul li { margin: 6px 0; font-size: 15px; line-height: 1.7; word-break: keep-all; overflow-wrap: anywhere; }
 .br-src { font-size: 13px; line-height: 1.9; }
 .br-src a { color: var(--primary); text-decoration: none; }
+/* 증권 차트 */
+.st-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border-light); cursor: pointer; }
+.st-name { font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+.st-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.st-price { flex: 0 0 auto; min-width: 84px; text-align: right; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.st-disc { font-size: 12px; line-height: 1.7; color: var(--text-secondary); margin: 4px 4px 24px; }
+.st-info { font-size: 12px; line-height: 1.6; color: var(--text-secondary); min-height: 38px; font-variant-numeric: tabular-nums; }
+.st-info b { color: var(--text); }
+.st-chart { width: 100%; overflow: hidden; }
+.st-ax { font-size: 9.5px; fill: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.st-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 11px; color: var(--text-secondary); }
+.st-legend i { display: inline-block; width: 12px; height: 2px; margin-right: 4px; vertical-align: middle; }
+.st-ev { padding: 8px 0; border-top: 1px solid var(--border-light); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.st-ev b { display: inline-block; min-width: 46px; margin-right: 6px; font-size: 12px; color: var(--text-secondary); }
+.st-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 6px; background: var(--border-light); }
+.st-bar i { display: block; }
+.st-ind { border-top: 1px solid var(--border-light); }
+.st-ind summary { display: flex; align-items: center; gap: 8px; padding: 11px 0; cursor: pointer; list-style: none; }
+.st-ind summary::-webkit-details-marker { display: none; }
+.st-ind-t { flex: 0 0 auto; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.st-ind-v { flex: 1; min-width: 0; font-size: 12px; color: var(--text-secondary); text-align: right; font-variant-numeric: tabular-nums; }
+.st-ind-b { padding: 0 0 12px; font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.st-ind-b b { font-size: 12px; color: var(--text-secondary); margin-right: 6px; }
+.st-side { flex: 0 0 auto; min-width: 50px; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; text-align: center; white-space: nowrap; }
+.st-side.up { color: #E03131; background: rgba(224,49,49,0.09); }
+.st-side.down { color: #1C6DD0; background: rgba(28,109,208,0.09); }
+.st-side.flat { color: var(--text-secondary); background: var(--bg); }
+.st-side.hold { color: var(--primary); background: var(--primary-light); }
 .tab-item .tab-icon svg { width: 22px; height: 22px; display: block; }
 @media (min-width: 768px) {
   .hm-hello { font-size: 32px; }
@@ -745,6 +773,8 @@ body.se-unfrozen .se-frozen::before, body.se-unfrozen .se-topbar::before, body.s
   <button class="drawer-item" data-nav="plans"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg></span> 계획</button>
   <button class="drawer-item" data-nav="ideas"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 18h5M10.5 21h3M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z"/></svg></span> 아이디어</button>
   <button class="drawer-item" data-nav="memos"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8.5L19 8v12.5H6z"/><path d="M14 3.5V8h5M9 12.5h6M9 16h6"/></svg></span> 메모</button>
+  <div class="drawer-section">투자</div>
+  <button class="drawer-item" data-nav="stocks"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16"/><path d="M7.5 15l3.5-4 3 2.5 4.5-6"/></svg></span> 증권 차트</button>
   <div class="drawer-section">데이터</div>
   <button class="drawer-item" data-nav="bible"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/></svg></span> 성경 가져오기</button>
   <button class="drawer-item" data-nav="backup"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18.5a4 4 0 0 1-.6-7.95A5.5 5.5 0 0 1 17 9.5a4.5 4.5 0 0 1 .5 9z"/></svg></span> 백업/복원</button>
@@ -1452,6 +1482,7 @@ window.navigateTo = function(page) {
   if (typeof seFlush === 'function') seFlush(); // 설교노트 작성 중이면 먼저 저장
   if (typeof memoFlush === 'function') memoFlush(); // 메모 작성 중이면 먼저 저장
   currentPage = page;
+  if (page === 'stocks') stockSel = null; // 메뉴로 들어오면 목록부터
   closeDrawer();
   const tabMap = { dashboard: 0, schedule: 1, scripture: 2, diary: 3 };
   const idx = tabMap[page];
@@ -1494,6 +1525,7 @@ async function renderPage() {
     sermons: renderSermons,
     memos: renderMemos,
     space: renderSpace,
+    stocks: renderStocks,
     backup: renderBackup,
     bible: renderBibleImport,
   };
@@ -2605,6 +2637,566 @@ window.briefShow = function(i) {
   `);
 };
 
+// === 증권 차트 (일봉 차트 · 기술적 지표 점검표 · 눈에 띄는 변화 · 내 알림 가격) ===
+// 시세는 stocks-data.json 에서 읽는다. 이 파일은 저장소의 자동 실행(GitHub Actions)이 하루 몇 번 갱신한다.
+// 여기서 하는 일은 '지나간 가격을 계산해 보여주는 것'까지다. 방향 예측이나 매수·매도 권유는 하지 않는다.
+let stockData = null, stockCfg = null, stockSel = null, stockView = null;
+const STOCK_UP = '#E03131', STOCK_DOWN = '#1C6DD0';
+const STOCK_RAW_URL = 'https://raw.githubusercontent.com/chayoungdal/my-life/main/stocks-data.json';
+const STOCK_MA = [[5, '#F08C00'], [20, '#2F9E44'], [60, '#7048E8'], [120, '#868E96']];
+// 널리 알려진 매매 기준. 여기서는 조건을 그대로 계산해 '그 기준의 사는 날·파는 날'을 찾아 보여줄 뿐, 권유가 아니다.
+const STOCK_RULES = [
+  { id: 'ma', name: '이동평균 교차', buy: '5일선이 20일선을 위로 넘는 날 (골든크로스)', sell: '5일선이 20일선 아래로 내려가는 날 (데드크로스)',
+    note: '추세를 따라가는 가장 기본적인 기준입니다. 한 방향으로 길게 움직일 때는 잘 맞고, 오르내림이 잦은 횡보장에서는 조건이 자주 뒤집혀 작은 손실이 쌓입니다.' },
+  { id: 'macd', name: 'MACD 교차', buy: 'MACD가 시그널선을 위로 넘는 날', sell: 'MACD가 시그널선 아래로 내려가는 날',
+    note: '이동평균 교차보다 조금 빨리 반응하도록 만든 기준입니다. 빠른 만큼 틀린 신호도 더 자주 나옵니다.' },
+  { id: 'rsi', name: 'RSI 되돌림', buy: 'RSI가 30 아래로 내려갔다가 다시 30 위로 올라오는 날', sell: 'RSI가 70 위로 올라갔다가 다시 70 아래로 내려오는 날',
+    note: '많이 빠진 뒤의 반등을 노리는 기준입니다. 조건이 드물게 나오고, 내림세가 길어지면 산 뒤에도 더 내려갈 수 있습니다.' },
+  { id: 'brk', name: '신고가 돌파', buy: '종가가 직전 20일의 가장 높은 가격을 넘는 날', sell: '종가가 직전 10일의 가장 낮은 가격 아래로 내려가는 날',
+    note: '오르는 종목을 따라 사는 기준으로, 터틀 매매법으로 알려져 있습니다. 비싸 보일 때 사야 해서 따르기 어렵고, 돌파가 실패하면 바로 손실이 납니다.' },
+];
+// 한 기준을 지난 자료에 그대로 적용한다. 조건이 나온 날의 종가로 사고판 것으로 계산하고, 수수료·세금은 넣지 않는다.
+function stockRuleRun(it, ind, id) {
+  const { h, l, c } = it, n = c.length, st = Math.min(60, n - 1);
+  const ok = (x, y, k) => x[k - 1] != null && y[k - 1] != null && x[k] != null && y[k] != null;
+  const up = (x, y, k) => ok(x, y, k) && x[k - 1] <= y[k - 1] && x[k] > y[k];
+  const dn = (x, y, k) => ok(x, y, k) && x[k - 1] >= y[k - 1] && x[k] < y[k];
+  let pos = null, eq = 1, wins = 0;
+  const trades = [], marks = [];
+  for (let k = st; k < n; k++) {
+    let s = null;
+    if (id === 'ma') s = up(ind.ma[5], ind.ma[20], k) ? 'buy' : dn(ind.ma[5], ind.ma[20], k) ? 'sell' : null;
+    else if (id === 'macd') s = up(ind.macd.line, ind.macd.sig, k) ? 'buy' : dn(ind.macd.line, ind.macd.sig, k) ? 'sell' : null;
+    else if (id === 'rsi') { const a0 = ind.rsi[k - 1], a1 = ind.rsi[k]; if (a0 != null && a1 != null) s = a0 < 30 && a1 >= 30 ? 'buy' : a0 > 70 && a1 <= 70 ? 'sell' : null; }
+    else if (id === 'brk' && k >= 20) s = c[k] > TA.hi(h, 20, k - 1) ? 'buy' : c[k] < TA.lo(l, 10, k - 1) ? 'sell' : null;
+    if (s === 'buy' && !pos) { pos = { k, price: c[k] }; marks.push({ k, s }); }
+    else if (s === 'sell' && pos) { const r = c[k] / pos.price - 1; trades.push({ a: pos.k, b: k, r }); eq *= 1 + r; if (r > 0) wins++; pos = null; marks.push({ k, s }); }
+  }
+  const last = c[n - 1], openR = pos ? last / pos.price - 1 : null;
+  const lastSell = trades.length ? trades[trades.length - 1].b : null;
+  return { marks, trades, wins, pos, openR, lastSell, days: n - 1 - st,
+    total: (eq * (pos ? 1 + openR : 1) - 1) * 100, hold: (last / c[st] - 1) * 100,
+    today: pos && pos.k === n - 1 ? 'buy' : lastSell === n - 1 ? 'sell' : null };
+}
+
+// --- 자료 읽기 ---
+function stockValidItem(it) {
+  if (!it || typeof it.id !== 'string' || typeof it.name !== 'string' || !Array.isArray(it.d)) return false;
+  const n = it.d.length;
+  if (n < 30 || n > 2000) return false;
+  return ['o', 'h', 'l', 'c', 'v'].every(k => Array.isArray(it[k]) && it[k].length === n && it[k].every(x => typeof x === 'number' && isFinite(x)))
+    && it.d.every(x => typeof x === 'string' && /^\d{8}$/.test(x));
+}
+function stockApply(data) {
+  const items = (data && Array.isArray(data.items)) ? data.items.filter(stockValidItem).slice(0, 80) : [];
+  stockData = items.length ? { updated_at: typeof data.updated_at === 'string' ? data.updated_at : '', source: typeof data.source === 'string' ? data.source : '', items } : null;
+  items.forEach(it => { it._a = null; });
+}
+function stockLoad() {
+  try { const saved = JSON.parse(localStorage.getItem('stocksData') || 'null'); if (saved) stockApply(saved); } catch (e) {}
+  // 앱과 함께 올라온 파일과 저장소의 원본 파일을 둘 다 보고, 더 새로운 쪽을 쓴다 (앱 배포가 늦어도 시세는 최신으로)
+  ['./stocks-data.json', STOCK_RAW_URL].forEach(url => {
+    fetch(url, { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).then(data => {
+      if (!data || !Array.isArray(data.items) || typeof data.updated_at !== 'string') return;
+      if (stockData && stockData.updated_at >= data.updated_at) return; // 이미 같은 것이나 더 새 것을 갖고 있다
+      stockApply(data);
+      if (!stockData) return;
+      try { localStorage.setItem('stocksData', JSON.stringify(data)); } catch (e) {}
+      const slot = $('#hm-stocks'); if (slot) slot.innerHTML = stockHomeHTML();
+      if (currentPage === 'stocks' && !appBusy()) renderPage();
+    }).catch(() => {});
+  });
+  dbGetAll('memos').then(list => { stockCfg = list.filter(m => m.kind === 'stockcfg').sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''))[0] || null; const slot = $('#hm-stocks'); if (slot) slot.innerHTML = stockHomeHTML(); }).catch(() => {});
+}
+function stockItem(id) { return stockData ? stockData.items.find(it => it.id === id) || null : null; }
+function stockFmt(v, it) {
+  if (v == null || !isFinite(v)) return '-';
+  const dec = (it.cur === 'KRW' && it.kind !== 'index') ? 0 : 2;
+  return v.toLocaleString('ko-KR', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function stockDate(d) { return `${Number(d.slice(4, 6))}/${Number(d.slice(6, 8))}`; }
+
+// --- 지표 계산 (모두 배열을 받아 같은 길이의 배열을 돌려준다. 계산할 수 없는 자리는 null) ---
+const TA = {
+  sma(a, n) { const out = []; let s = 0; for (let i = 0; i < a.length; i++) { s += a[i]; if (i >= n) s -= a[i - n]; out.push(i >= n - 1 ? s / n : null); } return out; },
+  ema(a, n, from) { // from: 계산을 시작할 자리 (앞쪽이 null 인 배열용)
+    const out = new Array(a.length).fill(null), st = from || 0;
+    if (a.length < st + n) return out;
+    let e = 0; for (let i = st; i < st + n; i++) e += a[i]; e /= n; out[st + n - 1] = e;
+    const k = 2 / (n + 1);
+    for (let i = st + n; i < a.length; i++) { e = a[i] * k + e * (1 - k); out[i] = e; }
+    return out;
+  },
+  wilder(a, n, from) { // 와일더 평균 (RSI, ATR, ADX 에 쓰는 방식)
+    const out = new Array(a.length).fill(null), st = from || 0;
+    if (a.length < st + n) return out;
+    let e = 0; for (let i = st; i < st + n; i++) e += a[i]; e /= n; out[st + n - 1] = e;
+    for (let i = st + n; i < a.length; i++) { e = (e * (n - 1) + a[i]) / n; out[i] = e; }
+    return out;
+  },
+  rsi(c, n) {
+    const up = [0], dn = [0];
+    for (let i = 1; i < c.length; i++) { const d = c[i] - c[i - 1]; up.push(d > 0 ? d : 0); dn.push(d < 0 ? -d : 0); }
+    const au = TA.wilder(up, n, 1), ad = TA.wilder(dn, n, 1);
+    return c.map((_, i) => (au[i] == null ? null : (ad[i] === 0 ? 100 : 100 - 100 / (1 + au[i] / ad[i]))));
+  },
+  macd(c) {
+    const e12 = TA.ema(c, 12), e26 = TA.ema(c, 26);
+    const line = c.map((_, i) => (e12[i] == null || e26[i] == null ? null : e12[i] - e26[i]));
+    const first = line.findIndex(x => x != null);
+    const sig = first < 0 ? line.map(() => null) : TA.ema(line.map(x => (x == null ? 0 : x)), 9, first);
+    return { line, sig, hist: line.map((x, i) => (x == null || sig[i] == null ? null : x - sig[i])) };
+  },
+  boll(c, n, k) {
+    const mid = TA.sma(c, n), up = [], lo = [];
+    for (let i = 0; i < c.length; i++) {
+      if (mid[i] == null) { up.push(null); lo.push(null); continue; }
+      let s = 0; for (let j = i - n + 1; j <= i; j++) s += (c[j] - mid[i]) * (c[j] - mid[i]);
+      const sd = Math.sqrt(s / n); up.push(mid[i] + k * sd); lo.push(mid[i] - k * sd);
+    }
+    return { mid, up, lo };
+  },
+  hi(a, n, i) { let m = -Infinity; for (let j = Math.max(0, i - n + 1); j <= i; j++) if (a[j] > m) m = a[j]; return m; },
+  lo(a, n, i) { let m = Infinity; for (let j = Math.max(0, i - n + 1); j <= i; j++) if (a[j] < m) m = a[j]; return m; },
+  stoch(h, l, c) { // 스토캐스틱 슬로우 (14, 3, 3)
+    const raw = c.map((x, i) => { if (i < 13) return null; const hh = TA.hi(h, 14, i), ll = TA.lo(l, 14, i); return hh === ll ? 50 : (x - ll) / (hh - ll) * 100; });
+    const avg3 = a => a.map((x, i) => (i < 2 || a[i - 2] == null || a[i - 1] == null || x == null ? null : (a[i - 2] + a[i - 1] + x) / 3));
+    const k = avg3(raw); return { k, d: avg3(k) };
+  },
+  atr(h, l, c, n) {
+    const tr = c.map((_, i) => (i === 0 ? h[0] - l[0] : Math.max(h[i] - l[i], Math.abs(h[i] - c[i - 1]), Math.abs(l[i] - c[i - 1]))));
+    return TA.wilder(tr, n, 1);
+  },
+  adx(h, l, c, n) { // 추세 강도. +DI, -DI 도 함께
+    const tr = [0], pdm = [0], mdm = [0];
+    for (let i = 1; i < c.length; i++) {
+      const upMove = h[i] - h[i - 1], dnMove = l[i - 1] - l[i];
+      pdm.push(upMove > dnMove && upMove > 0 ? upMove : 0);
+      mdm.push(dnMove > upMove && dnMove > 0 ? dnMove : 0);
+      tr.push(Math.max(h[i] - l[i], Math.abs(h[i] - c[i - 1]), Math.abs(l[i] - c[i - 1])));
+    }
+    const atr = TA.wilder(tr, n, 1), sp = TA.wilder(pdm, n, 1), sm = TA.wilder(mdm, n, 1);
+    const pdi = c.map((_, i) => (atr[i] ? sp[i] / atr[i] * 100 : null)), mdi = c.map((_, i) => (atr[i] ? sm[i] / atr[i] * 100 : null));
+    const dx = c.map((_, i) => (pdi[i] == null || mdi[i] == null ? null : (pdi[i] + mdi[i] === 0 ? 0 : Math.abs(pdi[i] - mdi[i]) / (pdi[i] + mdi[i]) * 100)));
+    const first = dx.findIndex(x => x != null);
+    const adx = first < 0 ? dx.map(() => null) : TA.wilder(dx.map(x => (x == null ? 0 : x)), n, first);
+    return { adx, pdi, mdi };
+  },
+  obv(c, v) { const out = [0]; for (let i = 1; i < c.length; i++) out.push(out[i - 1] + (c[i] > c[i - 1] ? v[i] : c[i] < c[i - 1] ? -v[i] : 0)); return out; },
+  ichimoku(h, l) { // 일목균형표: 전환선(9), 기준선(26), 선행스팬(26일 앞에 그림)
+    const mid = (n, i) => (i < n - 1 ? null : (TA.hi(h, n, i) + TA.lo(l, n, i)) / 2);
+    const ten = h.map((_, i) => mid(9, i)), kij = h.map((_, i) => mid(26, i));
+    const a = h.map((_, i) => (i < 26 || ten[i - 26] == null || kij[i - 26] == null ? null : (ten[i - 26] + kij[i - 26]) / 2));
+    const b = h.map((_, i) => (i < 26 ? null : mid(52, i - 26)));
+    return { ten, kij, a, b };
+  },
+};
+
+// --- 한 종목 분석: 지표 값, 점검표, 눈에 띄는 변화, 지지·저항 ---
+function stockAnalyze(it) {
+  if (it._a) return it._a;
+  const { o, h, l, c, v } = it, n = c.length, i = n - 1, p = i - 1;
+  const ma = {}; STOCK_MA.forEach(([k]) => { ma[k] = TA.sma(c, k); });
+  const rsi = TA.rsi(c, 14), macd = TA.macd(c), bb = TA.boll(c, 20, 2), st = TA.stoch(h, l, c), atr = TA.atr(h, l, c, 14);
+  const adx = TA.adx(h, l, c, 14), obv = TA.obv(c, v), ich = TA.ichimoku(h, l), vma = TA.sma(v, 20);
+  const last = c[i], prev = c[p], chg = last - prev, pct = prev ? chg / prev * 100 : 0;
+  const f = x => stockFmt(x, it), r1 = x => (Math.round(x * 10) / 10).toLocaleString('ko-KR');
+  const rows = [], events = [];
+  const crossUp = (a, b) => a[p] != null && b[p] != null && a[i] != null && b[i] != null && a[p] <= b[p] && a[i] > b[i];
+  const crossDn = (a, b) => a[p] != null && b[p] != null && a[i] != null && b[i] != null && a[p] >= b[p] && a[i] < b[i];
+
+  // 1) 이동평균 배열
+  if (ma[60][i] != null) {
+    const m5 = ma[5][i], m20 = ma[20][i], m60 = ma[60][i], m120 = ma[120][i];
+    const full = m120 != null;
+    const upOrder = m5 > m20 && m20 > m60 && (!full || m60 > m120), dnOrder = m5 < m20 && m20 < m60 && (!full || m60 < m120);
+    const side = upOrder ? 'up' : dnOrder ? 'down' : (last > m20 && last > m60 ? 'up' : last < m20 && last < m60 ? 'down' : 'flat');
+    rows.push({ title: '이동평균선', value: upOrder ? '정배열' : dnOrder ? '역배열' : '혼조', side,
+      text: upOrder ? '짧은 기간의 평균선이 긴 기간의 평균선 위에 차례로 놓여 있습니다.' : dnOrder ? '짧은 기간의 평균선이 긴 기간의 평균선 아래에 차례로 놓여 있습니다.' : `주가가 20일선(${f(m20)}) ${last >= m20 ? '위' : '아래'}, 60일선(${f(m60)}) ${last >= m60 ? '위' : '아래'}에 있습니다.`,
+      note: '정배열은 보통 오름세가 이어지는 모습으로, 역배열은 내림세가 이어지는 모습으로 봅니다.' });
+    if (crossUp(ma[5], ma[20])) events.push('5일선이 20일선을 위로 넘었습니다 (골든크로스)');
+    if (crossDn(ma[5], ma[20])) events.push('5일선이 20일선 아래로 내려갔습니다 (데드크로스)');
+    if (crossUp(ma[20], ma[60])) events.push('20일선이 60일선을 위로 넘었습니다 (중기 골든크로스)');
+    if (crossDn(ma[20], ma[60])) events.push('20일선이 60일선 아래로 내려갔습니다 (중기 데드크로스)');
+    if (crossUp(c, ma[20])) events.push('주가가 20일선 위로 올라섰습니다');
+    if (crossDn(c, ma[20])) events.push('주가가 20일선 아래로 내려갔습니다');
+    if (crossUp(c, ma[60])) events.push('주가가 60일선 위로 올라섰습니다');
+    if (crossDn(c, ma[60])) events.push('주가가 60일선 아래로 내려갔습니다');
+  }
+  // 2) 일목균형표
+  if (ich.a[i] != null && ich.b[i] != null) {
+    const top = Math.max(ich.a[i], ich.b[i]), bot = Math.min(ich.a[i], ich.b[i]);
+    const side = last > top ? 'up' : last < bot ? 'down' : 'flat';
+    rows.push({ title: '일목균형표', value: side === 'up' ? '구름 위' : side === 'down' ? '구름 아래' : '구름 안', side,
+      text: `구름대는 ${f(bot)} ~ ${f(top)}이고, 전환선(${f(ich.ten[i])})이 기준선(${f(ich.kij[i])}) ${ich.ten[i] >= ich.kij[i] ? '위' : '아래'}에 있습니다.`,
+      note: '주가가 구름 위에 있으면 오름세, 아래에 있으면 내림세로 보고, 구름 안은 방향이 뚜렷하지 않은 구간으로 봅니다.' });
+    const pt = Math.max(ich.a[p], ich.b[p]), pb = Math.min(ich.a[p], ich.b[p]);
+    if (ich.a[p] != null && prev <= pt && last > top) events.push('주가가 일목균형표 구름대 위로 올라섰습니다');
+    if (ich.a[p] != null && prev >= pb && last < bot) events.push('주가가 일목균형표 구름대 아래로 내려갔습니다');
+  }
+  // 3) 추세 강도 (ADX)
+  if (adx.adx[i] != null) {
+    const a = adx.adx[i], side = adx.pdi[i] > adx.mdi[i] ? 'up' : adx.pdi[i] < adx.mdi[i] ? 'down' : 'flat';
+    rows.push({ title: '추세 강도 (ADX)', value: r1(a), side: a >= 20 ? side : 'flat',
+      text: `${a >= 25 ? '추세가 뚜렷한 편입니다' : a >= 20 ? '추세가 생기는 단계로 봅니다' : '추세가 약한 편입니다'}. 상승 방향 힘(+DI ${r1(adx.pdi[i])})이 하락 방향 힘(-DI ${r1(adx.mdi[i])})보다 ${adx.pdi[i] >= adx.mdi[i] ? '큽니다' : '작습니다'}.`,
+      note: 'ADX는 방향이 아니라 추세의 세기를 봅니다. 보통 25 이상이면 추세가 뚜렷하고 20 아래면 횡보로 봅니다.' });
+  }
+  // 4) MACD
+  if (macd.hist[i] != null) {
+    const side = macd.line[i] > macd.sig[i] ? 'up' : 'down';
+    rows.push({ title: 'MACD', value: side === 'up' ? '시그널 위' : '시그널 아래', side,
+      text: `MACD가 시그널선 ${side === 'up' ? '위' : '아래'}에 있고, 기준선(0) ${macd.line[i] >= 0 ? '위' : '아래'}입니다.`,
+      note: 'MACD가 시그널선 위에 있으면 오르는 힘이, 아래에 있으면 내리는 힘이 우세한 것으로 봅니다.' });
+    if (crossUp(macd.line, macd.sig)) events.push('MACD가 시그널선을 위로 넘었습니다');
+    if (crossDn(macd.line, macd.sig)) events.push('MACD가 시그널선 아래로 내려갔습니다');
+  }
+  // 5) RSI
+  if (rsi[i] != null) {
+    const x = rsi[i];
+    rows.push({ title: 'RSI (14일)', value: r1(x), side: x >= 50 ? 'up' : 'down', flag: x >= 70 ? '과열 구간' : x <= 30 ? '침체 구간' : '',
+      text: x >= 70 ? '70 이상으로, 흔히 과열(과매수)로 보는 구간입니다.' : x <= 30 ? '30 이하로, 흔히 침체(과매도)로 보는 구간입니다.' : `중립 구간(30~70)이고 50 ${x >= 50 ? '위' : '아래'}입니다.`,
+      note: 'RSI는 최근 오른 폭과 내린 폭의 비율입니다. 70 이상은 과열, 30 이하는 침체로 보지만, 강한 추세에서는 그 상태가 오래가기도 합니다.' });
+    if (rsi[p] != null && rsi[p] < 70 && x >= 70) events.push('RSI가 70을 넘어 과열 구간에 들어섰습니다');
+    if (rsi[p] != null && rsi[p] > 30 && x <= 30) events.push('RSI가 30 아래로 내려가 침체 구간에 들어섰습니다');
+  }
+  // 6) 스토캐스틱
+  if (st.d[i] != null) {
+    const k = st.k[i], d = st.d[i];
+    rows.push({ title: '스토캐스틱', value: `${r1(k)} / ${r1(d)}`, side: k > d ? 'up' : k < d ? 'down' : 'flat', flag: k >= 80 ? '과열 구간' : k <= 20 ? '침체 구간' : '',
+      text: `%K가 %D ${k >= d ? '위' : '아래'}에 있습니다.${k >= 80 ? ' 80 이상으로 과열 구간입니다.' : k <= 20 ? ' 20 이하로 침체 구간입니다.' : ''}`,
+      note: '최근 14일 가격 범위에서 지금 가격이 어디쯤인지 봅니다. 80 이상은 과열, 20 이하는 침체로 봅니다.' });
+  }
+  // 7) 볼린저밴드
+  if (bb.up[i] != null) {
+    const pb = bb.up[i] === bb.lo[i] ? 0.5 : (last - bb.lo[i]) / (bb.up[i] - bb.lo[i]);
+    const width = bb.mid[i] ? (bb.up[i] - bb.lo[i]) / bb.mid[i] * 100 : 0;
+    rows.push({ title: '볼린저밴드', value: last > bb.up[i] ? '상단 위' : last < bb.lo[i] ? '하단 아래' : pb >= 0.8 ? '상단 근처' : pb <= 0.2 ? '하단 근처' : '밴드 안', side: last >= bb.mid[i] ? 'up' : 'down',
+      text: `밴드는 ${f(bb.lo[i])} ~ ${f(bb.up[i])}이고 중심선(${f(bb.mid[i])}) ${last >= bb.mid[i] ? '위' : '아래'}에 있습니다. 밴드 폭은 ${r1(width)}%입니다.`,
+      note: '가격은 대부분 밴드 안에서 움직입니다. 밴드를 벗어나면 움직임이 평소보다 크다는 뜻이고, 밴드 폭이 좁아지면 변동이 줄어든 상태로 봅니다.' });
+    if (c[p] <= bb.up[p] && last > bb.up[i]) events.push('볼린저밴드 상단을 넘었습니다');
+    if (c[p] >= bb.lo[p] && last < bb.lo[i]) events.push('볼린저밴드 하단 아래로 내려갔습니다');
+  }
+  // 8) 거래량 흐름 (OBV)
+  if (n > 21 && vma[i]) {
+    const ratio = v[i] / vma[i], side = obv[i] > obv[i - 20] ? 'up' : obv[i] < obv[i - 20] ? 'down' : 'flat';
+    rows.push({ title: '거래량', value: `평균의 ${r1(ratio)}배`, side,
+      text: `오늘 거래량은 20일 평균의 ${r1(ratio)}배입니다. 거래량 흐름(OBV)은 20일 전보다 ${side === 'up' ? '늘었습니다' : side === 'down' ? '줄었습니다' : '비슷합니다'}.`,
+      note: 'OBV는 오른 날의 거래량은 더하고 내린 날의 거래량은 빼서 쌓은 값입니다. 가격과 같은 방향이면 흐름에 힘이 실린 것으로 봅니다.' });
+    if (it.kind !== 'index' && ratio >= 2) events.push(`거래량이 20일 평균의 ${r1(ratio)}배로 늘었습니다`);
+  }
+  // 변동성 (ATR) — 방향 없음
+  const info = [];
+  if (atr[i] != null && last) info.push({ title: '하루 변동 폭 (ATR)', text: `최근 14일 동안 하루 평균 ${f(atr[i])}, 주가의 ${r1(atr[i] / last * 100)}%쯤 움직였습니다.` });
+  // 52주 고저
+  const span = Math.min(n, 250), hi52 = TA.hi(h, span, i), lo52 = TA.lo(l, span, i);
+  info.push({ title: `${span >= 250 ? '52주' : span + '일'} 범위`, text: `최고 ${f(hi52)}, 최저 ${f(lo52)}입니다. 지금은 최고가보다 ${r1((hi52 - last) / hi52 * 100)}% 낮고 최저가보다 ${r1((last - lo52) / lo52 * 100)}% 높습니다.` });
+  if (n > 60 && h[i] >= hi52 && TA.hi(h, span - 1, p) < h[i]) events.push(`${span >= 250 ? '52주' : span + '일'} 최고가를 새로 썼습니다`);
+  if (n > 60 && l[i] <= lo52 && TA.lo(l, span - 1, p) > l[i]) events.push(`${span >= 250 ? '52주' : span + '일'} 최저가를 새로 썼습니다`);
+  const big = it.kind === 'index' ? 2 : 5;
+  if (pct >= big) events.unshift(`하루 만에 ${r1(pct)}% 올랐습니다`);
+  if (pct <= -big) events.unshift(`하루 만에 ${r1(-pct)}% 내렸습니다`);
+  // 캔들 모양 (가장 최근 봉)
+  const body = Math.abs(c[i] - o[i]), range = h[i] - l[i], upW = h[i] - Math.max(o[i], c[i]), loW = Math.min(o[i], c[i]) - l[i];
+  let avgBody = 0; for (let j = Math.max(0, i - 20); j < i; j++) avgBody += Math.abs(c[j] - o[j]); avgBody /= Math.min(20, i) || 1;
+  const candle = [];
+  if (range > 0) {
+    if (l[i] > h[p]) candle.push('전날 고가보다 높게 시작해 틈(갭)을 두고 올랐습니다.');
+    if (h[i] < l[p]) candle.push('전날 저가보다 낮게 시작해 틈(갭)을 두고 내렸습니다.');
+    if (c[p] < o[p] && c[i] > o[i] && o[i] <= c[p] && c[i] >= o[p]) candle.push('전날 음봉을 감싸는 양봉(상승 장악형)입니다. 내림세 뒤에 나오면 분위기가 바뀌는 신호로 보기도 합니다.');
+    else if (c[p] > o[p] && c[i] < o[i] && o[i] >= c[p] && c[i] <= o[p]) candle.push('전날 양봉을 감싸는 음봉(하락 장악형)입니다. 오름세 뒤에 나오면 분위기가 바뀌는 신호로 보기도 합니다.');
+    else if (body <= range * 0.1) candle.push('시가와 종가가 거의 같은 도지형입니다. 사려는 힘과 팔려는 힘이 맞선 모습으로 봅니다.');
+    else if (loW >= body * 2 && upW <= body * 0.5) candle.push('아래꼬리가 긴 봉(망치형)입니다. 장중에 밀렸다가 되돌린 모습입니다.');
+    else if (upW >= body * 2 && loW <= body * 0.5) candle.push('위꼬리가 긴 봉입니다. 장중에 올랐다가 되밀린 모습입니다.');
+    else if (avgBody && body >= avgBody * 1.8 && body >= range * 0.7) candle.push(c[i] > o[i] ? '몸통이 평소보다 훨씬 긴 장대양봉입니다.' : '몸통이 평소보다 훨씬 긴 장대음봉입니다.');
+  }
+  // 지지·저항: 최근 120일의 꺾인 지점 가운데 지금 가격과 가까운 것
+  const piv = [], from = Math.max(5, n - 120);
+  for (let j = from; j < n - 5; j++) {
+    let isH = true, isL = true;
+    for (let q = j - 5; q <= j + 5; q++) { if (h[q] > h[j]) isH = false; if (l[q] < l[j]) isL = false; }
+    if (isH) piv.push(h[j]); if (isL) piv.push(l[j]);
+  }
+  const uniq = arr => arr.filter((x, k) => arr.findIndex(y => Math.abs(y - x) / x < 0.015) === k);
+  const sup = uniq(piv.filter(x => x < last * 0.995).sort((a, b) => b - a)).slice(0, 2), res = uniq(piv.filter(x => x > last * 1.005).sort((a, b) => a - b)).slice(0, 2);
+  const sum = { up: rows.filter(x => x.side === 'up').length, down: rows.filter(x => x.side === 'down').length, flat: rows.filter(x => x.side === 'flat').length };
+  // 기준별 사고파는 지점
+  const rules = STOCK_RULES.map(r => Object.assign({ rule: r }, stockRuleRun(it, { ma, rsi, macd }, r.id)));
+  const ruleEv = { rsi: { buy: 'RSI가 30 위로 되돌아왔습니다', sell: 'RSI가 70 아래로 되돌아왔습니다' }, brk: { buy: '종가가 직전 20일 최고가를 넘었습니다', sell: '종가가 직전 10일 최저가 아래로 내려갔습니다' } };
+  rules.forEach(x => { const e = ruleEv[x.rule.id]; if (e && x.today) events.push(`${e[x.today]} ('${x.rule.name}' 기준의 ${x.today === 'buy' ? '사는' : '파는'} 조건)`); });
+  it._a = { last, prev, chg, pct, rows, info, events, candle, sup, res, sum, rules, ma, rsi, macd, bb, ich, vma };
+  return it._a;
+}
+// 내 알림 가격에 닿았는지
+function stockTargetHits(it) {
+  const t = stockCfg && stockCfg.targets && stockCfg.targets[it.id];
+  if (!t) return [];
+  const last = it.c[it.c.length - 1], out = [];
+  if (typeof t.above === 'number' && last >= t.above) out.push(`내가 정한 가격 ${stockFmt(t.above, it)} 이상이 됐습니다`);
+  if (typeof t.below === 'number' && last <= t.below) out.push(`내가 정한 가격 ${stockFmt(t.below, it)} 이하가 됐습니다`);
+  return out;
+}
+function stockAllEvents() {
+  const out = [];
+  (stockData ? stockData.items : []).forEach(it => {
+    stockTargetHits(it).forEach(t => out.push({ it, text: t, mine: true }));
+    stockAnalyze(it).events.forEach(t => out.push({ it, text: t }));
+  });
+  return out;
+}
+function stockUpdatedText() {
+  if (!stockData || !stockData.updated_at) return '';
+  const d = new Date(stockData.updated_at);
+  if (isNaN(d.getTime())) return '';
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} 갱신`;
+}
+function stockPctHTML(a) { return `<span style="color:${a.chg > 0 ? STOCK_UP : a.chg < 0 ? STOCK_DOWN : 'var(--text-secondary)'};font-weight:700">${a.chg > 0 ? '▲' : a.chg < 0 ? '▼' : ''} ${Math.abs(a.pct).toFixed(2)}%</span>`; }
+
+// --- 홈 카드 ---
+function stockHomeHTML() {
+  if (!stockData) return '';
+  const ev = stockAllEvents();
+  return `<div class="hm-card" style="cursor:pointer" onclick="navigateTo('stocks')">
+    <div class="hm-top"><span class="hm-label">증권 차트</span><span class="hm-label" style="font-weight:500">${stockUpdatedText()}</span></div>
+    ${ev.length ? `<div class="br-list" style="margin-top:0">${ev.slice(0, 3).map(e => `<div class="br-row"><span class="br-key">${esc(e.it.name)}</span><span class="br-val">${esc(e.text)}</span></div>`).join('')}</div>
+      ${ev.length > 3 ? `<div class="hm-empty">그 밖에 ${ev.length - 3}건이 더 있습니다.</div>` : ''}` : '<div class="hm-empty">오늘 눈에 띄는 변화는 없습니다.</div>'}
+    <div style="text-align:right;margin-top:10px"><span class="hm-more">차트 보기 &rsaquo;</span></div>
+  </div>`;
+}
+
+// --- 목록 화면 ---
+function stockSpark(it) {
+  const c = it.c.slice(-60), min = Math.min(...c), max = Math.max(...c), w = 60, hh = 26;
+  const pts = c.map((x, k) => `${(k / (c.length - 1) * w).toFixed(1)},${(max === min ? hh / 2 : hh - (x - min) / (max - min) * hh).toFixed(1)}`).join(' ');
+  return `<svg width="${w}" height="${hh}" viewBox="0 0 ${w} ${hh}" style="flex-shrink:0"><polyline points="${pts}" fill="none" stroke="${c[c.length - 1] >= c[0] ? STOCK_UP : STOCK_DOWN}" stroke-width="1.5"/></svg>`;
+}
+async function renderStocks() {
+  if (stockSel && stockItem(stockSel)) { renderStockDetail(); return; }
+  stockSel = null;
+  if (!stockData) {
+    $('#mainContent').innerHTML = `<div class="page-header"><h2>증권 차트</h2></div><div class="hm-card"><div class="hm-empty">아직 시세 자료가 없습니다. 자료는 하루 몇 번 자동으로 받아옵니다. 잠시 뒤 다시 열어 보세요.</div></div>`;
+    return;
+  }
+  const ev = stockAllEvents();
+  const group = (title, list) => (list.length ? `<div class="hm-card"><div class="hm-top"><span class="hm-label">${title}</span></div>${list.map(it => {
+    const a = stockAnalyze(it);
+    return `<div class="st-row" onclick="stockOpen('${esc(it.id)}')">
+      <div style="flex:1;min-width:0"><div class="st-name">${esc(it.name)}</div><div class="st-sub" style="white-space:nowrap">상승 ${a.sum.up} · 하락 ${a.sum.down}</div></div>
+      ${stockSpark(it)}
+      <div class="st-price"><div>${stockFmt(a.last, it)}</div><div style="font-size:12px">${stockPctHTML(a)}</div></div>
+    </div>`;
+  }).join('')}</div>` : '');
+  const items = stockData.items;
+  $('#mainContent').innerHTML = `
+    <div class="page-header"><h2>증권 차트</h2><span class="item-meta">${stockUpdatedText()}</span></div>
+    <div class="hm-card">
+      <div class="hm-top"><span class="hm-label">눈에 띄는 변화</span><span class="hm-label" style="font-weight:500">가장 최근 거래일 기준</span></div>
+      ${ev.length ? `<div class="br-list" style="margin-top:0">${ev.map(e => `<div class="br-row" style="cursor:pointer" onclick="stockOpen('${esc(e.it.id)}')"><span class="br-key">${esc(e.it.name)}</span><span style="flex:1;min-width:0;${e.mine ? 'color:var(--primary);font-weight:600' : ''}">${esc(e.text)}</span></div>`).join('')}</div>` : '<div class="hm-empty">눈에 띄는 변화가 없습니다.</div>'}
+    </div>
+    ${group('지수', items.filter(x => x.kind === 'index'))}
+    ${group('국내 종목', items.filter(x => x.kind !== 'index' && x.market === 'KR'))}
+    ${group('해외 종목', items.filter(x => x.kind !== 'index' && x.market !== 'KR'))}
+    <p class="st-disc">지표는 지나간 가격을 계산해 정리한 것으로, 앞으로의 방향을 알려주지 않습니다. 투자 권유가 아닙니다. 시세는 ${esc(stockData.source || '외부 자료')}에서 하루 몇 번 받아오며 실제와 차이가 있을 수 있습니다. 종목을 더하거나 빼려면 Claude에게 말씀하세요.</p>`;
+}
+window.stockOpen = function(id) {
+  if (!stockItem(id)) return;
+  stockSel = id; currentPage = 'stocks';
+  $$('.tab-item').forEach(t => t.classList.remove('active'));
+  window.scrollTo(0, 0);
+  renderStockDetail();
+};
+window.stockBack = function() { stockSel = null; renderStocks(); };
+
+// --- 상세 화면 ---
+function stockPrefs() {
+  let p = {};
+  try { p = JSON.parse(localStorage.getItem('stockPrefs') || '{}') || {}; } catch (e) {}
+  return { range: [63, 126, 250].includes(p.range) ? p.range : (window.innerWidth < 600 ? 63 : 126), // 좁은 화면은 3개월부터
+     boll: !!p.boll, ichi: !!p.ichi, rule: STOCK_RULES.some(r => r.id === p.rule) ? p.rule : '' };
+}
+window.stockPref = function(key, val) {
+  const p = stockPrefs();
+  p[key] = key === 'range' ? val : key === 'rule' ? (p.rule === val ? '' : val) : !p[key];
+  try { localStorage.setItem('stockPrefs', JSON.stringify(p)); } catch (e) {}
+  renderStockDetail();
+  if (key === 'rule' && p.rule) { const box = $('#st-chart'); if (box) box.scrollIntoView({ block: 'center' }); }
+};
+function renderStockDetail() {
+  const it = stockItem(stockSel);
+  if (!it) { stockSel = null; renderStocks(); return; }
+  const a = stockAnalyze(it), p = stockPrefs(), hits = stockTargetHits(it);
+  const t = (stockCfg && stockCfg.targets && stockCfg.targets[it.id]) || {};
+  const sideTag = s => `<span class="st-side ${s}">${s === 'up' ? '상승 쪽' : s === 'down' ? '하락 쪽' : '중립'}</span>`;
+  const pc = x => `${x > 0 ? '+' : ''}${x.toFixed(1)}%`;
+  const dt = k => stockDate(it.d[k]);
+  const inCount = a.rules.filter(x => x.pos).length;
+  const shown = a.rules.find(x => x.rule.id === p.rule);
+  const ruleHTML = a.rules.map(x => {
+    const r = x.rule, on = p.rule === r.id;
+    const now = x.pos ? `${dt(x.pos.k)}에 사는 조건이 나왔고 아직 파는 조건은 나오지 않았습니다. 그날 종가 ${stockFmt(x.pos.price, it)}에서 지금까지 ${pc(x.openR * 100)}입니다.`
+      : x.lastSell != null ? `${dt(x.lastSell)}에 파는 조건이 나온 뒤로 사는 조건이 아직 나오지 않았습니다.` : '살펴본 기간에는 사는 조건이 나오지 않았습니다.';
+    const rec = x.trades.length || x.pos ? `최근 ${x.days}거래일 동안 이 기준대로만 했다면 ${x.trades.length}번 사고팔아 ${x.wins}번 이익이 났고, ${x.pos ? '지금 들고 있는 몫까지 ' : ''}합치면 ${pc(x.total)}입니다. 같은 기간 그냥 들고 있었다면 ${pc(x.hold)}입니다.` : `최근 ${x.days}거래일 동안 한 번도 조건이 나오지 않았습니다. 같은 기간 그냥 들고 있었다면 ${pc(x.hold)}입니다.`;
+    return `<details class="st-ind"><summary><span class="st-ind-t">${r.name}</span><span class="st-ind-v">${x.pos ? pc(x.openR * 100) : x.lastSell != null ? dt(x.lastSell) + ' 이후' : ''}</span><span class="st-side ${x.pos ? 'hold' : 'flat'}">${x.pos ? '보유 구간' : '기다리는 구간'}</span></summary>
+      <div class="st-ind-b"><div><b>사는 조건</b> ${r.buy}</div><div><b>파는 조건</b> ${r.sell}</div><div style="margin-top:6px"><b>지금</b> ${now}</div><div><b>지난 기록</b> ${rec}</div>
+      <div class="item-meta" style="margin-top:6px;line-height:1.6">${r.note}</div>
+      <button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="stockPref('rule', '${r.id}')">${on ? '차트 표시 끄기' : '차트에 표시'}</button></div></details>`;
+  }).join('');
+  const cost = typeof t.cost === 'number' ? t.cost : null;
+  $('#mainContent').innerHTML = `
+    <div class="page-header"><button class="btn btn-secondary btn-sm" onclick="stockBack()">&larr; 목록</button><span class="item-meta">${stockUpdatedText()}</span></div>
+    <div class="hm-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px">
+        <div><div class="st-name" style="font-size:18px">${esc(it.name)}</div><div class="st-sub">${esc(it.id)} · ${stockDate(it.d[it.d.length - 1])} 기준</div></div>
+        <div style="text-align:right"><div style="font-size:24px;font-weight:800;letter-spacing:-0.5px">${stockFmt(a.last, it)}</div><div style="font-size:13px">${stockPctHTML(a)} <span class="item-meta">(${a.chg > 0 ? '+' : ''}${stockFmt(a.chg, it)})</span></div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:14px 0 8px">
+        <span class="seg sm">${[[63, '3개월'], [126, '6개월'], [250, '1년']].map(r => `<button class="${p.range === r[0] ? 'on' : ''}" onclick="stockPref('range', ${r[0]})">${r[1]}</button>`).join('')}</span>
+        <span class="seg sm"><button class="${p.boll ? 'on' : ''}" onclick="stockPref('boll')">볼린저</button><button class="${p.ichi ? 'on' : ''}" onclick="stockPref('ichi')">일목</button></span>
+      </div>
+      <div id="st-info" class="st-info"></div>
+      <div id="st-chart" class="st-chart"></div>
+      <div class="st-legend">${STOCK_MA.map(m => `<span><i style="background:${m[1]}"></i>${m[0]}일선</span>`).join('')}${shown ? `<span><b style="color:${STOCK_UP}">▲</b> 사는 조건 <b style="color:${STOCK_DOWN}">▼</b> 파는 조건 (${shown.rule.name})</span>` : ''}${cost != null ? '<span><i style="background:var(--primary)"></i>내가 산 가격</span>' : ''}</div>
+      ${cost != null ? `<div class="st-ev" style="margin-top:10px"><b>내가 산 가격</b> ${stockFmt(cost, it)} · 지금까지 <span style="font-weight:700;color:${a.last > cost ? STOCK_UP : a.last < cost ? STOCK_DOWN : 'inherit'}">${pc((a.last / cost - 1) * 100)}</span></div>` : ''}
+    </div>
+    <div class="hm-card">
+      <div class="hm-top"><span class="hm-label">기준별 사고파는 지점</span><span class="hm-label" style="font-weight:500">보유 ${inCount} · 기다림 ${a.rules.length - inCount}</span></div>
+      ${ruleHTML}
+      <p class="item-meta" style="margin-top:12px;line-height:1.6">널리 알려진 매매 기준 네 가지를 조건 그대로 계산한 것입니다. 줄을 누르면 조건과 지난 기록이 나오고, "차트에 표시"를 누르면 그 기준에서 사는 날(▲)과 파는 날(▼)이 차트에 찍힙니다. 기준마다 답이 다르고, 지난 기록이 좋았다고 앞으로도 맞는 것은 아닙니다. 수수료와 세금은 넣지 않았습니다.</p>
+    </div>
+    ${hits.length || a.events.length ? `<div class="hm-card"><div class="hm-top"><span class="hm-label">눈에 띄는 변화</span></div>
+      ${hits.map(x => `<div class="st-ev" style="color:var(--primary);font-weight:600">${esc(x)}</div>`).join('')}${a.events.map(x => `<div class="st-ev">${esc(x)}</div>`).join('')}</div>` : ''}
+    <div class="hm-card">
+      <div class="hm-top"><span class="hm-label">지표 점검표</span><span class="hm-label" style="font-weight:500">상승 ${a.sum.up} · 하락 ${a.sum.down}${a.sum.flat ? ' · 중립 ' + a.sum.flat : ''}</span></div>
+      <div class="st-bar"><i style="flex:${a.sum.up};background:${STOCK_UP}"></i><i style="flex:${a.sum.flat};background:var(--border)"></i><i style="flex:${a.sum.down};background:${STOCK_DOWN}"></i></div>
+      ${a.rows.map(r => `<details class="st-ind"><summary><span class="st-ind-t">${r.title}</span><span class="st-ind-v">${esc(r.value)}${r.flag ? ` <span class="gc-tag">${r.flag}</span>` : ''}</span>${sideTag(r.side)}</summary>
+        <div class="st-ind-b">${esc(r.text)}<div class="item-meta" style="margin-top:6px;line-height:1.6">${r.note}</div></div></details>`).join('')}
+      <p class="item-meta" style="margin-top:12px;line-height:1.6">각 줄을 누르면 설명이 나옵니다. 지표끼리는 자주 엇갈리고, 같은 지표도 보는 사람에 따라 해석이 다릅니다.</p>
+    </div>
+    <div class="hm-card">
+      <div class="hm-top"><span class="hm-label">가격대와 봉 모양</span></div>
+      <div class="st-ev"><b>저항</b> ${a.res.length ? a.res.map(x => stockFmt(x, it)).join(', ') : '최근 넉 달 안에는 위쪽에 꺾인 자리가 없습니다'}</div>
+      <div class="st-ev"><b>지지</b> ${a.sup.length ? a.sup.map(x => stockFmt(x, it)).join(', ') : '최근 넉 달 안에는 아래쪽에 꺾인 자리가 없습니다'}</div>
+      ${a.info.map(x => `<div class="st-ev"><b>${x.title}</b> ${esc(x.text)}</div>`).join('')}
+      ${a.candle.map(x => `<div class="st-ev"><b>최근 봉</b> ${esc(x)}</div>`).join('')}
+      <p class="item-meta" style="margin-top:10px;line-height:1.6">지지와 저항은 최근 넉 달 동안 주가가 방향을 바꿨던 가격입니다. 그 근처에서 다시 멈추거나 되돌리는 일이 잦다고 봅니다.</p>
+    </div>
+    <div class="hm-card">
+      <div class="hm-top"><span class="hm-label">내 가격</span></div>
+      <div class="form-group"><label class="form-label">내가 산 가격 (평균)</label><input class="form-input" id="st-cost" type="number" inputmode="decimal" step="any" value="${cost != null ? cost : ''}" placeholder="적어 두면 차트에 선으로 표시합니다"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">이 가격 이상이면</label><input class="form-input" id="st-above" type="number" inputmode="decimal" step="any" value="${typeof t.above === 'number' ? t.above : ''}" placeholder="비워 두면 알림 없음"></div>
+        <div class="form-group"><label class="form-label">이 가격 이하이면</label><input class="form-input" id="st-below" type="number" inputmode="decimal" step="any" value="${typeof t.below === 'number' ? t.below : ''}" placeholder="비워 두면 알림 없음"></div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="stockSaveTarget()">저장</button>
+      <p class="item-meta" style="margin-top:10px;line-height:1.6">시세를 받아올 때마다 확인해서, 조건에 닿으면 홈과 이 화면의 눈에 띄는 변화에 표시합니다. 실시간 알림은 아닙니다.</p>
+    </div>
+    <p class="st-disc">지표는 지나간 가격을 계산해 정리한 것으로, 앞으로의 방향을 알려주지 않습니다. 투자 권유가 아니며 판단과 책임은 본인에게 있습니다.</p>`;
+  stockDrawChart();
+}
+window.stockSaveTarget = async function() {
+  const it = stockItem(stockSel);
+  if (!it) return;
+  const num = id => { const x = parseFloat(($('#' + id).value || '').trim()); return isFinite(x) && x > 0 ? x : null; };
+  const above = num('st-above'), below = num('st-below'), cost = num('st-cost');
+  if (above != null && below != null && below >= above) { toast('"이하" 가격은 "이상" 가격보다 낮아야 합니다'); return; }
+  const list = (await dbGetAll('memos')).filter(m => m.kind === 'stockcfg').sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
+  const cfg = list[0] || { kind: 'stockcfg', title: '증권 차트 설정', content: '', targets: {} };
+  cfg.targets = Object.assign({}, cfg.targets || {});
+  const none = above == null && below == null && cost == null;
+  if (none) delete cfg.targets[it.id]; else cfg.targets[it.id] = { above, below, cost };
+  stockCfg = cfg.id ? await dbPut('memos', cfg) : await dbAdd('memos', cfg);
+  toast(none ? '적어 둔 가격을 지웠습니다' : '저장했습니다');
+  renderStockDetail();
+};
+
+// --- 차트 그리기 (SVG): 봉 + 이동평균(+볼린저, 일목) / 거래량 / RSI / MACD ---
+function stockDrawChart() {
+  const it = stockItem(stockSel), box = $('#st-chart');
+  if (!it || !box) return;
+  const a = stockAnalyze(it), p = stockPrefs();
+  const N = it.c.length, n = Math.min(p.range, N), s0 = N - n;
+  const W = Math.max(200, Math.floor(box.getBoundingClientRect().width / uiZoomNow())), padR = Math.max(40, stockFmt(Math.max(...it.h), it).length * 5.6 + 10), plotW = W - padR, bw = plotW / n;
+  const H1 = 230, H2 = 54, H3 = 60, H4 = 60, gap = 14, y2 = H1 + gap, y3 = y2 + H2 + gap, y4 = y3 + H3 + gap, H = y4 + H4 + 18;
+  const X = k => (k - s0 + 0.5) * bw;
+  const vis = arr => arr.slice(s0);
+  const nums = arr => vis(arr).filter(x => x != null);
+  let lo = Math.min(...vis(it.l)), hi = Math.max(...vis(it.h));
+  const over = [];
+  if (p.boll) over.push(a.bb.up, a.bb.lo);
+  if (p.ichi) over.push(a.ich.a, a.ich.b);
+  over.forEach(arr => { const x = nums(arr); if (x.length) { lo = Math.min(lo, ...x); hi = Math.max(hi, ...x); } });
+  const rule = a.rules.find(x => x.rule.id === p.rule);
+  const padY = (hi - lo) * (rule ? 0.09 : 0.05) || hi * 0.01; lo -= padY; hi += padY;
+  const Y = v => (hi - v) / (hi - lo) * H1;
+  const line = (arr, color, w, yf, dash) => {
+    let d = '', pen = false;
+    for (let k = s0; k < N; k++) { if (arr[k] == null) { pen = false; continue; } d += (pen ? 'L' : 'M') + X(k).toFixed(1) + ' ' + yf(arr[k]).toFixed(1); pen = true; }
+    return d ? `<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}"${dash ? ' stroke-dasharray="3 3"' : ''}/>` : '';
+  };
+  let g = '';
+  // 가격 눈금
+  for (let q = 0; q <= 4; q++) { const v = lo + (hi - lo) * q / 4, y = Y(v); g += `<line x1="0" x2="${plotW}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--border-light)"/><text x="${plotW + 4}" y="${Math.max(8, y + 3).toFixed(1)}" class="st-ax">${stockFmt(v, it)}</text>`; }
+  // 달 표시
+  let lastM = '';
+  for (let k = s0; k < N; k++) { const m = it.d[k].slice(4, 6); if (m !== lastM) { if (lastM && X(k) < plotW - 18) g += `<line x1="${X(k).toFixed(1)}" x2="${X(k).toFixed(1)}" y1="0" y2="${H - 16}" stroke="var(--border-light)"/><text x="${(X(k) + 2).toFixed(1)}" y="${H - 4}" class="st-ax">${Number(m)}월</text>`; lastM = m; } }
+  // 일목 구름
+  if (p.ichi) {
+    let top = '', bot = '';
+    for (let k = s0; k < N; k++) { if (a.ich.a[k] == null || a.ich.b[k] == null) continue; top += `${top ? 'L' : 'M'}${X(k).toFixed(1)} ${Y(a.ich.a[k]).toFixed(1)}`; bot = `L${X(k).toFixed(1)} ${Y(a.ich.b[k]).toFixed(1)}` + bot; }
+    if (top) g += `<path d="${top}${bot}Z" fill="rgba(112,72,232,0.10)" stroke="none"/>`;
+    g += line(a.ich.ten, '#C2255C', 1, Y, true) + line(a.ich.kij, '#1098AD', 1, Y, true);
+  }
+  if (p.boll) g += line(a.bb.up, '#ADB5BD', 1, Y, true) + line(a.bb.lo, '#ADB5BD', 1, Y, true);
+  // 봉
+  const cw = Math.max(1, Math.min(9, bw * 0.7));
+  for (let k = s0; k < N; k++) {
+    const up = it.c[k] >= it.o[k], col = up ? STOCK_UP : STOCK_DOWN, x = X(k);
+    g += `<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${Y(it.h[k]).toFixed(1)}" y2="${Y(it.l[k]).toFixed(1)}" stroke="${col}" stroke-width="1"/>`;
+    if (cw >= 2) { const yt = Y(Math.max(it.o[k], it.c[k])), hb = Math.max(1, Y(Math.min(it.o[k], it.c[k])) - yt); g += `<rect x="${(x - cw / 2).toFixed(1)}" y="${yt.toFixed(1)}" width="${cw.toFixed(1)}" height="${hb.toFixed(1)}" fill="${col}"/>`; }
+  }
+  STOCK_MA.forEach(m => { g += line(a.ma[m[0]], m[1], 1.2, Y); });
+  // 내가 산 가격
+  const tg = (stockCfg && stockCfg.targets && stockCfg.targets[it.id]) || {};
+  if (typeof tg.cost === 'number' && tg.cost > lo && tg.cost < hi) g += `<line x1="0" x2="${plotW}" y1="${Y(tg.cost).toFixed(1)}" y2="${Y(tg.cost).toFixed(1)}" stroke="var(--primary)" stroke-width="1" stroke-dasharray="5 3"/>`;
+  // 고른 기준의 사는 날(▲) · 파는 날(▼)
+  if (rule) rule.marks.forEach(m => {
+    if (m.k < s0) return;
+    const x = X(m.k), buy = m.s === 'buy', y = buy ? Y(it.l[m.k]) + 4 : Y(it.h[m.k]) - 4, d = buy ? 9 : -9;
+    g += `<polygon points="${x.toFixed(1)},${y.toFixed(1)} ${(x - 5).toFixed(1)},${(y + d).toFixed(1)} ${(x + 5).toFixed(1)},${(y + d).toFixed(1)}" fill="${buy ? STOCK_UP : STOCK_DOWN}" stroke="var(--surface)" stroke-width="1"/>`;
+  });
+  // 거래량
+  const vmax = Math.max(...vis(it.v), 1), VY = v => y2 + H2 - v / vmax * H2;
+  for (let k = s0; k < N; k++) g += `<rect x="${(X(k) - cw / 2).toFixed(1)}" y="${VY(it.v[k]).toFixed(1)}" width="${cw.toFixed(1)}" height="${(y2 + H2 - VY(it.v[k])).toFixed(1)}" fill="${it.c[k] >= it.o[k] ? STOCK_UP : STOCK_DOWN}" opacity="0.55"/>`;
+  g += line(a.vma, '#868E96', 1, VY) + `<text x="2" y="${y2 + 9}" class="st-ax">거래량</text>`;
+  // RSI
+  const RY = v => y3 + H3 - v / 100 * H3;
+  g += `<rect x="0" y="${RY(70)}" width="${plotW}" height="${RY(30) - RY(70)}" fill="var(--bg)"/>` + [70, 30].map(v => `<line x1="0" x2="${plotW}" y1="${RY(v)}" y2="${RY(v)}" stroke="var(--border)" stroke-dasharray="3 3"/><text x="${plotW + 4}" y="${RY(v) + 3}" class="st-ax">${v}</text>`).join('');
+  g += line(a.rsi, '#7048E8', 1.2, RY) + `<text x="2" y="${y3 + 9}" class="st-ax">RSI</text>`;
+  // MACD
+  const mh = nums(a.macd.hist).concat(nums(a.macd.line), nums(a.macd.sig)), mm = Math.max(...mh.map(Math.abs), 1e-9), MY = v => y4 + H4 / 2 - v / mm * (H4 / 2);
+  g += `<line x1="0" x2="${plotW}" y1="${MY(0)}" y2="${MY(0)}" stroke="var(--border)"/>`;
+  for (let k = s0; k < N; k++) { const v = a.macd.hist[k]; if (v == null) continue; const y = MY(Math.max(v, 0)); g += `<rect x="${(X(k) - cw / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${cw.toFixed(1)}" height="${Math.max(0.5, Math.abs(MY(v) - MY(0))).toFixed(1)}" fill="${v >= 0 ? STOCK_UP : STOCK_DOWN}" opacity="0.5"/>`; }
+  g += line(a.macd.line, '#212529', 1.1, MY) + line(a.macd.sig, '#F08C00', 1.1, MY) + `<text x="2" y="${y4 + 9}" class="st-ax">MACD</text>`;
+  g += `<line id="st-cross" x1="0" x2="0" y1="0" y2="${H - 16}" stroke="var(--text-secondary)" stroke-dasharray="2 2" style="display:none"/>`;
+  box.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;touch-action:pan-y">${g}<rect x="0" y="0" width="${plotW}" height="${H - 16}" fill="transparent" onpointerdown="stockPoint(event)" onpointermove="stockPoint(event)"/></svg>`;
+  stockView = { s0, n, bw, W };
+  stockInfo(N - 1);
+}
+function stockInfo(k) {
+  const it = stockItem(stockSel), el = $('#st-info');
+  if (!it || !el || k < 0 || k >= it.c.length) return;
+  const d = it.d[k], pc = k > 0 ? it.c[k - 1] : it.o[k], pct = pc ? (it.c[k] - pc) / pc * 100 : 0;
+  el.innerHTML = `<b>${Number(d.slice(0, 4))}.${Number(d.slice(4, 6))}.${Number(d.slice(6, 8))}</b> 시 ${stockFmt(it.o[k], it)} · 고 ${stockFmt(it.h[k], it)} · 저 ${stockFmt(it.l[k], it)} · 종 <b>${stockFmt(it.c[k], it)}</b> <span style="color:${pct > 0 ? STOCK_UP : pct < 0 ? STOCK_DOWN : 'inherit'}">${pct > 0 ? '+' : ''}${pct.toFixed(2)}%</span> · 거래량 ${it.v[k].toLocaleString('ko-KR')}`;
+}
+window.stockPoint = function(ev) {
+  if (!stockView) return;
+  const svg = ev.currentTarget.ownerSVGElement, r = svg.getBoundingClientRect();
+  const x = (ev.clientX - r.left) * (stockView.W / (r.width || stockView.W));
+  const k = stockView.s0 + Math.max(0, Math.min(stockView.n - 1, Math.floor(x / stockView.bw)));
+  const cross = $('#st-cross'), cx = (k - stockView.s0 + 0.5) * stockView.bw;
+  if (cross) { cross.setAttribute('x1', cx); cross.setAttribute('x2', cx); cross.style.display = ''; }
+  stockInfo(k);
+};
+
 // === DASHBOARD (홈: 단색 · 단순) ===
 window.homeSchedToggle = async function(id) {
   await schedToggle(id, toLocalYMD(new Date()));
@@ -2659,6 +3251,7 @@ async function renderDashboard() {
     </div>` : ''}
     <div class="hm-word" id="hm-word">${dailyWordHTML()}</div>
     <div id="hm-brief">${briefCardHTML()}</div>
+    <div id="hm-stocks">${stockHomeHTML()}</div>
 
     <div class="hm-card hm-nums">
       <div onclick="homeGo('schedule')"><b>${schedules.length}</b><span>오늘 일정</span></div>
@@ -4861,9 +5454,10 @@ window.deleteItem = async function(store, id) {
 window.exportBackup = exportBackup;
 window.importBackup = importBackup;
 
-const APP_PAGES = ['dashboard', 'schedule', 'routine', 'scripture', 'prayer', 'diary', 'plans', 'ideas', 'sermons', 'memos', 'space', 'backup', 'bible'];
+const APP_PAGES = ['dashboard', 'schedule', 'routine', 'scripture', 'prayer', 'diary', 'plans', 'ideas', 'sermons', 'memos', 'space', 'stocks', 'backup', 'bible'];
 learnLoadExtra(); // 매주 더해지는 '오늘의 배움' 내용
 briefLoad();      // 매일 아침 올라오는 '아침 시황'
+stockLoad();      // 하루 몇 번 갱신되는 증권 시세
 (function start() {
   let resume = null;
   try { resume = JSON.parse(sessionStorage.getItem('appResume') || 'null'); sessionStorage.removeItem('appResume'); } catch (e) {}

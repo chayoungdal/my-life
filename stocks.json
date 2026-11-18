@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "note": "증권 차트에 보여줄 종목과 지수 목록. src 는 네이버 금융 차트 주소의 가운데 부분이다 (국내 종목 domestic/item/종목코드, 국내 지수 domestic/index/KOSPI, 해외 종목 foreign/item/AAPL.O, 해외 지수 foreign/index/.INX).",
+  "items": [
+    { "id": "KOSPI", "name": "코스피", "kind": "index", "market": "KR", "cur": "KRW", "src": "domestic/index/KOSPI" },
+    { "id": "KOSDAQ", "name": "코스닥", "kind": "index", "market": "KR", "cur": "KRW", "src": "domestic/index/KOSDAQ" },
+    { "id": "005930", "name": "삼성전자", "kind": "stock", "market": "KR", "cur": "KRW", "src": "domestic/item/005930" },
+    { "id": "000660", "name": "SK하이닉스", "kind": "stock", "market": "KR", "cur": "KRW", "src": "domestic/item/000660" },
+    { "id": ".INX", "name": "S&P 500", "kind": "index", "market": "US", "cur": "USD", "src": "foreign/index/.INX" },
+    { "id": ".IXIC", "name": "나스닥 종합", "kind": "index", "market": "US", "cur": "USD", "src": "foreign/index/.IXIC" },
+    { "id": ".DJI", "name": "다우존스", "kind": "index", "market": "US", "cur": "USD", "src": "foreign/index/.DJI" },
+    { "id": "NVDA.O", "name": "엔비디아", "kind": "stock", "market": "US", "cur": "USD", "src": "foreign/item/NVDA.O" },
+    { "id": "AAPL.O", "name": "애플", "kind": "stock", "market": "US", "cur": "USD", "src": "foreign/item/AAPL.O" }
+  ]
+}
