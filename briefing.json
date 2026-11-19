@@ -43,119 +43,16 @@
         }
       ],
       "sources": [
-        {
-          "name": "아시아경제",
-          "url": "https://view.asiae.co.kr/article/2026111806133130755"
-        },
-        {
-          "name": "서울데이터랩(네이트)",
-          "url": "https://m.news.nate.com/view/20261118n03038"
-        },
-        {
-          "name": "더페어",
-          "url": "https://www.thefairnews.co.kr/news/articleView.html?idxno=94571"
-        },
-        {
-          "name": "CNBC",
-          "url": "https://www.cnbc.com/2026/11/16/stock-market-today-live-updates.html"
-        },
-        {
-          "name": "EBN",
-          "url": "https://www.ebn.co.kr/news/articleView.html?idxno=1732157"
-        },
-        {
-          "name": "Businesskorea",
-          "url": "https://businesskorea.co.kr/news/articleView.html?idxno=281626"
-        },
-        {
-          "name": "라이센스뉴스",
-          "url": "https://www.lcnews.co.kr/news/articleView.html?idxno=211547"
-        },
-        {
-          "name": "파이낸셜뉴스",
-          "url": "https://www.fnnews.com/news/202611150129458878"
-        },
-        {
-          "name": "SBS",
-          "url": "https://news.sbs.co.kr/news/endPage.do?news_id=N1008846882"
-        },
-        {
-          "name": "서플",
-          "url": "https://supple.kr/news/cmwidoc80c81wal9pdsxpxns1"
-        }
-      ]
-    },
-    {
-      "date": "2026-11-19",
-      "made_at": "2026-11-19T22:23:43+09:00",
-      "headline": "뉴욕 다우 1.11% 하락·나스닥 소폭 상승, 코스피는 1.39% 올라 5,137 마감",
-      "sections": [
-        {
-          "title": "미국 증시",
-          "points": [
-            "18일(현지) 뉴욕증시는 혼조로 마감했습니다. 다우 50,198.17(-1.11%), S&P500 7,323.63(-0.23%), 나스닥 24,429.88(+0.42%)입니다.",
-            "엔비디아는 예상을 웃돈 실적에도 주가가 내렸습니다. 하락 폭은 매체에 따라 1.70%와 2.89%로 다르게 전해졌고, AI 투자의 수익성에 대한 우려가 부담이 됐다는 분석이 나왔습니다.",
-            "같은 날 공개된 10월 FOMC 의사록에서 연준 당국자 거의 전원이 앞으로 몇 달 안에 추가 금리 인상이 필요할 가능성이 크다고 본 것으로 나타나 투자심리를 눌렀습니다."
-          ]
-        },
-        {
-          "title": "한국 증시",
-          "points": [
-            "19일 코스피는 1.39% 오른 5,137.89에 마감했습니다. 수능일이라 개장과 마감이 1시간씩 늦춰진 날이었습니다.",
-            "코스닥은 22.00포인트(3.32%) 오른 684.81에 마감했습니다.",
-            "유가증권시장에서 기관이 약 190억 원을 순매수했고, 외국인은 약 4,000억 원, 개인은 약 650억 원을 순매도했습니다. 정확한 금액은 매체마다 조금씩 다릅니다.",
-            "코스닥에서는 외국인이 2,127억 원을 순매도했고 기관이 2,100억 원대를 순매수했습니다.",
-            "한중 FTA 기대로 엔터·여행주가 강세였다는 보도가 있었습니다."
-          ]
-        },
-        {
-          "title": "환율",
-          "points": [
-            "19일 원/달러 환율은 3.0원 내린 1,330.0원에 마감했습니다(오후 3시 30분 종가). 수출업체의 달러 매도 물량이 환율을 끌어내렸다는 분석입니다.",
-            "달러인덱스는 장중 103.970까지 올라 19개월 만의 최고치를 기록한 것으로 보도됐습니다."
-          ]
-        },
-        {
-          "title": "확인할 일정",
-          "points": [
-            "19일(현지): 앤트로픽의 나스닥 상장이 예정된 것으로 보도됐습니다. 한국 시각은 확인하지 못했습니다.",
-            "이 정리는 19일 저녁에 만들었습니다. 19일 밤 뉴욕장 결과는 20일 아침 정리에 담깁니다."
-          ]
-        }
-      ],
-      "sources": [
-        {
-          "name": "더퍼블릭",
-          "url": "https://www.thepublic.kr/news/articleView.html?idxno=327448"
-        },
-        {
-          "name": "서울경제TV",
-          "url": "https://www.sentv.co.kr/article/view/sentv202611190006"
-        },
-        {
-          "name": "블록미디어",
-          "url": "https://www.blockmedia.co.kr/archives/1167821"
-        },
-        {
-          "name": "아시아경제",
-          "url": "https://view.asiae.co.kr/article/2026111916492474833"
-        },
-        {
-          "name": "머니S",
-          "url": "https://www.sidae.com/article/2026111915545424861"
-        },
-        {
-          "name": "서울파이낸스",
-          "url": "https://www.seoulfn.com/news/articleView.html?idxno=643357"
-        },
-        {
-          "name": "서울경제",
-          "url": "https://www.sedaily.com/article/20116571"
-        },
-        {
-          "name": "네이버 금융(지수 종가)",
-          "url": "https://finance.naver.com/sise/"
-        }
+        { "name": "아시아경제", "url": "https://view.asiae.co.kr/article/2026111806133130755" },
+        { "name": "서울데이터랩(네이트)", "url": "https://m.news.nate.com/view/20261118n03038" },
+        { "name": "더페어", "url": "https://www.thefairnews.co.kr/news/articleView.html?idxno=94571" },
+        { "name": "CNBC", "url": "https://www.cnbc.com/2026/11/16/stock-market-today-live-updates.html" },
+        { "name": "EBN", "url": "https://www.ebn.co.kr/news/articleView.html?idxno=1732157" },
+        { "name": "Businesskorea", "url": "https://businesskorea.co.kr/news/articleView.html?idxno=281626" },
+        { "name": "라이센스뉴스", "url": "https://www.lcnews.co.kr/news/articleView.html?idxno=211547" },
+        { "name": "파이낸셜뉴스", "url": "https://www.fnnews.com/news/202611150129458878" },
+        { "name": "SBS", "url": "https://news.sbs.co.kr/news/endPage.do?news_id=N1008846882" },
+        { "name": "서플", "url": "https://supple.kr/news/cmwidoc80c81wal9pdsxpxns1" }
       ]
     }
   ]
