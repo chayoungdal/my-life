@@ -2618,7 +2618,7 @@ window.briefShow = function(i) {
   const made = (typeof d.made_at === 'string' && !isNaN(new Date(d.made_at).getTime())) ? new Date(d.made_at) : null;
   const madeText = made ? `${made.getMonth() + 1}/${made.getDate()} ${String(made.getHours()).padStart(2, '0')}:${String(made.getMinutes()).padStart(2, '0')} 정리` : '';
   showModal(`
-    <div class="modal-header"><span class="modal-title">아침 시황 · ${briefDateLabel(d.date)}</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="modal-header" style="justify-content:flex-start;gap:10px"><button class="btn btn-secondary btn-sm" style="flex-shrink:0" onclick="closeModal()">&larr; 뒤로</button><span class="modal-title" style="flex:1;min-width:0;font-size:16px">아침 시황 · ${briefDateLabel(d.date)}</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
     <div style="max-height:62vh;overflow-y:auto">
       <div style="font-size:17px;font-weight:700;line-height:1.55;word-break:keep-all;overflow-wrap:anywhere">${esc(d.headline)}</div>
       ${madeText ? `<div class="item-meta" style="margin-top:4px">${madeText}</div>` : ''}
@@ -2979,7 +2979,7 @@ async function renderStocks() {
   if (stockSel && stockItem(stockSel)) { renderStockDetail(); return; }
   stockSel = null;
   if (!stockData) {
-    $('#mainContent').innerHTML = `<div class="page-header"><h2>증권 차트</h2></div><div class="hm-card"><div class="hm-empty">아직 시세 자료가 없습니다. 자료는 하루 몇 번 자동으로 받아옵니다. 잠시 뒤 다시 열어 보세요.</div></div>`;
+    $('#mainContent').innerHTML = `<div class="page-header"><div style="display:flex;align-items:center;gap:10px"><button class="btn btn-secondary btn-sm" onclick="navigateTo('dashboard')">&larr; 홈</button><h2 style="font-size:20px">증권 차트</h2></div></div><div class="hm-card"><div class="hm-empty">아직 시세 자료가 없습니다. 자료는 하루 몇 번 자동으로 받아옵니다. 잠시 뒤 다시 열어 보세요.</div></div>`;
     return;
   }
   const ev = stockAllEvents();
@@ -2993,7 +2993,7 @@ async function renderStocks() {
   }).join('')}</div>` : '');
   const items = stockData.items;
   $('#mainContent').innerHTML = `
-    <div class="page-header"><h2>증권 차트</h2><span class="item-meta">${stockUpdatedText()}</span></div>
+    <div class="page-header"><div style="display:flex;align-items:center;gap:10px"><button class="btn btn-secondary btn-sm" onclick="navigateTo('dashboard')">&larr; 홈</button><h2 style="font-size:20px">증권 차트</h2></div><span class="item-meta">${stockUpdatedText()}</span></div>
     <div class="hm-card">
       <div class="hm-top"><span class="hm-label">눈에 띄는 변화</span><span class="hm-label" style="font-weight:500">가장 최근 거래일 기준</span></div>
       ${ev.length ? `<div class="br-list" style="margin-top:0">${ev.map(e => `<div class="br-row" style="cursor:pointer" onclick="stockOpen('${esc(e.it.id)}')"><span class="br-key">${esc(e.it.name)}</span><span style="flex:1;min-width:0;${e.mine ? 'color:var(--primary);font-weight:600' : ''}">${stockSigTag(e.sig)}${esc(e.text)}</span></div>`).join('')}</div>` : '<div class="hm-empty">눈에 띄는 변화가 없습니다.</div>'}
@@ -3095,6 +3095,7 @@ function renderStockDetail() {
       <button class="btn btn-primary btn-sm" onclick="stockSaveTarget()">저장</button>
       <p class="item-meta" style="margin-top:10px;line-height:1.6">시세를 받아올 때마다 확인해서, 조건에 닿으면 홈과 이 화면의 눈에 띄는 변화에 표시합니다. 실시간 알림은 아닙니다.</p>
     </div>
+    <div style="margin:4px 0 14px"><button class="btn btn-secondary btn-sm" onclick="stockBack()">&larr; 목록으로</button></div>
     <p class="st-disc">지표는 지나간 가격을 계산해 정리한 것으로, 앞으로의 방향을 알려주지 않습니다. 투자 권유가 아니며 판단과 책임은 본인에게 있습니다.</p>`;
   stockDrawChart();
 }
