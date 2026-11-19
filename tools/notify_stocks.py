@@ -132,7 +132,7 @@ def last_final_index(it, now):
             break
         day = datetime.datetime.strptime(it['d'][k], '%Y%m%d').replace(tzinfo=KST)
         if it.get('market') == 'KR':
-            done = day + datetime.timedelta(hours=15, minutes=40)          # 한국 장 마감 15:30
+            done = day + datetime.timedelta(hours=20, minutes=5)           # 한국은 정규장 15:30 뒤 시간외 거래(20:00까지)가 끝나야 종가가 굳는다
         else:
             done = day + datetime.timedelta(days=1, hours=6, minutes=15)   # 미국 장 마감은 한국 시간 다음 날 05:00~06:00
         if now >= done:

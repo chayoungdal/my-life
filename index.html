@@ -3018,16 +3018,78 @@ window.stockOpen = function(id) {
 window.stockBack = function() { stockSel = null; renderStocks(); };
 
 // --- 상세 화면 ---
+// 봉 단위: 일봉(봉 하나 = 하루), 주봉(한 주), 월봉(한 달). key 는 그 단위에서 보여줄 봉 개수를 담는 설정 이름
+const STOCK_UNITS = {
+  d: { name: '일봉', key: 'range', word: '일', ranges: [[21, '1개월'], [63, '3개월'], [126, '6개월'], [250, '1년']] },
+  w: { name: '주봉', key: 'rangeW', word: '주', ranges: [[52, '1년'], [104, '2년'], [156, '3년']] },
+  m: { name: '월봉', key: 'rangeM', word: '개월', ranges: [[24, '2년'], [36, '3년'], [60, '5년']] },
+};
+// 주봉·월봉은 더 긴 기간이 필요해서 따로 둔 파일(stocks-long.json)을 처음 고를 때 읽는다
+let stockLong = null, stockLongAsked = false, stockLongAt = '';
+const STOCK_LONG_RAW_URL = 'https://raw.githubusercontent.com/chayoungdal/my-life/main/stocks-long.json';
+function stockValidSeries(s) {
+  if (!s || !Array.isArray(s.d) || s.d.length < 2 || s.d.length > 2000) return false;
+  const n = s.d.length;
+  return ['o', 'h', 'l', 'c', 'v'].every(k => Array.isArray(s[k]) && s[k].length === n && s[k].every(x => typeof x === 'number' && isFinite(x)))
+    && s.d.every(x => typeof x === 'string' && /^\d{8}$/.test(x));
+}
+function stockLoadLong() {
+  if (stockLongAsked) return;
+  stockLongAsked = true;
+  let left = 2;
+  ['./stocks-long.json', STOCK_LONG_RAW_URL].forEach(url => {
+    fetch(url, { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).then(data => {
+      if (!data || !Array.isArray(data.items) || typeof data.updated_at !== 'string' || data.updated_at <= stockLongAt) return;
+      const map = {};
+      data.items.forEach(x => { if (x && typeof x.id === 'string') map[x.id] = { w: stockValidSeries(x.w) ? x.w : null, m: stockValidSeries(x.m) ? x.m : null }; });
+      stockLongAt = data.updated_at; stockLong = map;
+      (stockData ? stockData.items : []).forEach(it => { it._u = null; });
+      if (currentPage === 'stocks' && stockSel && stockPrefs().unit !== 'd' && $('#st-chart')) stockDrawChart();
+    }).catch(() => {}).then(() => { if (--left === 0 && !stockLong) stockLongAsked = false; }); // 둘 다 못 받았으면 다음에 다시 시도
+  });
+}
+// 긴 자료가 아직 없을 때는 일봉을 묶어서 주봉·월봉을 만든다 (기간은 짧다)
+function stockAgg(it, unit) {
+  const out = { d: [], o: [], h: [], l: [], c: [], v: [] };
+  let key = null;
+  for (let k = 0; k < it.d.length; k++) {
+    const d = it.d[k];
+    let kk = d.slice(0, 6);
+    if (unit === 'w') { const t = Date.UTC(+d.slice(0, 4), +d.slice(4, 6) - 1, +d.slice(6, 8)) / 86400000; kk = String(t - (new Date(t * 86400000).getUTCDay() + 6) % 7); } // 그 주 월요일
+    if (kk !== key) { key = kk; out.d.push(d); out.o.push(it.o[k]); out.h.push(it.h[k]); out.l.push(it.l[k]); out.c.push(it.c[k]); out.v.push(it.v[k]); }
+    else { const j = out.d.length - 1; out.d[j] = d; out.h[j] = Math.max(out.h[j], it.h[k]); out.l[j] = Math.min(out.l[j], it.l[k]); out.c[j] = it.c[k]; out.v[j] += it.v[k]; }
+  }
+  return out;
+}
+// 고른 봉 단위의 가격 묶음(S)과 그 단위로 계산한 지표(a). 기준별 사고파는 지점(rules)은 일봉에만 있다
+function stockUnitView(it, unit) {
+  if (unit === 'd' || !STOCK_UNITS[unit]) { const a = stockAnalyze(it); return { S: it, a, rules: a.rules }; }
+  it._u = it._u || {};
+  if (!it._u[unit]) {
+    const S = (stockLong && stockLong[it.id] && stockLong[it.id][unit]) || stockAgg(it, unit);
+    const ma = {}; STOCK_MA.forEach(([k]) => { ma[k] = TA.sma(S.c, k); });
+    it._u[unit] = { S, a: { ma, rsi: TA.rsi(S.c, 14), macd: TA.macd(S.c), bb: TA.boll(S.c, 20, 2), ich: TA.ichimoku(S.h, S.l), vma: TA.sma(S.v, 20) }, rules: [] };
+  }
+  return it._u[unit];
+}
 function stockPrefs() {
   let p = {};
   try { p = JSON.parse(localStorage.getItem('stockPrefs') || '{}') || {}; } catch (e) {}
-  return { range: [21, 63, 126, 250].includes(p.range) ? p.range : (window.innerWidth < 600 ? 63 : 126), // 좁은 화면은 3개월부터
-     boll: !!p.boll, ichi: !!p.ichi, rule: STOCK_RULES.some(r => r.id === p.rule) ? p.rule : '' };
+  const narrow = window.innerWidth < 600; // 좁은 화면은 짧은 기간부터
+  return { unit: STOCK_UNITS[p.unit] ? p.unit : 'd',
+    range: [21, 63, 126, 250].includes(p.range) ? p.range : (narrow ? 63 : 126),
+    rangeW: [52, 104, 156].includes(p.rangeW) ? p.rangeW : (narrow ? 52 : 104),
+    rangeM: [24, 36, 60].includes(p.rangeM) ? p.rangeM : 60,
+    boll: !!p.boll, ichi: !!p.ichi, rule: STOCK_RULES.some(r => r.id === p.rule) ? p.rule : '' };
 }
 window.stockPref = function(key, val) {
   const p = stockPrefs();
-  p[key] = key === 'range' ? val : key === 'rule' ? (p.rule === val ? '' : val) : !p[key];
+  if (key === 'range') p[STOCK_UNITS[p.unit].key] = val;
+  else if (key === 'unit') p.unit = STOCK_UNITS[val] ? val : 'd';
+  else if (key === 'rule') { p.rule = p.rule === val ? '' : val; if (p.rule) p.unit = 'd'; } // 기준 표시는 일봉에서만
+  else p[key] = !p[key];
   try { localStorage.setItem('stockPrefs', JSON.stringify(p)); } catch (e) {}
+  if (p.unit !== 'd') stockLoadLong();
   renderStockDetail();
   if (key === 'rule' && p.rule) { const box = $('#st-chart'); if (box) box.scrollIntoView({ block: 'center' }); }
 };
@@ -3040,7 +3102,8 @@ function renderStockDetail() {
   const pc = x => `${x > 0 ? '+' : ''}${x.toFixed(1)}%`;
   const dt = k => stockDate(it.d[k]);
   const inCount = a.rules.filter(x => x.pos).length;
-  const shown = a.rules.find(x => x.rule.id === p.rule);
+  const shown = p.unit === 'd' ? a.rules.find(x => x.rule.id === p.rule) : null;
+  const U = STOCK_UNITS[p.unit];
   const ruleHTML = a.rules.map(x => {
     const r = x.rule, on = p.rule === r.id;
     const now = x.pos ? `${dt(x.pos.k)}에 사는 조건이 나왔고 아직 파는 조건은 나오지 않았습니다. 그날 종가 ${stockFmt(x.pos.price, it)}에서 지금까지 ${pc(x.openR * 100)}입니다.`
@@ -3060,15 +3123,16 @@ function renderStockDetail() {
         <div style="text-align:right"><div style="font-size:24px;font-weight:800;letter-spacing:-0.5px">${stockFmt(a.last, it)}</div><div style="font-size:13px">${stockPctHTML(a)} <span class="item-meta">(${a.chg > 0 ? '+' : ''}${stockFmt(a.chg, it)})</span></div></div>
       </div>
       <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:14px 0 8px">
-        <span class="seg sm">${[[21, '1개월'], [63, '3개월'], [126, '6개월'], [250, '1년']].map(r => `<button class="${p.range === r[0] ? 'on' : ''}" onclick="stockPref('range', ${r[0]})">${r[1]}</button>`).join('')}</span>
+        <span class="seg sm">${Object.keys(STOCK_UNITS).map(k => `<button class="${p.unit === k ? 'on' : ''}" onclick="stockPref('unit', '${k}')">${STOCK_UNITS[k].name}</button>`).join('')}</span>
         <span class="seg sm"><button class="${p.boll ? 'on' : ''}" onclick="stockPref('boll')">볼린저</button><button class="${p.ichi ? 'on' : ''}" onclick="stockPref('ichi')">일목</button></span>
       </div>
+      <div style="margin:0 0 8px"><span class="seg sm">${U.ranges.map(r => `<button class="${p[U.key] === r[0] ? 'on' : ''}" onclick="stockPref('range', ${r[0]})">${r[1]}</button>`).join('')}</span></div>
       <div id="st-info" class="st-info"></div>
       <div id="st-chart" class="st-chart"></div>
-      <div class="st-legend">${STOCK_MA.map(m => `<span><i style="background:${m[1]}"></i>${m[0]}일선</span>`).join('')}${shown ? `<span><b style="color:${STOCK_UP}">▲</b> 사는 조건 <b style="color:${STOCK_DOWN}">▼</b> 파는 조건 (${shown.rule.name})</span>` : ''}${cost != null ? '<span><i style="background:var(--primary)"></i>내가 산 가격</span>' : ''}</div>
+      <div class="st-legend">${STOCK_MA.map(m => `<span><i style="background:${m[1]}"></i>${m[0]}${U.word}선</span>`).join('')}${shown ? `<span><b style="color:${STOCK_UP}">▲</b> 사는 조건 <b style="color:${STOCK_DOWN}">▼</b> 파는 조건 (${shown.rule.name})</span>` : ''}${cost != null ? '<span><i style="background:var(--primary)"></i>내가 산 가격</span>' : ''}</div>
       ${cost != null ? `<div class="st-ev" style="margin-top:10px"><b>내가 산 가격</b> ${stockFmt(cost, it)} · 지금까지 <span style="font-weight:700;color:${a.last > cost ? STOCK_UP : a.last < cost ? STOCK_DOWN : 'inherit'}">${pc((a.last / cost - 1) * 100)}</span></div>` : ''}
       <div style="margin-top:12px"><a class="btn btn-secondary btn-sm" style="text-decoration:none" href="${esc(stockNaverUrl(it))}" target="_blank" rel="noopener">네이버 증권에서 실시간 보기 &#8599;</a></div>
-      <p class="item-meta" style="margin-top:8px;line-height:1.6">이 화면의 그래프는 하루를 봉 하나로 그린 일봉이고, 시세는 하루 4번 받아옵니다. 지금 이 순간의 가격과 오늘 하루의 움직임은 네이버 증권에서 볼 수 있습니다.</p>
+      <p class="item-meta" style="margin-top:8px;line-height:1.6">일봉은 봉 하나가 하루, 주봉은 한 주, 월봉은 한 달입니다.${p.unit !== 'd' ? ' 주봉·월봉은 그래프만 바뀌고, 아래 점검표와 기준별 사고파는 지점은 일봉 기준 그대로입니다.' : ''} 시세는 하루 4번 받아옵니다. 지금 이 순간의 가격과 오늘 하루의 움직임은 네이버 증권에서 볼 수 있습니다.</p>
     </div>
     <div class="hm-card">
       <div class="hm-top"><span class="hm-label">기준별 사고파는 지점</span><span class="hm-label" style="font-weight:500">보유 ${inCount} · 기다림 ${a.rules.length - inCount}</span></div>
@@ -3126,19 +3190,19 @@ window.stockSaveTarget = async function() {
 function stockDrawChart() {
   const it = stockItem(stockSel), box = $('#st-chart');
   if (!it || !box) return;
-  const a = stockAnalyze(it), p = stockPrefs();
-  const N = it.c.length, n = Math.min(p.range, N), s0 = N - n;
-  const W = Math.max(200, Math.floor(box.getBoundingClientRect().width / uiZoomNow())), padR = Math.max(40, stockFmt(Math.max(...it.h), it).length * 5.6 + 10), plotW = W - padR, bw = plotW / n;
+  const p = stockPrefs(), U = STOCK_UNITS[p.unit], uv = stockUnitView(it, p.unit), S = uv.S, a = uv.a;
+  const N = S.c.length, n = Math.min(p[U.key], N), s0 = N - n;
+  const W = Math.max(200, Math.floor(box.getBoundingClientRect().width / uiZoomNow())), padR = Math.max(40, stockFmt(Math.max(...S.h), it).length * 5.6 + 10), plotW = W - padR, bw = plotW / n;
   const H1 = 230, H2 = 54, H3 = 60, H4 = 60, gap = 14, y2 = H1 + gap, y3 = y2 + H2 + gap, y4 = y3 + H3 + gap, H = y4 + H4 + 18;
   const X = k => (k - s0 + 0.5) * bw;
   const vis = arr => arr.slice(s0);
   const nums = arr => vis(arr).filter(x => x != null);
-  let lo = Math.min(...vis(it.l)), hi = Math.max(...vis(it.h));
+  let lo = Math.min(...vis(S.l)), hi = Math.max(...vis(S.h));
   const over = [];
   if (p.boll) over.push(a.bb.up, a.bb.lo);
   if (p.ichi) over.push(a.ich.a, a.ich.b);
   over.forEach(arr => { const x = nums(arr); if (x.length) { lo = Math.min(lo, ...x); hi = Math.max(hi, ...x); } });
-  const rule = a.rules.find(x => x.rule.id === p.rule);
+  const rule = uv.rules.find(x => x.rule.id === p.rule);
   const padY = (hi - lo) * (rule ? 0.09 : 0.05) || hi * 0.01; lo -= padY; hi += padY;
   const Y = v => (hi - v) / (hi - lo) * H1;
   const line = (arr, color, w, yf, dash) => {
@@ -3149,9 +3213,12 @@ function stockDrawChart() {
   let g = '';
   // 가격 눈금
   for (let q = 0; q <= 4; q++) { const v = lo + (hi - lo) * q / 4, y = Y(v); g += `<line x1="0" x2="${plotW}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--border-light)"/><text x="${plotW + 4}" y="${Math.max(8, y + 3).toFixed(1)}" class="st-ax">${stockFmt(v, it)}</text>`; }
-  // 달 표시
+  // 달 표시 (주봉·월봉은 해 표시)
   let lastM = '';
-  for (let k = s0; k < N; k++) { const m = it.d[k].slice(4, 6); if (m !== lastM) { if (lastM && X(k) < plotW - 18) g += `<line x1="${X(k).toFixed(1)}" x2="${X(k).toFixed(1)}" y1="0" y2="${H - 16}" stroke="var(--border-light)"/><text x="${(X(k) + 2).toFixed(1)}" y="${H - 4}" class="st-ax">${Number(m)}월</text>`; lastM = m; } }
+  for (let k = s0; k < N; k++) {
+    const m = p.unit === 'd' ? S.d[k].slice(4, 6) : S.d[k].slice(0, 4);
+    if (m !== lastM) { if (lastM && X(k) < plotW - 18) g += `<line x1="${X(k).toFixed(1)}" x2="${X(k).toFixed(1)}" y1="0" y2="${H - 16}" stroke="var(--border-light)"/><text x="${(X(k) + 2).toFixed(1)}" y="${H - 4}" class="st-ax">${p.unit === 'd' ? Number(m) + '월' : m + '년'}</text>`; lastM = m; }
+  }
   // 일목 구름
   if (p.ichi) {
     let top = '', bot = '';
@@ -3163,9 +3230,9 @@ function stockDrawChart() {
   // 봉
   const cw = Math.max(1, Math.min(9, bw * 0.7));
   for (let k = s0; k < N; k++) {
-    const up = it.c[k] >= it.o[k], col = up ? STOCK_UP : STOCK_DOWN, x = X(k);
-    g += `<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${Y(it.h[k]).toFixed(1)}" y2="${Y(it.l[k]).toFixed(1)}" stroke="${col}" stroke-width="1"/>`;
-    if (cw >= 2) { const yt = Y(Math.max(it.o[k], it.c[k])), hb = Math.max(1, Y(Math.min(it.o[k], it.c[k])) - yt); g += `<rect x="${(x - cw / 2).toFixed(1)}" y="${yt.toFixed(1)}" width="${cw.toFixed(1)}" height="${hb.toFixed(1)}" fill="${col}"/>`; }
+    const up = S.c[k] >= S.o[k], col = up ? STOCK_UP : STOCK_DOWN, x = X(k);
+    g += `<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${Y(S.h[k]).toFixed(1)}" y2="${Y(S.l[k]).toFixed(1)}" stroke="${col}" stroke-width="1"/>`;
+    if (cw >= 2) { const yt = Y(Math.max(S.o[k], S.c[k])), hb = Math.max(1, Y(Math.min(S.o[k], S.c[k])) - yt); g += `<rect x="${(x - cw / 2).toFixed(1)}" y="${yt.toFixed(1)}" width="${cw.toFixed(1)}" height="${hb.toFixed(1)}" fill="${col}"/>`; }
   }
   STOCK_MA.forEach(m => { g += line(a.ma[m[0]], m[1], 1.2, Y); });
   // 내가 산 가격
@@ -3174,12 +3241,12 @@ function stockDrawChart() {
   // 고른 기준의 사는 날(▲) · 파는 날(▼)
   if (rule) rule.marks.forEach(m => {
     if (m.k < s0) return;
-    const x = X(m.k), buy = m.s === 'buy', y = buy ? Y(it.l[m.k]) + 4 : Y(it.h[m.k]) - 4, d = buy ? 9 : -9;
+    const x = X(m.k), buy = m.s === 'buy', y = buy ? Y(S.l[m.k]) + 4 : Y(S.h[m.k]) - 4, d = buy ? 9 : -9;
     g += `<polygon points="${x.toFixed(1)},${y.toFixed(1)} ${(x - 5).toFixed(1)},${(y + d).toFixed(1)} ${(x + 5).toFixed(1)},${(y + d).toFixed(1)}" fill="${buy ? STOCK_UP : STOCK_DOWN}" stroke="var(--surface)" stroke-width="1"/>`;
   });
   // 거래량
-  const vmax = Math.max(...vis(it.v), 1), VY = v => y2 + H2 - v / vmax * H2;
-  for (let k = s0; k < N; k++) g += `<rect x="${(X(k) - cw / 2).toFixed(1)}" y="${VY(it.v[k]).toFixed(1)}" width="${cw.toFixed(1)}" height="${(y2 + H2 - VY(it.v[k])).toFixed(1)}" fill="${it.c[k] >= it.o[k] ? STOCK_UP : STOCK_DOWN}" opacity="0.55"/>`;
+  const vmax = Math.max(...vis(S.v), 1), VY = v => y2 + H2 - v / vmax * H2;
+  for (let k = s0; k < N; k++) g += `<rect x="${(X(k) - cw / 2).toFixed(1)}" y="${VY(S.v[k]).toFixed(1)}" width="${cw.toFixed(1)}" height="${(y2 + H2 - VY(S.v[k])).toFixed(1)}" fill="${S.c[k] >= S.o[k] ? STOCK_UP : STOCK_DOWN}" opacity="0.55"/>`;
   g += line(a.vma, '#868E96', 1, VY) + `<text x="2" y="${y2 + 9}" class="st-ax">거래량</text>`;
   // RSI
   const RY = v => y3 + H3 - v / 100 * H3;
@@ -3192,14 +3259,15 @@ function stockDrawChart() {
   g += line(a.macd.line, '#212529', 1.1, MY) + line(a.macd.sig, '#F08C00', 1.1, MY) + `<text x="2" y="${y4 + 9}" class="st-ax">MACD</text>`;
   g += `<line id="st-cross" x1="0" x2="0" y1="0" y2="${H - 16}" stroke="var(--text-secondary)" stroke-dasharray="2 2" style="display:none"/>`;
   box.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;touch-action:pan-y">${g}<rect x="0" y="0" width="${plotW}" height="${H - 16}" fill="transparent" onpointerdown="stockPoint(event)" onpointermove="stockPoint(event)"/></svg>`;
-  stockView = { s0, n, bw, W };
+  stockView = { s0, n, bw, W, S, unit: p.unit };
   stockInfo(N - 1);
 }
 function stockInfo(k) {
-  const it = stockItem(stockSel), el = $('#st-info');
-  if (!it || !el || k < 0 || k >= it.c.length) return;
-  const d = it.d[k], pc = k > 0 ? it.c[k - 1] : it.o[k], pct = pc ? (it.c[k] - pc) / pc * 100 : 0;
-  el.innerHTML = `<b>${Number(d.slice(0, 4))}.${Number(d.slice(4, 6))}.${Number(d.slice(6, 8))}</b> 시 ${stockFmt(it.o[k], it)} · 고 ${stockFmt(it.h[k], it)} · 저 ${stockFmt(it.l[k], it)} · 종 <b>${stockFmt(it.c[k], it)}</b> <span style="color:${pct > 0 ? STOCK_UP : pct < 0 ? STOCK_DOWN : 'inherit'}">${pct > 0 ? '+' : ''}${pct.toFixed(2)}%</span> · 거래량 ${it.v[k].toLocaleString('ko-KR')}`;
+  const it = stockItem(stockSel), el = $('#st-info'), S = (stockView && stockView.S) || it, unit = (stockView && stockView.unit) || 'd';
+  if (!it || !el || k < 0 || k >= S.c.length) return;
+  const d = S.d[k], pc = k > 0 ? S.c[k - 1] : S.o[k], pct = pc ? (S.c[k] - pc) / pc * 100 : 0;
+  const when = unit === 'm' ? `${Number(d.slice(0, 4))}년 ${Number(d.slice(4, 6))}월` : `${Number(d.slice(0, 4))}.${Number(d.slice(4, 6))}.${Number(d.slice(6, 8))}${unit === 'w' ? '까지 한 주' : ''}`;
+  el.innerHTML = `<b>${when}</b> 시 ${stockFmt(S.o[k], it)} · 고 ${stockFmt(S.h[k], it)} · 저 ${stockFmt(S.l[k], it)} · 종 <b>${stockFmt(S.c[k], it)}</b> <span style="color:${pct > 0 ? STOCK_UP : pct < 0 ? STOCK_DOWN : 'inherit'}">${pct > 0 ? '+' : ''}${pct.toFixed(2)}%</span> · 거래량 ${S.v[k].toLocaleString('ko-KR')}`;
 }
 window.stockPoint = function(ev) {
   if (!stockView) return;

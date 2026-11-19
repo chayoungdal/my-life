@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """관심 종목의 일봉 시세를 받아 stocks-data.json 을 만든다.
+같은 자료를 한 주·한 달씩 묶어 주봉·월봉용 stocks-long.json 도 만든다.
 
 - 무엇을 받을지는 stocks.json 에 적는다 (종목·지수 목록).
 - 자료는 네이버 금융의 차트 API에서 받는다. 공식 공개 API가 아니어서 형식이 바뀌면 이 스크립트를 고쳐야 한다.
@@ -21,7 +22,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 API = 'https://api.stock.naver.com/chart/%s/day?startDateTime=%s&endDateTime=%s'
 UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36'
 KEEP_ROWS = 320       # 종목마다 남겨 두는 거래일 수 (120일선과 52주 고저를 계산할 만큼)
-FETCH_DAYS = 500      # 이만큼의 달력 날짜를 요청한다
+KEEP_WEEKS = 160      # 주봉으로 남겨 두는 주 수 (3년쯤)
+KEEP_MONTHS = 60      # 월봉으로 남겨 두는 달 수 (5년)
+FETCH_DAYS = 1900     # 이만큼의 달력 날짜를 요청한다 (월봉 5년치를 만들 만큼)
 MIN_ROWS = 30         # 이보다 적게 오면 잘못 받은 것으로 본다
 KST = datetime.timezone(datetime.timedelta(hours=9))
 SRC_PREFIXES = ('domestic/item/', 'domestic/index/', 'foreign/item/', 'foreign/index/')
@@ -60,9 +63,34 @@ def to_columns(rows):
         for k, val in (('o', o), ('h', h), ('l', l), ('c', c)):
             out[k].append(round(val, 4))
         out['v'].append(v)
-    for k in out:
-        out[k] = out[k][-KEEP_ROWS:]
     return out
+
+
+def tail(cols, n):
+    return {k: v[-n:] for k, v in cols.items()}
+
+
+def group(cols, unit, keep):
+    """일봉을 한 주('w') 또는 한 달('m')씩 묶는다. 날짜는 그 묶음의 마지막 거래일이다. 앱의 stockAgg 와 같은 방식."""
+    out = {'d': [], 'o': [], 'h': [], 'l': [], 'c': [], 'v': []}
+    last = None
+    for i, d in enumerate(cols['d']):
+        if unit == 'm':
+            key = d[:6]
+        else:
+            day = datetime.date(int(d[:4]), int(d[4:6]), int(d[6:8]))
+            key = (day - datetime.timedelta(days=day.weekday())).isoformat()  # 그 주 월요일
+        if key != last:
+            last = key
+            for k in out:
+                out[k].append(cols[k][i])
+        else:
+            out['d'][-1] = d
+            out['h'][-1] = max(out['h'][-1], cols['h'][i])
+            out['l'][-1] = min(out['l'][-1], cols['l'][i])
+            out['c'][-1] = cols['c'][i]
+            out['v'][-1] += cols['v'][i]
+    return tail(out, keep)
 
 
 def main():
@@ -73,6 +101,7 @@ def main():
         print('오류: stocks.json 을 읽을 수 없습니다:', e)
         return 1
     out_path = os.path.join(ROOT, 'stocks-data.json')
+    long_path = os.path.join(ROOT, 'stocks-long.json')
     old = {}
     try:
         with open(out_path, encoding='utf-8') as f:
@@ -80,11 +109,18 @@ def main():
         old = {it['id']: it for it in prev.get('items', [])}
     except Exception:
         prev = None
+    old_long = {}
+    try:
+        with open(long_path, encoding='utf-8') as f:
+            prev_long = json.load(f)
+        old_long = {it['id']: it for it in prev_long.get('items', [])}
+    except Exception:
+        prev_long = None
 
     today = datetime.datetime.now(KST)
     start = (today - datetime.timedelta(days=FETCH_DAYS)).strftime('%Y%m%d')
     end = today.strftime('%Y%m%d')
-    items, ok, failed = [], 0, []
+    items, long_items, ok, failed = [], [], 0, []
     for w in watch:
         wid, name, src = str(w.get('id', '')), str(w.get('name', '')), str(w.get('src', ''))
         if not wid or not name or not src.startswith(SRC_PREFIXES) or any(ch in src for ch in '?#&% '):
@@ -95,7 +131,8 @@ def main():
             cols = to_columns(fetch(src, start, end))
             if len(cols['d']) < MIN_ROWS:
                 raise ValueError('자료가 %d일치뿐입니다' % len(cols['d']))
-            base.update(cols)
+            long_items.append({'id': wid, 'w': group(cols, 'w', KEEP_WEEKS), 'm': group(cols, 'm', KEEP_MONTHS)})
+            base.update(tail(cols, KEEP_ROWS))
             items.append(base)
             ok += 1
         except Exception as e:
@@ -104,6 +141,8 @@ def main():
                 keep = dict(old[wid])
                 keep.update({'name': name, 'kind': base['kind'], 'market': base['market'], 'cur': base['cur']})
                 items.append(keep)
+            if wid in old_long:
+                long_items.append(old_long[wid])
         time.sleep(0.4)  # 서버에 부담을 주지 않도록 천천히
 
     if ok == 0:
@@ -121,6 +160,12 @@ def main():
             json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
             f.write('\n')
         print('저장함: %d개 종목 (새로 받음 %d개)' % (len(items), ok))
+    if not (prev_long is not None and prev_long.get('items') == long_items):
+        data = {'version': 1, 'updated_at': today.strftime('%Y-%m-%dT%H:%M:%S+09:00'), 'source': '네이버 금융', 'items': long_items}
+        with open(long_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
+            f.write('\n')
+        print('주봉·월봉 저장함: %d개 종목' % len(long_items))
     for f_ in failed:
         print('받지 못함:', f_)
     return 0

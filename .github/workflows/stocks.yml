@@ -1,4 +1,4 @@
-# 증권 차트에 쓰는 시세(stocks-data.json)를 하루 몇 번 받아서 저장소에 올리고,
+# 증권 차트에 쓰는 시세(stocks-data.json, 주봉·월봉용 stocks-long.json)를 하루 몇 번 받아서 저장소에 올리고,
 # 장이 끝난 뒤 사는 조건·파는 조건이 나온 종목을 휴대폰 알림으로 보낸다.
 # 시간은 UTC 기준이다 (한국 시간 = UTC + 9시간).
 name: 증권 시세 받기
@@ -8,6 +8,7 @@ on:
     - cron: '10 22 * * 1-5'   # 한국 화~토 07:10 — 미국 장 마감 뒤
     - cron: '30 1,4 * * 1-5'  # 한국 월~금 10:30, 13:30 — 한국 장중
     - cron: '0 7 * * 1-5'     # 한국 월~금 16:00 — 한국 장 마감 뒤
+    - cron: '20 11 * * 1-5'   # 한국 월~금 20:20 — 시간외 거래까지 끝난 뒤 (국내 알림은 이때 나간다)
   workflow_dispatch:
 
 permissions:
@@ -32,13 +33,14 @@ jobs:
         run: python3 tools/notify_stocks.py
       - name: 바뀐 내용 올리기
         run: |
-          if [ -z "$(git status --porcelain -- stocks-data.json stocks-notified.json)" ]; then
+          if [ -z "$(git status --porcelain -- stocks-data.json stocks-long.json stocks-notified.json)" ]; then
             echo "변경 없음"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add stocks-data.json
+          if [ -f stocks-long.json ]; then git add stocks-long.json; fi
           if [ -f stocks-notified.json ]; then git add stocks-notified.json; fi
           git commit -m "증권 시세 갱신"
           git pull --rebase origin main
