@@ -1,6 +1,9 @@
 {
 "version": 1,
 "sent": [
+".DJI|20261119|move",
+".INX|20261119|move",
+".IXIC|20261119|move",
 "000660|20261118|move",
 "005930|20261119|macd|buy",
 "005935|20261118|move",
@@ -16,8 +19,10 @@
 "143240|20261118|macd|buy",
 "143240|20261119|move",
 "267260|20261119|move",
+"AAPL.O|20261119|macd|sell",
 "KOSDAQ|20261119|macd|buy",
 "KOSDAQ|20261119|move",
-"KOSPI|20261119|macd|buy"
+"KOSPI|20261119|macd|buy",
+"TSLA.O|20261119|ma|sell"
 ]
 }
