@@ -3,7 +3,9 @@
 "sent": [
 ".DJI|20261119|move",
 ".INX|20261119|move",
+".INX|20261120|move",
 ".IXIC|20261119|move",
+".IXIC|20261120|move",
 "000660|20261118|move",
 "000660|20261120|move",
 "005380|20261120|move",
@@ -42,6 +44,10 @@
 "KOSPI|20261119|macd|buy",
 "KOSPI|20261120|macd|sell",
 "KOSPI|20261120|move",
-"TSLA.O|20261119|ma|sell"
+"NVDA.O|20261120|move",
+"SPCX.O|20261120|macd|sell",
+"SPCX.O|20261120|move",
+"TSLA.O|20261119|ma|sell",
+"TSLA.O|20261120|move"
 ]
 }
