@@ -341,6 +341,124 @@
           "url": "https://m.news.nate.com/view/20261123n00298"
         }
       ]
+    },
+    {
+      "date": "2026-11-24",
+      "made_at": "2026-11-24T07:33:24+09:00",
+      "headline": "젠슨 황 복귀에 나스닥 6.51% 급반등, 코스피는 전날 3.31% 내린 4,708",
+      "sections": [
+        {
+          "title": "미국 증시",
+          "points": [
+            "23일(월, 현지) 뉴욕 3대 지수가 크게 반등했습니다. 다우 49,595.31(+3.01%), S&P500 7,237.17(+4.73%), 나스닥 24,089.56(+6.51%)입니다. 나스닥은 2025년 4월 이후 가장 많이 오른 하루였다고 보도됐습니다.",
+            "엔비디아 이사회가 12일 사임했던 젠슨 황을 CEO로 복귀시켰다고 발표하자 엔비디아가 31.48% 오른 165.05달러에 마감했고, 반도체·AI주 전반이 급등했습니다. 지난주 급락분을 상당 부분 되돌린 셈입니다.",
+            "변동성지수(VIX)는 25% 넘게 떨어졌습니다. 다만 엔비디아 이사회는 황 CEO 관련 독립조사를 계속 진행하기로 했고, SEC의 회계 조사 보도에 대한 공식 설명은 아직 없습니다.",
+            "장 마감 뒤 줌은 분기 조정 주당순이익 1.59달러(예상 1.49달러), 매출 12억 9,000만 달러로 예상을 웃돌았고 첫 분기 배당(주당 0.25달러)을 발표했습니다. 시간외 주가는 거의 움직이지 않았습니다."
+          ]
+        },
+        {
+          "title": "한국 증시",
+          "points": [
+            "어제(23일) 코스피는 3.31% 내린 4,708.54, 코스닥은 1.58% 내린 635.45에 마감했습니다. 코스피는 장중 4,586.80까지 밀렸다가 낙폭을 줄였고, 코스닥 종가는 2년 만에 가장 낮은 수준이라고 보도됐습니다.",
+            "유가증권시장에서 외국인이 2,472억 원을 순매도해 7거래일 연속 팔았고, 개인도 3,669억 원을 순매도했습니다. 기관은 1,872억 원을 순매수했습니다. 매체에 따라 수급 금액이 조금씩 다르게 전해졌습니다.",
+            "오전 11시 33분 매도 사이드카가 발동돼 이틀 연속 발동됐습니다. 삼성전자는 3.06% 내린 177,500원, SK하이닉스는 2.52% 내린 1,085,000원에 마감했습니다.",
+            "오늘은 뉴욕 증시가 급반등한 뒤 처음 열리는 장이고, 상장사의 하루 자사주 매수 한도 완화가 오늘부터 3개월간 적용됩니다."
+          ]
+        },
+        {
+          "title": "환율·금리·원자재",
+          "points": [
+            "23일 원/달러 환율은 9.7원 오른 1,345.9원에 마감했습니다(오후 3시 30분 종가). 이틀 연속 올랐습니다.",
+            "미국 국채 10년물 금리는 23일 4.92~4.95% 안팎으로 매체에 따라 다르게 전해졌습니다. 금요일보다 소폭 내렸다는 보도와 올랐다는 보도가 섞여 있습니다.",
+            "WTI는 23일 배럴당 80.17달러로 3.88% 내려 8월 말 이후 가장 낮았습니다. 중동 공급 차질 우려가 줄고 공급 과잉 전망이 부각된 영향이라고 보도됐습니다.",
+            "국제 금값은 12월물 기준 온스당 3,651.40달러로 3.87% 올라 지난주 급락분을 일부 되돌렸습니다."
+          ]
+        },
+        {
+          "title": "확인할 일정",
+          "points": [
+            "오늘(24일) 한국은행이 오전 6시에 11월 소비자동향조사를 발표하고, 미국에서는 11월 컨퍼런스보드 소비자신뢰지수가 한국시간 25일 0시에 나옵니다. 애널로그디바이스·베스트바이 실적은 오늘 밤 미국 장 전, 델·오토데스크·HP·워크데이 실적은 한국시간 25일 새벽 장 마감 뒤에 나옵니다.",
+            "내일(25일) 한국은 11월 기업경기조사·경제심리지수가 나오고, 미국은 10월 PCE 물가, 3분기 GDP 수정치, 주간 실업수당 청구가 한국시간 25일 밤 10시 30분에 발표됩니다. 연준 베이지북은 26일 새벽 4시입니다.",
+            "26일(목) 한국은행 금통위가 올해 마지막 기준금리를 결정합니다. 증권가에서는 연 3.00%에서 3.25%로 올릴 것이라는 전망이 우세하지만 동결 가능성을 열어둔 의견도 있습니다. 수정 경제전망도 함께 나옵니다.",
+            "미국 증시는 26일 추수감사절 휴장, 27일은 조기 폐장입니다."
+          ]
+        },
+        {
+          "title": "주요 뉴스",
+          "points": [
+            "엔비디아 이사회가 만장일치로 젠슨 황을 CEO에 즉시 복직시켰습니다. 황 CEO는 12일 사임했고 그동안 콜레트 크레스 CFO가 임시 CEO를 맡았습니다. 이사회는 황 CEO가 외국 정보기관의 표적이 됐는지에 대한 독립조사는 계속하기로 했습니다.",
+            "정부는 증권시장안정펀드를 바로 가동할 수 있도록 준비 중이며, 실제 투입 시점과 규모는 정해지지 않았습니다. 불법 공매도 특별 감시도 3개월간 이어집니다.",
+            "WTI가 80달러 선까지 내려오면서 유가 부담은 줄었지만, 달러 지수는 2025년 3월 이후 가장 높은 수준으로 올랐다고 보도됐습니다.",
+            "미국 12월 FOMC를 앞두고 시장은 금리 인상 가능성을 높게 보고 있으며, 이번 주 PCE 물가가 인상 폭을 가늠할 변수로 꼽힙니다."
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "name": "서울신문 서울데이터랩(뉴욕증시)",
+          "url": "https://seoul.co.kr/news/economy/securities/2026/11/24/20261124500006"
+        },
+        {
+          "name": "야후파이낸스(뉴욕증시)",
+          "url": "https://finance.yahoo.com/markets/live/stock-market-today-monday-november-23-dow-sp-500-nasdaq-surge-after-nvidia-reinstates-jensen-huang-182039397.html"
+        },
+        {
+          "name": "모틀리풀(엔비디아 종가)",
+          "url": "https://www.fool.com/coverage/stock-market-today/2026/11/23/stock-market-today-nov-23-nvidia-surges-31-adding-nearly-usd1-trillion-in-market-value-as-jensen-huang-reclaims-ceo-role/"
+        },
+        {
+          "name": "네이트뉴스(젠슨 황 복귀)",
+          "url": "https://m.news.nate.com/view/20261124n00205"
+        },
+        {
+          "name": "CNBC(줌 실적)",
+          "url": "https://cnbc.com/2026/11/23/stocks-moving-the-most-today-live-updates.html"
+        },
+        {
+          "name": "헤럴드경제(국내 마감)",
+          "url": "https://biz.heraldcorp.com/article/10946429"
+        },
+        {
+          "name": "스트레이트뉴스(수급)",
+          "url": "https://www.straightnews.co.kr/news/articleView.html?idxno=315979"
+        },
+        {
+          "name": "인포스탁데일리(코스닥)",
+          "url": "https://www.infostockdaily.co.kr/news/articleView.html?idxno=219069"
+        },
+        {
+          "name": "아시아경제(환율)",
+          "url": "https://view.asiae.co.kr/article/2026112315391264636"
+        },
+        {
+          "name": "investingLive(WTI)",
+          "url": "https://investinglive.com/commodities/crude-oil-settles-at-80-17-trades-at-its-lowest-level-since-august-26/"
+        },
+        {
+          "name": "Investrade(금·유가)",
+          "url": "https://investrade.com/market-review-november-23-2026/"
+        },
+        {
+          "name": "Babypips(금리·달러)",
+          "url": "https://babypips.com/news/daily-financial-forex-market-recap-2026-11-23"
+        },
+        {
+          "name": "Kiplinger(경제일정)",
+          "url": "https://www.kiplinger.com/investing/economy/this-weeks-economic-calendar"
+        },
+        {
+          "name": "Benzinga(실적일정)",
+          "url": "https://www.benzinga.com/news/26/11/63560430/dell-analog-devices-on-deck-tuesday-as-ai-demand-and-guidance-face-test"
+        },
+        {
+          "name": "헤럴드경제(금통위)",
+          "url": "https://biz.heraldcorp.com/article/10945990"
+        },
+        {
+          "name": "네이트뉴스(증안펀드)",
+          "url": "https://m.news.nate.com/view/20261122n14017"
+        }
+      ]
     }
   ]
 }
