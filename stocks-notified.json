@@ -71,8 +71,10 @@
 "KOSPI|20261124|move",
 "NVDA.O|20261120|move",
 "NVDA.O|20261123|move",
+"NVDA.O|20261124|move",
 "SPCX.O|20261120|macd|sell",
 "SPCX.O|20261120|move",
+"SPCX.O|20261124|move",
 "TSLA.O|20261119|ma|sell",
 "TSLA.O|20261120|move",
 "TSLA.O|20261123|move"
