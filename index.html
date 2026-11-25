@@ -742,6 +742,25 @@ body.se-unfrozen .se-frozen::before, body.se-unfrozen .se-topbar::before, body.s
 .st-side.down { color: #1C6DD0; background: rgba(28,109,208,0.09); }
 .st-side.flat { color: var(--text-secondary); background: var(--bg); }
 .st-side.hold { color: var(--primary); background: var(--primary-light); }
+/* 운동 */
+.ft-prog { height: 6px; border-radius: 3px; background: var(--border-light); overflow: hidden; }
+.ft-prog i { display: block; height: 100%; background: var(--text); border-radius: 3px; }
+.ft-line { display: flex; justify-content: space-between; gap: 8px; margin: 12px 0 5px; font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.ft-row { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid var(--border-light); cursor: pointer; }
+.ft-name { font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+.ft-kcal { flex: 0 0 auto; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ft-week { display: flex; gap: 6px; align-items: stretch; margin-bottom: 4px; }
+.ft-col { flex: 1; min-width: 0; text-align: center; cursor: pointer; }
+.ft-colbar { height: 72px; display: flex; align-items: flex-end; justify-content: center; border-radius: 6px; background: var(--bg); overflow: hidden; }
+.ft-colbar i { display: block; width: 100%; background: var(--text-secondary); opacity: 0.55; }
+.ft-col.on .ft-colbar i { background: var(--text); opacity: 1; }
+.ft-collab { margin-top: 5px; font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+.ft-col.on .ft-collab { color: var(--text); }
+.ft-colnum { height: 14px; font-size: 10px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.ft-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ft-chip { border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 7px 12px; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; font-family: inherit; }
+.ft-chip.on { background: var(--text); border-color: var(--text); color: var(--surface); }
+.ft-est { margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: var(--bg); font-size: 15px; line-height: 1.6; }
 .tab-item .tab-icon svg { width: 22px; height: 22px; display: block; }
 @media (min-width: 768px) {
   .hm-hello { font-size: 32px; }
@@ -773,6 +792,8 @@ body.se-unfrozen .se-frozen::before, body.se-unfrozen .se-topbar::before, body.s
   <button class="drawer-item" data-nav="plans"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg></span> 계획</button>
   <button class="drawer-item" data-nav="ideas"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 18h5M10.5 21h3M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z"/></svg></span> 아이디어</button>
   <button class="drawer-item" data-nav="memos"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8.5L19 8v12.5H6z"/><path d="M14 3.5V8h5M9 12.5h6M9 16h6"/></svg></span> 메모</button>
+  <div class="drawer-section">건강</div>
+  <button class="drawer-item" data-nav="fitness"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 8v8M3.5 10v4M17.5 8v8M20.5 10v4M6.5 12h11"/></svg></span> 운동</button>
   <div class="drawer-section">투자</div>
   <button class="drawer-item" data-nav="stocks"><span class="di-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16"/><path d="M7.5 15l3.5-4 3 2.5 4.5-6"/></svg></span> 증권 차트</button>
   <div class="drawer-section">데이터</div>
@@ -1483,6 +1504,7 @@ window.navigateTo = function(page) {
   if (typeof memoFlush === 'function') memoFlush(); // 메모 작성 중이면 먼저 저장
   currentPage = page;
   if (page === 'stocks') stockSel = null; // 메뉴로 들어오면 목록부터
+  if (page === 'fitness') fitDate = null;  // 메뉴로 들어오면 오늘부터
   closeDrawer();
   const tabMap = { dashboard: 0, schedule: 1, scripture: 2, diary: 3 };
   const idx = tabMap[page];
@@ -1526,6 +1548,7 @@ async function renderPage() {
     memos: renderMemos,
     space: renderSpace,
     stocks: renderStocks,
+    fitness: renderFitness,
     backup: renderBackup,
     bible: renderBibleImport,
   };
@@ -3279,6 +3302,307 @@ window.stockPoint = function(ev) {
   stockInfo(k);
 };
 
+// === 운동 (하루 운동 기록 · 열량 계산 · 주간 요약 · 나에게 맞는 운동 찾기) ===
+// 기록은 memos 저장소에 kind:'workout', 내 정보는 kind:'fitprofile' 로 둔다. 새 저장소를 만들지 않아 기기 사이 동기화가 그대로 된다.
+// 열량은 MET(운동 강도 값) × 체중(kg) × 시간(시간)으로 어림한 값이다. 일반적인 운동 안내일 뿐 진료를 대신하지 않는다.
+const FIT_LV = ['가볍게', '보통', '힘들게'];
+// met: [가볍게, 보통, 힘들게]. k: cardio(유산소) / strength(근력) / flex(유연성) / sport(구기·놀이).
+// g: 목표별 점수(w 체중 관리, c 심폐 체력, s 근력, f 유연성, m 기분). hard: 0 누구나, 1 조금 해 본 사람, 2 꾸준히 하는 사람.
+// avoid: 그 부위가 불편하면 피할 운동. long: 한 번에 시간이 꽤 드는 운동. rec:false 는 추천 목록에서 뺀다.
+const FIT_TYPES = [
+  { id: 'walk', name: '걷기', met: [2.8, 3.5, 4.8], k: 'cardio', place: ['out', 'gym'], g: { w: 2, c: 2, s: 0, f: 0, m: 3 }, hard: 0, avoid: [], why: '준비물 없이 바로 시작할 수 있고 관절 부담이 적습니다. 숨이 조금 찰 만큼 빠르게 걸으면 효과가 커집니다.' },
+  { id: 'jog', name: '달리기', met: [6.0, 8.3, 10.5], k: 'cardio', place: ['out', 'gym'], g: { w: 3, c: 3, s: 1, f: 0, m: 3 }, hard: 1, avoid: ['knee'], why: '짧은 시간에 열량을 많이 쓰고 심폐 체력이 빨리 붙습니다. 걷기와 번갈아 하며 천천히 늘리세요.' },
+  { id: 'cycle', name: '자전거', met: [4.0, 6.8, 10.0], k: 'cardio', place: ['out'], g: { w: 3, c: 3, s: 1, f: 0, m: 3 }, hard: 0, avoid: [], why: '무릎에 실리는 무게가 적으면서 오래 탈 수 있습니다.' },
+  { id: 'icycle', name: '실내 자전거', met: [3.5, 6.8, 8.8], k: 'cardio', place: ['home', 'gym'], g: { w: 3, c: 3, s: 1, f: 0, m: 1 }, hard: 0, avoid: [], why: '날씨와 상관없이 할 수 있고 무릎 부담이 적습니다.' },
+  { id: 'swim', name: '수영', met: [5.8, 7.0, 9.8], k: 'cardio', place: ['gym'], g: { w: 3, c: 3, s: 2, f: 1, m: 2 }, hard: 0, avoid: ['shoulder'], why: '물이 몸을 받쳐 줘서 무릎과 허리에 부담이 적고 온몸을 씁니다.' },
+  { id: 'hike', name: '등산', met: [5.3, 6.5, 7.8], k: 'cardio', place: ['out'], g: { w: 3, c: 3, s: 2, f: 0, m: 3 }, hard: 1, avoid: ['knee'], long: 1, why: '오르막이 하체 근력과 심폐 체력을 함께 길러 줍니다. 내려올 때 무릎에 힘이 많이 실립니다.' },
+  { id: 'weights', name: '기구 근력 운동', met: [3.5, 5.0, 6.0], k: 'strength', place: ['gym'], g: { w: 2, c: 1, s: 3, f: 0, m: 2 }, hard: 0, avoid: [], why: '근육량을 지키고 늘리는 데 가장 직접적입니다. 가벼운 무게로 자세부터 익히세요.' },
+  { id: 'body', name: '맨몸 근력 운동', met: [2.8, 3.8, 8.0], k: 'strength', place: ['home', 'out', 'gym'], g: { w: 2, c: 1, s: 3, f: 1, m: 2 }, hard: 0, avoid: [], why: '스쿼트, 팔굽혀펴기, 플랭크처럼 내 몸무게로 하는 운동입니다. 집에서 10~15분이면 되고, 주 2일만 해도 근력 권장량을 채울 수 있습니다.' },
+  { id: 'yoga', name: '요가', met: [2.3, 3.0, 4.0], k: 'flex', place: ['home', 'gym'], g: { w: 1, c: 0, s: 1, f: 3, m: 3 }, hard: 0, avoid: [], why: '굳은 몸을 풀고 호흡을 고르는 데 좋습니다.' },
+  { id: 'pilates', name: '필라테스', met: [2.8, 3.0, 3.8], k: 'flex', place: ['home', 'gym'], g: { w: 1, c: 0, s: 2, f: 3, m: 2 }, hard: 0, avoid: [], why: '몸통(코어) 힘과 자세를 잡아 줍니다.' },
+  { id: 'stretch', name: '스트레칭', met: [2.0, 2.3, 2.8], k: 'flex', place: ['home', 'out', 'gym'], g: { w: 0, c: 0, s: 0, f: 3, m: 2 }, hard: 0, avoid: [], why: '5~10분만 해도 뻣뻣함이 줄어듭니다. 다른 운동 앞뒤에 붙이기 좋습니다.' },
+  { id: 'rope', name: '줄넘기', met: [8.8, 11.8, 12.3], k: 'cardio', place: ['home', 'out'], g: { w: 3, c: 3, s: 1, f: 0, m: 1 }, hard: 1, avoid: ['knee'], why: '좁은 곳에서 짧게 해도 운동량이 큽니다.' },
+  { id: 'stairs', name: '계단 오르기', met: [4.0, 6.0, 8.8], k: 'cardio', place: ['home', 'out'], g: { w: 3, c: 3, s: 2, f: 0, m: 1 }, hard: 1, avoid: ['knee'], why: '따로 시간을 내지 않아도 일상에서 할 수 있습니다. 내려올 때는 엘리베이터를 타면 무릎 부담이 줄어듭니다.' },
+  { id: 'badminton', name: '배드민턴', met: [4.5, 5.5, 7.0], k: 'sport', place: ['out', 'gym'], g: { w: 2, c: 2, s: 1, f: 1, m: 3 }, hard: 0, avoid: ['knee', 'shoulder'], social: 1, why: '함께 치다 보면 시간 가는 줄 모르고 움직이게 됩니다.' },
+  { id: 'tennis', name: '테니스', met: [5.0, 6.0, 7.3], k: 'sport', place: ['out'], g: { w: 2, c: 3, s: 1, f: 1, m: 3 }, hard: 1, avoid: ['knee', 'shoulder'], social: 1, why: '달리고 멈추기를 반복해 심폐 체력에 좋습니다.' },
+  { id: 'ttennis', name: '탁구', met: [3.0, 4.0, 5.0], k: 'sport', place: ['gym'], g: { w: 1, c: 1, s: 0, f: 1, m: 3 }, hard: 0, avoid: [], social: 1, why: '관절 부담이 적고 나이와 상관없이 즐길 수 있습니다.' },
+  { id: 'golf', name: '골프', met: [3.5, 4.3, 5.3], k: 'sport', place: ['out'], g: { w: 1, c: 1, s: 0, f: 1, m: 3 }, hard: 0, avoid: ['back'], social: 1, long: 1, why: '걸어서 돌면 걷는 양이 꽤 많습니다.' },
+  { id: 'soccer', name: '축구·풋살', met: [5.0, 7.0, 10.0], k: 'sport', place: ['out'], g: { w: 3, c: 3, s: 1, f: 0, m: 3 }, hard: 1, avoid: ['knee'], social: 1, long: 1, why: '뛰는 양이 많아 운동량이 큽니다.' },
+  { id: 'basket', name: '농구', met: [4.5, 6.5, 8.0], k: 'sport', place: ['out', 'gym'], g: { w: 3, c: 3, s: 1, f: 0, m: 3 }, hard: 1, avoid: ['knee'], social: 1, why: '뛰고 점프하며 온몸을 씁니다.' },
+  { id: 'dance', name: '댄스·에어로빅', met: [3.5, 5.0, 7.3], k: 'cardio', place: ['home', 'gym'], g: { w: 2, c: 2, s: 1, f: 1, m: 3 }, hard: 0, avoid: [], social: 1, why: '음악에 맞춰 움직여서 지루하지 않습니다.' },
+  { id: 'hiit', name: '고강도 인터벌', met: [6.0, 8.0, 10.0], k: 'cardio', place: ['home', 'gym'], g: { w: 3, c: 3, s: 2, f: 0, m: 1 }, hard: 2, avoid: ['knee', 'back'], why: '짧은 시간에 강하게 하는 방식입니다. 운동이 몸에 익은 뒤에 하는 것이 안전합니다.' },
+  { id: 'chores', name: '집안일·청소', met: [2.5, 3.3, 4.0], k: 'cardio', place: [], g: {}, hard: 0, avoid: [], rec: false },
+  { id: 'etc', name: '그 밖의 운동', met: [3.0, 4.5, 6.5], k: 'cardio', place: [], g: {}, hard: 0, avoid: [], rec: false },
+];
+const FIT_Q = [
+  { key: 'goal', q: '가장 바라는 것', opts: [['w', '체중 관리'], ['c', '체력·심폐'], ['s', '근력'], ['f', '유연성·뻐근함 풀기'], ['m', '기분 전환']] },
+  { key: 'level', q: '요즘 운동은', opts: [[0, '거의 안 함'], [1, '가끔 (주 1~2회)'], [2, '꾸준히 (주 3회 이상)']] },
+  { key: 'time', q: '한 번에 낼 수 있는 시간', opts: [[15, '10~20분'], [30, '30분쯤'], [50, '45분 이상']] },
+  { key: 'place', q: '주로 할 곳', opts: [['home', '집'], ['out', '야외'], ['gym', '헬스장·수영장·체육관']] },
+  { key: 'limits', q: '조심해야 하는 곳 (여러 개 가능)', multi: 1, opts: [['knee', '무릎'], ['back', '허리'], ['shoulder', '어깨']] },
+  { key: 'social', q: '어느 쪽이 더 좋으세요', opts: [[0, '혼자 조용히'], [1, '함께, 놀이처럼']] },
+];
+let fitAll = [], fitProfile = null, fitDate = null, FA = null, FQ = null;
+function fitType(id) { return FIT_TYPES.find(t => t.id === id) || FIT_TYPES[FIT_TYPES.length - 1]; }
+function fitWeight() { return (fitProfile && typeof fitProfile.weight === 'number' && fitProfile.weight > 0) ? fitProfile.weight : 65; }
+function fitKcal(typeId, lv, minutes, weight) { return Math.round(fitType(typeId).met[lv] * (weight || fitWeight()) * minutes / 60); }
+function fitNum(n) { return Math.round(n).toLocaleString('ko-KR'); }
+async function fitLoad() {
+  const list = await dbGetAll('memos');
+  fitAll = list.filter(m => m.kind === 'workout' && /^\d{4}-\d{2}-\d{2}$/.test(m.date || '') && m.minutes > 0)
+    .sort((a, b) => (a.date + (a.created_at || '')).localeCompare(b.date + (b.created_at || '')));
+  fitProfile = list.filter(m => m.kind === 'fitprofile').sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''))[0] || null;
+  const slot = $('#hm-fit'); if (slot) slot.innerHTML = fitHomeHTML();
+}
+function fitDay(ymd) { return fitAll.filter(x => x.date === ymd); }
+function fitSum(items) {
+  let min = 0, kcal = 0, eq = 0, strength = false;
+  items.forEach(x => {
+    const t = fitType(x.type), met = t.met[x.lv] || t.met[1];
+    min += x.minutes; kcal += x.kcal || 0;
+    eq += x.minutes * (met >= 6 ? 2 : met >= 3 ? 1 : 0); // 권장량 계산: 힘든 운동은 두 배로, 아주 가벼운 운동은 넣지 않는다
+    if (t.k === 'strength') strength = true;
+  });
+  return { min, kcal, eq, strength, n: items.length };
+}
+// 그 날짜가 든 주(월요일 시작)의 날마다 합계
+function fitWeek(ymd) {
+  const d = new Date(ymd + 'T00:00:00'), mon = ymdShift(ymd, { d: -((d.getDay() + 6) % 7) });
+  const days = [];
+  for (let i = 0; i < 7; i++) { const ds = ymdShift(mon, { d: i }); days.push(Object.assign({ date: ds }, fitSum(fitDay(ds)))); }
+  return { mon, days, min: days.reduce((s, x) => s + x.min, 0), kcal: days.reduce((s, x) => s + x.kcal, 0), eq: days.reduce((s, x) => s + x.eq, 0),
+    active: days.filter(x => x.min > 0).length, strength: days.filter(x => x.strength).length };
+}
+function fitStreak() {
+  const has = new Set(fitAll.map(x => x.date)), today = toLocalYMD(new Date());
+  let n = 0, d = has.has(today) ? today : ymdShift(today, { d: -1 }); // 오늘 아직 안 했어도 어제까지의 연속은 이어진 것으로 본다
+  while (has.has(d)) { n++; d = ymdShift(d, { d: -1 }); }
+  return n;
+}
+function fitGoal() { return (fitProfile && fitProfile.goal_min > 0) ? fitProfile.goal_min : 150; }
+function fitBar(now, goal) { return `<div class="ft-prog"><i style="width:${Math.max(0, Math.min(100, goal ? now / goal * 100 : 0)).toFixed(0)}%"></i></div>`; }
+
+// --- 홈 카드 ---
+function fitHomeHTML() {
+  if (!fitHomeHTML.busy) { fitHomeHTML.busy = true; fitLoad().catch(() => {}).then(() => { fitHomeHTML.busy = false; }); }
+  const today = toLocalYMD(new Date()), t = fitSum(fitDay(today)), w = fitWeek(today), goal = fitGoal();
+  return `<div class="hm-card" style="cursor:pointer" onclick="navigateTo('fitness')">
+    <div class="hm-top"><span class="hm-label">운동</span><span class="hm-label" style="font-weight:500">이번 주 ${fitNum(w.min)}분 / 목표 ${fitNum(goal)}분</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <div style="font-size:16px;font-weight:700">${t.n ? `오늘 ${fitNum(t.min)}분 · ${fitNum(t.kcal)}kcal` : '오늘은 아직 기록이 없습니다'}</div>
+      <button class="btn btn-secondary btn-sm" style="flex-shrink:0" onclick="event.stopPropagation();fitQuickAdd()">+ 기록</button>
+    </div>
+    <div style="margin-top:12px">${fitBar(w.min, goal)}</div>
+  </div>`;
+}
+window.fitQuickAdd = async function() { fitDate = toLocalYMD(new Date()); navigateTo('fitness'); setTimeout(() => fitAdd(), 150); };
+
+// --- 운동 화면 ---
+async function renderFitness() {
+  await fitLoad();
+  const today = toLocalYMD(new Date());
+  if (!fitDate) fitDate = today;
+  const items = fitDay(fitDate), t = fitSum(items), w = fitWeek(fitDate), goal = fitGoal(), streak = fitStreak();
+  const dd = new Date(fitDate + 'T00:00:00'), dayLabel = `${dd.getMonth() + 1}월 ${dd.getDate()}일 (${'일월화수목금토'[dd.getDay()]})`;
+  const maxMin = Math.max(30, ...w.days.map(x => x.min));
+  const from30 = ymdShift(today, { d: -29 }), last = fitAll.filter(x => x.date >= from30 && x.date <= today), s30 = fitSum(last);
+  const cnt = {}; last.forEach(x => { cnt[x.type] = (cnt[x.type] || 0) + x.minutes; });
+  const top = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0];
+  const hasW = fitProfile && fitProfile.weight > 0;
+  $('#mainContent').innerHTML = `
+    <div class="page-header"><div style="display:flex;align-items:center;gap:10px"><button class="btn btn-secondary btn-sm" onclick="navigateTo('dashboard')">&larr; 홈</button><h2 style="font-size:20px">운동</h2></div>${streak ? `<span class="item-meta">${streak}일 연속</span>` : ''}</div>
+    <div class="hm-card">
+      <div class="date-nav" style="margin-bottom:12px"><button class="btn-icon" onclick="fitMove(-1)">&larr;</button><span class="current-date">${dayLabel}</span><button class="btn-icon" onclick="fitMove(1)" ${fitDate >= today ? 'disabled style="opacity:0.3"' : ''}>&rarr;</button></div>
+      ${fitDate === today ? '' : `<div style="text-align:center;margin:-4px 0 10px"><button class="hm-more" onclick="fitGo('${today}')">오늘로 돌아가기</button></div>`}
+      ${items.length ? `<div style="font-size:22px;font-weight:800;letter-spacing:-0.5px">${fitNum(t.min)}분 · ${fitNum(t.kcal)}kcal</div>
+        <div class="item-meta" style="margin-bottom:8px">밥 한 공기(약 300kcal)로 치면 ${(t.kcal / 300).toFixed(1)}공기쯤입니다.</div>
+        ${items.map(x => `<div class="ft-row" onclick="fitAdd(${x.id})">
+          <div style="flex:1;min-width:0"><div class="ft-name">${esc(fitType(x.type).name)}</div><div class="item-meta">${FIT_LV[x.lv] || ''} · ${fitNum(x.minutes)}분${x.note ? ' · ' + esc(x.note) : ''}</div></div>
+          <div class="ft-kcal">${fitNum(x.kcal || 0)}kcal</div>
+          <button class="btn-icon" onclick="event.stopPropagation();fitDel(${x.id})">&#128465;</button>
+        </div>`).join('')}` : '<div class="hm-empty">이 날은 기록이 없습니다.</div>'}
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:14px" onclick="fitAdd()">+ 운동 기록하기</button>
+      ${hasW ? '' : '<p class="item-meta" style="margin-top:10px;line-height:1.6">열량은 체중 65kg으로 어림하고 있습니다. 아래 "내 정보"에 체중을 적으면 내 몸에 맞게 계산합니다.</p>'}
+    </div>
+    <div class="hm-card">
+      <div class="hm-top"><span class="hm-label">이번 주</span><span class="hm-label" style="font-weight:500">${fitNum(w.min)}분 · ${fitNum(w.kcal)}kcal · ${w.active}일</span></div>
+      <div class="ft-week">${w.days.map((x, i) => `<div class="ft-col${x.date === fitDate ? ' on' : ''}" onclick="fitGo('${x.date}')"><div class="ft-colbar"><i style="height:${(x.min / maxMin * 100).toFixed(0)}%"></i></div><div class="ft-collab">${'월화수목금토일'[i]}</div><div class="ft-colnum">${x.min ? fitNum(x.min) : ''}</div></div>`).join('')}</div>
+      <div class="ft-line"><span>내 목표 ${fitNum(goal)}분</span><span>${fitNum(w.min)}분</span></div>${fitBar(w.min, goal)}
+      <div class="ft-line"><span>권장 유산소 150분 (중강도 환산)</span><span>${fitNum(w.eq)}분</span></div>${fitBar(w.eq, 150)}
+      <div class="ft-line"><span>권장 근력 운동 주 2일</span><span>${w.strength}일</span></div>${fitBar(w.strength, 2)}
+      <p class="item-meta" style="margin-top:12px;line-height:1.6">세계보건기구(WHO)는 어른에게 한 주에 중강도 유산소 150분 이상(힘든 운동은 75분)과 근력 운동 2일 이상을 권합니다. 환산할 때 힘든 운동은 두 배로 치고, 아주 가벼운 움직임은 넣지 않았습니다.</p>
+    </div>
+    <div class="hm-card">
+      <div class="hm-top"><span class="hm-label">최근 30일</span></div>
+      ${last.length ? `<div class="st-ev"><b>횟수</b> ${fitNum(s30.n)}번, ${new Set(last.map(x => x.date)).size}일</div>
+        <div class="st-ev"><b>시간</b> ${fitNum(s30.min)}분 (하루 평균 ${fitNum(s30.min / 30)}분)</div>
+        <div class="st-ev"><b>열량</b> ${fitNum(s30.kcal)}kcal</div>
+        <div class="st-ev"><b>가장 많이</b> ${esc(fitType(top).name)} ${fitNum(cnt[top])}분</div>` : '<div class="hm-empty">아직 기록이 없습니다. 오늘 한 것부터 적어 보세요.</div>'}
+    </div>
+    ${fitRecHTML()}
+    <div class="hm-card">
+      <div class="hm-top"><span class="hm-label">내 정보</span></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">체중 (kg)</label><input class="form-input" id="ft-weight" type="number" inputmode="decimal" step="any" value="${hasW ? fitProfile.weight : ''}" placeholder="예: 68"></div>
+        <div class="form-group"><label class="form-label">한 주 목표 (분)</label><input class="form-input" id="ft-goal" type="number" inputmode="numeric" value="${goal}"></div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="fitSaveProfile()">저장</button>
+      <p class="item-meta" style="margin-top:10px;line-height:1.6">체중은 열량 계산에만 씁니다. 열량 = 운동 강도 값(MET) × 체중 × 시간으로 어림한 값이라 실제와 차이가 있습니다. 체중을 바꿔도 이미 적은 기록의 열량은 그대로입니다.</p>
+    </div>
+    <p class="st-disc">일반적인 운동 안내이며 진료를 대신하지 않습니다. 가슴 통증, 어지럼, 심한 숨참이 있거나 심장·혈압·당뇨·관절 질환이 있으면 운동을 시작하기 전에 의사와 상의하세요.</p>`;
+}
+window.fitMove = function(n) { const d = ymdShift(fitDate, { d: n }); if (d > toLocalYMD(new Date())) return; fitDate = d; renderFitness(); };
+window.fitGo = function(d) { if (d > toLocalYMD(new Date())) return; fitDate = d; renderFitness(); };
+window.fitDel = async function(id) {
+  if (!confirm('이 운동 기록을 지울까요?')) return;
+  await dbDelete('memos', id);
+  toast('지웠습니다');
+  renderFitness();
+};
+async function fitProfileSave(patch) {
+  await fitLoad();
+  const p = fitProfile || { kind: 'fitprofile', title: '운동 설정', content: '' };
+  Object.assign(p, patch);
+  fitProfile = p.id ? await dbPut('memos', p) : await dbAdd('memos', p);
+}
+window.fitSaveProfile = async function() {
+  const w = parseFloat($('#ft-weight').value), g = parseInt($('#ft-goal').value, 10);
+  if ($('#ft-weight').value.trim() && !(w >= 20 && w <= 300)) { toast('체중은 20~300 사이로 적어 주세요'); return; }
+  if (!(g >= 10 && g <= 3000)) { toast('한 주 목표는 10~3000분 사이로 적어 주세요'); return; }
+  await fitProfileSave({ weight: (w >= 20 && w <= 300) ? w : null, goal_min: g });
+  toast('저장했습니다');
+  renderFitness();
+};
+
+// --- 기록 넣기 · 고치기 ---
+window.fitAdd = async function(id) {
+  const cur = id ? fitAll.find(x => x.id === id) : null;
+  const lastUsed = fitAll.length ? fitAll[fitAll.length - 1] : null;
+  FA = cur ? { id: cur.id, type: cur.type, lv: cur.lv, min: cur.minutes, note: cur.note || '' }
+    : { id: null, type: lastUsed ? lastUsed.type : 'walk', lv: 1, min: lastUsed ? lastUsed.minutes : 30, note: '' };
+  // 자주 한 운동을 앞에 둔다
+  const cnt = {}; fitAll.forEach(x => { cnt[x.type] = (cnt[x.type] || 0) + 1; });
+  const types = FIT_TYPES.slice().sort((a, b) => (cnt[b.id] || 0) - (cnt[a.id] || 0));
+  showModal(`
+    <div class="modal-header"><span class="modal-title">${cur ? '운동 기록 고치기' : '운동 기록하기'}</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div style="max-height:62vh;overflow-y:auto">
+      <label class="form-label">어떤 운동</label>
+      <div class="ft-chips" id="fa-types">${types.map(t => `<button class="ft-chip${FA.type === t.id ? ' on' : ''}" data-v="${t.id}" onclick="fitPick('type', '${t.id}')">${esc(t.name)}</button>`).join('')}</div>
+      <label class="form-label" style="margin-top:16px">얼마나 힘들게</label>
+      <div class="ft-chips" id="fa-lv">${FIT_LV.map((n, i) => `<button class="ft-chip${FA.lv === i ? ' on' : ''}" data-v="${i}" onclick="fitPick('lv', ${i})">${n}</button>`).join('')}</div>
+      <p class="item-meta" style="margin-top:6px;line-height:1.6">가볍게: 노래할 수 있음 · 보통: 말은 되지만 숨이 참 · 힘들게: 말하기 어려움</p>
+      <label class="form-label" style="margin-top:16px">몇 분</label>
+      <div class="ft-chips" id="fa-min">${[10, 20, 30, 45, 60, 90].map(n => `<button class="ft-chip${FA.min === n ? ' on' : ''}" data-v="${n}" onclick="fitPick('min', ${n})">${n}분</button>`).join('')}</div>
+      <input class="form-input" id="fa-minutes" type="number" inputmode="numeric" style="margin-top:8px" value="${FA.min}" oninput="fitPick('min', parseInt(this.value, 10) || 0, true)">
+      <label class="form-label" style="margin-top:16px">한 줄 메모 (선택)</label>
+      <input class="form-input" id="fa-note" maxlength="60" value="${esc(FA.note)}" placeholder="예: 한강 5km, 스쿼트 3세트">
+      <div class="ft-est" id="fa-est"></div>
+    </div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="fitSave()">저장</button></div>`);
+  fitEst();
+};
+function fitEst() {
+  const el = $('#fa-est'); if (!el || !FA) return;
+  const t = fitType(FA.type);
+  el.innerHTML = FA.min > 0 ? `약 <b>${fitNum(fitKcal(FA.type, FA.lv, FA.min))}kcal</b> <span class="item-meta">(강도 값 ${t.met[FA.lv]} × 체중 ${fitWeight()}kg × ${FA.min}분)</span>` : '<span class="item-meta">시간을 넣으면 열량을 계산합니다.</span>';
+}
+window.fitPick = function(key, val, typed) {
+  if (!FA) return;
+  FA[key] = val;
+  const box = $('#fa-' + (key === 'type' ? 'types' : key));
+  if (box) box.querySelectorAll('.ft-chip').forEach(b => b.classList.toggle('on', String(b.dataset.v) === String(val)));
+  if (key === 'min' && !typed) { const inp = $('#fa-minutes'); if (inp) inp.value = val; }
+  fitEst();
+};
+window.fitSave = async function() {
+  if (!FA) return;
+  const minutes = parseInt($('#fa-minutes').value, 10);
+  if (!(minutes >= 1 && minutes <= 600)) { toast('시간은 1~600분 사이로 적어 주세요'); return; }
+  const t = fitType(FA.type), weight = fitWeight();
+  const data = { kind: 'workout', title: '운동 기록', content: '', date: fitDate || toLocalYMD(new Date()), type: t.id, lv: FA.lv, minutes,
+    met: t.met[FA.lv], weight, kcal: fitKcal(t.id, FA.lv, minutes, weight), note: ($('#fa-note').value || '').trim().slice(0, 60) };
+  if (FA.id) { const cur = await dbGet('memos', FA.id); if (cur) await dbPut('memos', Object.assign(cur, data)); }
+  else await dbAdd('memos', data);
+  FA = null;
+  closeModal();
+  toast(`저장했습니다 · ${fitNum(data.kcal)}kcal`);
+  if (currentPage === 'fitness') renderFitness(); else fitLoad();
+};
+
+// --- 나에게 맞는 운동 찾기 ---
+function fitRecommend(a) {
+  const limits = Array.isArray(a.limits) ? a.limits : [];
+  const scored = FIT_TYPES.filter(t => t.rec !== false).map(t => {
+    let s = (t.g[a.goal] || 0) * 3;
+    s += t.place.includes(a.place) ? 2 : -6;
+    s += a.level >= t.hard ? 1 : -5;
+    if (t.avoid.some(x => limits.includes(x))) s -= 9;
+    if ((t.social ? 1 : 0) === a.social) s += 1;
+    if (t.long && a.time < 45) s -= 3;
+    return { t, s };
+  }).sort((x, y) => y.s - x.s);
+  const ok = scored.filter(x => x.s > 0);
+  const picks = (ok.length ? ok : scored).slice(0, 3).map(x => x.t);
+  // 한 주 계획: 주 운동 + 근력 2일 (권장량을 따른다)
+  const days = [3, 4, 5][a.level] || 3, min = a.time;
+  const fits = t => t.place.includes(a.place) && a.level >= t.hard && !t.avoid.some(x => limits.includes(x));
+  const main = a.goal === 's' ? picks[0] : (picks.find(t => t.k !== 'strength') || picks[0]); // 근력이 목표면 근력 운동을 중심에 둔다
+  const str = picks.find(t => t.k === 'strength') || FIT_TYPES.find(t => t.k === 'strength' && fits(t)) || fitType('body');
+  const plan = [];
+  if (main.k === 'strength') plan.push(`${main.name}: 주 ${Math.min(3, days)}일, 한 번에 ${min}분`, `걷기: 주 ${Math.max(2, days - 2)}일, 한 번에 ${min}분 (숨이 조금 찰 만큼)`);
+  else plan.push(`${main.name}: 주 ${days}일, 한 번에 ${min}분`, `${str.name}: 주 2일, 한 번에 ${Math.min(20, min)}분`);
+  plan.push('스트레칭: 운동 앞뒤로 5분');
+  const total = main.k === 'strength' ? Math.min(3, days) * min + Math.max(2, days - 2) * min : days * min + 2 * Math.min(20, min);
+  return { picks, plan, total, days };
+}
+function fitRecHTML() {
+  const a = fitProfile && fitProfile.answers;
+  if (!a) return `<div class="hm-card">
+    <div class="hm-top"><span class="hm-label">나에게 맞는 운동</span></div>
+    <div class="hm-empty" style="margin-bottom:12px">여섯 가지만 고르면 나에게 맞는 운동 세 가지와 한 주 계획을 정리해 드립니다.</div>
+    <button class="btn btn-secondary btn-sm" onclick="fitFind()">나에게 맞는 운동 찾기</button></div>`;
+  const r = fitRecommend(a), lim = (a.limits || []).map(x => ({ knee: '무릎', back: '허리', shoulder: '어깨' }[x])).filter(Boolean);
+  return `<div class="hm-card">
+    <div class="hm-top"><span class="hm-label">나에게 맞는 운동</span><button class="hm-more" onclick="fitFind()">다시 찾기</button></div>
+    ${r.picks.map((t, i) => `<details class="st-ind"${i === 0 ? ' open' : ''}><summary><span class="st-ind-t" style="white-space:normal">${i + 1}. ${esc(t.name)}</span><span class="st-ind-v"></span><span class="st-side flat">${{ cardio: '유산소', strength: '근력', flex: '유연성', sport: '함께' }[t.k]}</span></summary>
+      <div class="st-ind-b">${t.why}<div style="margin-top:8px"><button class="btn btn-secondary btn-sm" onclick="fitStart('${t.id}')">이 운동 기록하기</button></div></div></details>`).join('')}
+    <div class="br-sec">한 주 계획 (합쳐서 약 ${fitNum(r.total)}분)</div>
+    <ul class="br-ul">${r.plan.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+    <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="fitUseGoal(${r.total})">이 계획을 한 주 목표로 (${fitNum(r.total)}분)</button>
+    <p class="item-meta" style="margin-top:12px;line-height:1.6">${a.level === 0 ? '처음에는 계획의 절반만 해도 충분합니다. ' : ''}시간이나 강도는 한 주에 10%쯤씩만 늘리는 것이 다치지 않는 방법입니다.${lim.length ? ` ${lim.join('·')}에 부담이 큰 운동은 뺐습니다. 아프면 멈추고, 통증이 이어지면 진료를 받으세요.` : ''}</p>
+  </div>`;
+}
+window.fitStart = function(type) { fitDate = toLocalYMD(new Date()); fitAdd().then(() => fitPick('type', type)); };
+window.fitUseGoal = async function(min) { await fitProfileSave({ goal_min: Math.max(10, Math.round(min)) }); toast('한 주 목표를 바꿨습니다'); renderFitness(); };
+window.fitFind = function() {
+  const a = (fitProfile && fitProfile.answers) || {};
+  FQ = { goal: a.goal || 'w', level: a.level != null ? a.level : 0, time: a.time || 30, place: a.place || 'home', limits: (a.limits || []).slice(), social: a.social != null ? a.social : 0 };
+  showModal(`
+    <div class="modal-header"><span class="modal-title">나에게 맞는 운동 찾기</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div style="max-height:62vh;overflow-y:auto">
+      ${FIT_Q.map(q => `<label class="form-label" style="margin-top:14px">${q.q}</label>
+        <div class="ft-chips" id="fq-${q.key}">${q.opts.map(o => `<button class="ft-chip${(q.multi ? FQ[q.key].includes(o[0]) : FQ[q.key] === o[0]) ? ' on' : ''}" data-v="${o[0]}" onclick="fitAns('${q.key}', ${typeof o[0] === 'number' ? o[0] : `'${o[0]}'`})">${o[1]}</button>`).join('')}</div>`).join('')}
+      <p class="item-meta" style="margin-top:14px;line-height:1.6">고른 내용은 추천을 만드는 데만 쓰고, 다른 기록과 함께 내 기기와 내 계정에만 저장됩니다.</p>
+    </div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">취소</button><button class="btn btn-primary" onclick="fitFindSave()">결과 보기</button></div>`);
+};
+window.fitAns = function(key, val) {
+  if (!FQ) return;
+  const q = FIT_Q.find(x => x.key === key), box = $('#fq-' + key);
+  if (q.multi) { const i = FQ[key].indexOf(val); if (i >= 0) FQ[key].splice(i, 1); else FQ[key].push(val); }
+  else FQ[key] = val;
+  if (box) box.querySelectorAll('.ft-chip').forEach(b => b.classList.toggle('on', q.multi ? FQ[key].map(String).includes(String(b.dataset.v)) : String(b.dataset.v) === String(val)));
+};
+window.fitFindSave = async function() {
+  if (!FQ) return;
+  await fitProfileSave({ answers: FQ });
+  FQ = null;
+  closeModal();
+  await renderFitness();
+  const el = [...document.querySelectorAll('.hm-label')].find(x => x.textContent === '나에게 맞는 운동');
+  if (el) el.scrollIntoView({ block: 'start' });
+};
+
 // === DASHBOARD (홈: 단색 · 단순) ===
 window.homeSchedToggle = async function(id) {
   await schedToggle(id, toLocalYMD(new Date()));
@@ -3334,6 +3658,7 @@ async function renderDashboard() {
     <div class="hm-word" id="hm-word">${dailyWordHTML()}</div>
     <div id="hm-brief">${briefCardHTML()}</div>
     <div id="hm-stocks">${stockHomeHTML()}</div>
+    <div id="hm-fit">${fitHomeHTML()}</div>
 
     <div class="hm-card hm-nums">
       <div onclick="homeGo('schedule')"><b>${schedules.length}</b><span>오늘 일정</span></div>
@@ -5536,10 +5861,11 @@ window.deleteItem = async function(store, id) {
 window.exportBackup = exportBackup;
 window.importBackup = importBackup;
 
-const APP_PAGES = ['dashboard', 'schedule', 'routine', 'scripture', 'prayer', 'diary', 'plans', 'ideas', 'sermons', 'memos', 'space', 'stocks', 'backup', 'bible'];
+const APP_PAGES = ['dashboard', 'schedule', 'routine', 'scripture', 'prayer', 'diary', 'plans', 'ideas', 'sermons', 'memos', 'space', 'stocks', 'fitness', 'backup', 'bible'];
 learnLoadExtra(); // 매주 더해지는 '오늘의 배움' 내용
 briefLoad();      // 매일 아침 올라오는 '아침 시황'
 stockLoad();      // 하루 몇 번 갱신되는 증권 시세
+fitLoad().catch(() => {}); // 운동 기록
 (function start() {
   let resume = null;
   try { resume = JSON.parse(sessionStorage.getItem('appResume') || 'null'); sessionStorage.removeItem('appResume'); } catch (e) {}
