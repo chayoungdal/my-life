@@ -3137,7 +3137,7 @@ function renderStockDetail() {
       <div class="item-meta" style="margin-top:6px;line-height:1.6">${r.note}</div>
       <button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="stockPref('rule', '${r.id}')">${on ? '차트 표시 끄기' : '차트에 표시'}</button></div></details>`;
   }).join('');
-  const cost = typeof t.cost === 'number' ? t.cost : null;
+  const cost = typeof t.cost === 'number' ? t.cost : null, qty = typeof t.qty === 'number' && t.qty > 0 ? t.qty : null;
   $('#mainContent').innerHTML = `
     <div class="page-header"><button class="btn btn-secondary btn-sm" onclick="stockBack()">&larr; 목록</button><span class="item-meta">${stockUpdatedText()}</span></div>
     <div class="hm-card">
@@ -3181,29 +3181,103 @@ function renderStockDetail() {
     </div>
     <div class="hm-card">
       <div class="hm-top"><span class="hm-label">내 가격</span></div>
-      <div class="form-group"><label class="form-label">내가 산 가격 (평균)</label><input class="form-input" id="st-cost" type="number" inputmode="decimal" step="any" value="${cost != null ? cost : ''}" placeholder="적어 두면 차트에 선으로 표시합니다"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">내가 산 가격 (평균)</label><input class="form-input" id="st-cost" type="number" inputmode="decimal" step="any" value="${cost != null ? cost : ''}" placeholder="차트에 선으로 표시"></div>
+        <div class="form-group"><label class="form-label">보유 수량 (주)</label><input class="form-input" id="st-qty" type="number" inputmode="decimal" step="any" value="${qty != null ? qty : ''}" placeholder="비워 둬도 됩니다"></div>
+      </div>
+      ${cost != null && qty != null ? `<div class="st-ev"><b>매수 금액</b> ${stockMoney(cost * qty, it)}</div>
+        <div class="st-ev"><b>평가 금액</b> ${stockMoney(a.last * qty, it)} <span style="font-weight:700;color:${a.last > cost ? STOCK_UP : a.last < cost ? STOCK_DOWN : 'inherit'}">(${a.last >= cost ? '+' : '-'}${stockMoney(Math.abs(a.last - cost) * qty, it)}, ${pc((a.last / cost - 1) * 100)})</span></div>
+        <div style="height:10px"></div>` : ''}
       <div class="form-row">
         <div class="form-group"><label class="form-label">이 가격 이상이면</label><input class="form-input" id="st-above" type="number" inputmode="decimal" step="any" value="${typeof t.above === 'number' ? t.above : ''}" placeholder="비워 두면 알림 없음"></div>
         <div class="form-group"><label class="form-label">이 가격 이하이면</label><input class="form-input" id="st-below" type="number" inputmode="decimal" step="any" value="${typeof t.below === 'number' ? t.below : ''}" placeholder="비워 두면 알림 없음"></div>
       </div>
       <button class="btn btn-primary btn-sm" onclick="stockSaveTarget()">저장</button>
-      <p class="item-meta" style="margin-top:10px;line-height:1.6">시세를 받아올 때마다 확인해서, 조건에 닿으면 홈과 이 화면의 눈에 띄는 변화에 표시합니다. 실시간 알림은 아닙니다.</p>
+      <p class="item-meta" style="margin-top:10px;line-height:1.6">알림 가격은 시세를 받아올 때마다 확인해서, 조건에 닿으면 홈과 이 화면의 눈에 띄는 변화에 표시합니다. 실시간 알림은 아닙니다. 산 가격과 수량은 내 기기와 내 계정에만 저장됩니다.</p>
+    </div>
+    <div class="hm-card">
+      <div class="hm-top"><span class="hm-label">물타기 계산 (추가 매수)</span></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">지금 평균 단가</label><input class="form-input" id="sc-cost" type="number" inputmode="decimal" step="any" value="${cost != null ? cost : ''}" oninput="stockCalc()"></div>
+        <div class="form-group"><label class="form-label">보유 수량 (주)</label><input class="form-input" id="sc-qty" type="number" inputmode="decimal" step="any" value="${qty != null ? qty : ''}" oninput="stockCalc()"></div>
+      </div>
+      <div class="form-group"><label class="form-label">살 가격 (처음 값은 최근 종가)</label><input class="form-input" id="sc-price" type="number" inputmode="decimal" step="any" value="${a.last}" oninput="stockCalc()"></div>
+      <span class="seg sm" id="sc-mode">${Object.keys(STOCK_CALC).map(k => `<button class="${stockCalcMode === k ? 'on' : ''}" data-v="${k}" onclick="stockCalcSet('${k}')">${STOCK_CALC[k].tab}</button>`).join('')}</span>
+      <div class="form-group" style="margin-top:10px"><label class="form-label" id="sc-lab">${STOCK_CALC[stockCalcMode].label}</label><input class="form-input" id="sc-val" type="number" inputmode="decimal" step="any" oninput="stockCalc()"></div>
+      <div class="ft-est" id="sc-out" style="margin-top:4px"></div>
+      <p class="item-meta" style="margin-top:10px;line-height:1.6">1주 단위로 계산하고, 수수료·세금·환율은 넣지 않았습니다. 계산만 해 드리는 것이며 추가 매수를 권하는 것이 아닙니다. 평균 단가는 낮아지지만 이 종목에 들어간 돈은 그만큼 늘어납니다.</p>
     </div>
     <div style="margin:4px 0 14px"><button class="btn btn-secondary btn-sm" onclick="stockBack()">&larr; 목록으로</button></div>
     <p class="st-disc">지표는 지나간 가격을 계산해 정리한 것으로, 앞으로의 방향을 알려주지 않습니다. 투자 권유가 아니며 판단과 책임은 본인에게 있습니다.</p>`;
   stockDrawChart();
+  stockCalc();
 }
+// --- 물타기(추가 매수) 계산: 평균 단가 = (기존 매수 금액 + 새로 사는 금액) ÷ (기존 수량 + 새로 사는 수량) ---
+const STOCK_CALC = {
+  amt: { tab: '넣을 금액', label: '넣을 금액', ask: '넣을 금액을 적어 주세요.' },
+  qty: { tab: '살 수량', label: '살 수량 (주)', ask: '살 수량을 적어 주세요.' },
+  avg: { tab: '목표 평균 단가', label: '만들고 싶은 평균 단가', ask: '만들고 싶은 평균 단가를 적어 주세요.' },
+};
+let stockCalcMode = 'amt';
+function stockMoney(v, it) {
+  const krw = it.cur === 'KRW';
+  return v.toLocaleString('ko-KR', { minimumFractionDigits: krw ? 0 : 2, maximumFractionDigits: krw ? 0 : 2 }) + (krw ? '원' : '달러');
+}
+window.stockCalcSet = function(mode) {
+  if (!STOCK_CALC[mode]) return;
+  stockCalcMode = mode;
+  const seg = $('#sc-mode'); if (seg) seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === mode));
+  const lab = $('#sc-lab'); if (lab) lab.textContent = STOCK_CALC[mode].label;
+  const val = $('#sc-val'); if (val) { val.value = ''; val.focus(); }
+  stockCalc();
+};
+window.stockCalc = function() {
+  const it = stockItem(stockSel), out = $('#sc-out');
+  if (!it || !out) return;
+  const num = id => { const x = parseFloat((($('#' + id) || {}).value || '').trim()); return isFinite(x) && x > 0 ? x : null; };
+  const cost = num('sc-cost'), qty = num('sc-qty'), price = num('sc-price'), val = num('sc-val');
+  const M = v => stockMoney(v, it), P = v => stockFmt(v, it), N = v => v.toLocaleString('ko-KR', { maximumFractionDigits: 4 });
+  const pct = x => `${x > 0 ? '+' : ''}${x.toFixed(2)}%`, msg = t => { out.innerHTML = `<span class="item-meta">${t}</span>`; };
+  if (cost == null || qty == null || price == null) { msg('지금 평균 단가, 보유 수량, 살 가격을 넣으면 계산합니다.'); return; }
+  const head = `<div class="st-ev" style="border-top:none;padding-top:0"><b>지금</b> ${N(qty)}주 · 매수 금액 ${M(cost * qty)} · 살 가격으로 치면 ${pct((price / cost - 1) * 100)}</div>`;
+  if (val == null) { out.innerHTML = head + `<div class="st-ev"><span class="item-meta">${STOCK_CALC[stockCalcMode].ask}</span></div>`; return; }
+  let n;
+  if (stockCalcMode === 'amt') {
+    n = Math.floor(val / price + 1e-9);
+    if (n < 1) { out.innerHTML = head + `<div class="st-ev">이 금액으로는 1주도 살 수 없습니다. 1주에 ${M(price)}입니다.</div>`; return; }
+  } else if (stockCalcMode === 'qty') {
+    n = Math.floor(val + 1e-9);
+    if (n < 1) { out.innerHTML = head + '<div class="st-ev">살 수량은 1주 이상으로 넣어 주세요.</div>'; return; }
+  } else {
+    const lo = Math.min(price, cost), hi = Math.max(price, cost);
+    if (price === cost) { out.innerHTML = head + '<div class="st-ev">살 가격이 평균 단가와 같아서, 몇 주를 사도 평균 단가가 바뀌지 않습니다.</div>'; return; }
+    if (!(val > lo && val < hi)) { out.innerHTML = head + `<div class="st-ev">목표 평균 단가는 ${P(lo)}보다 높고 ${P(hi)}보다 낮아야 합니다. 평균 단가는 살 가격과 지금 평균 단가 사이에서만 움직입니다.</div>`; return; }
+    n = Math.max(1, Math.ceil(qty * (cost - val) / (val - price) - 1e-9));
+    if (!isFinite(n) || n > 1e9) { out.innerHTML = head + '<div class="st-ev">목표가 살 가격과 너무 가까워 수량을 계산할 수 없습니다.</div>'; return; }
+  }
+  const spend = n * price, newQty = qty + n, newAvg = (cost * qty + spend) / newQty;
+  const rows = [
+    `<b>살 수량</b> <span style="font-weight:800;font-size:17px">${N(n)}주</span> · 드는 돈 <span style="font-weight:800">${M(spend)}</span>${stockCalcMode === 'amt' && val - spend > 0 ? ` <span class="item-meta">(남는 돈 ${M(val - spend)})</span>` : ''}`,
+    `<b>새 평균 단가</b> ${P(cost)} → <span style="font-weight:800">${P(newAvg)}</span> <span class="item-meta">(${pct((newAvg / cost - 1) * 100)})</span>`,
+    `<b>보유 수량</b> ${N(qty)}주 → ${N(newQty)}주`,
+    `<b>총 매수 금액</b> ${M(cost * qty)} → ${M(cost * qty + spend)}`,
+    `<b>살 가격 기준 수익률</b> ${pct((price / cost - 1) * 100)} → ${pct((price / newAvg - 1) * 100)}`,
+  ];
+  if (price < newAvg) rows.push(`<b>본전까지</b> 살 가격에서 ${pct((cost / price - 1) * 100)} 올라야 했던 것이 ${pct((newAvg / price - 1) * 100)}로 줄어듭니다.`);
+  if (stockCalcMode === 'avg' && Math.abs(newAvg - val) / val > 0.00005) rows.push(`<span class="item-meta">1주 단위로 올림해서 목표(${P(val)})보다 조금 더 낮아집니다.</span>`);
+  out.innerHTML = head + rows.map(r => `<div class="st-ev">${r}</div>`).join('');
+};
 window.stockSaveTarget = async function() {
   const it = stockItem(stockSel);
   if (!it) return;
   const num = id => { const x = parseFloat(($('#' + id).value || '').trim()); return isFinite(x) && x > 0 ? x : null; };
-  const above = num('st-above'), below = num('st-below'), cost = num('st-cost');
+  const above = num('st-above'), below = num('st-below'), cost = num('st-cost'), qty = num('st-qty');
   if (above != null && below != null && below >= above) { toast('"이하" 가격은 "이상" 가격보다 낮아야 합니다'); return; }
   const list = (await dbGetAll('memos')).filter(m => m.kind === 'stockcfg').sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
   const cfg = list[0] || { kind: 'stockcfg', title: '증권 차트 설정', content: '', targets: {} };
   cfg.targets = Object.assign({}, cfg.targets || {});
-  const none = above == null && below == null && cost == null;
-  if (none) delete cfg.targets[it.id]; else cfg.targets[it.id] = { above, below, cost };
+  const none = above == null && below == null && cost == null && qty == null;
+  if (none) delete cfg.targets[it.id]; else cfg.targets[it.id] = { above, below, cost, qty };
   stockCfg = cfg.id ? await dbPut('memos', cfg) : await dbAdd('memos', cfg);
   toast(none ? '적어 둔 가격을 지웠습니다' : '저장했습니다');
   renderStockDetail();
