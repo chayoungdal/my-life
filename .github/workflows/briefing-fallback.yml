@@ -1,0 +1,44 @@
+# 맥북의 아침 시황 예약이 돌지 못한 날을 위한 예비 실행.
+# 시세를 새로 받고, 오늘 정식 시황이 없으면 숫자와 기사 제목만으로 '간이 시황'을 만들어 올린다.
+# 정식 시황이 이미 있으면 시세만 새로 받는다. 앱의 "지금 새로 받기"에서도 이 실행 화면을 연다.
+# 시간은 UTC 기준이다 (한국 시간 = UTC + 9시간).
+name: 시황·시세 새로 받기
+
+on:
+  schedule:
+    - cron: '10 23 * * 0-4'   # 한국 월~금 08:10 — 맥북 예약(07:33)이 못 돈 날의 예비
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stocks-data          # 시세 받기와 같은 묶음: 둘이 동시에 올리지 않게 한다
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: 시세 받기
+        run: python3 tools/fetch_stocks.py
+      - name: 간이 시황 만들기 (정식 시황이 없을 때만)
+        run: python3 tools/auto_briefing.py
+      - name: 시황 파일 검사
+        run: python3 tools/check_briefing.py
+      - name: 바뀐 내용 올리기
+        run: |
+          rm -rf tools/__pycache__
+          if [ -z "$(git status --porcelain -- stocks-data.json stocks-long.json briefing.json)" ]; then
+            echo "변경 없음"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add stocks-data.json briefing.json
+          if [ -f stocks-long.json ]; then git add stocks-long.json; fi
+          git commit -m "시황·시세 새로 받기"
+          git pull --rebase origin main
+          git push

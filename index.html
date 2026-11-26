@@ -2625,12 +2625,12 @@ function briefCardHTML() {
   if (!briefDays.length) return '';
   const i = briefDays.length - 1, d = briefDays[i];
   const today = toLocalYMD(new Date());
-  const old = d.date < today ? ' · 오늘 정리는 아직 없습니다' : '';
+  const old = d.date < today ? ' · 오늘 정리는 아직 없습니다' : (d.auto ? ' · 간이 정리' : '');
   return `<div class="hm-card" style="cursor:pointer" onclick="briefShow(${i})">
     <div class="hm-top"><span class="hm-label">아침 시황</span><span class="hm-label" style="font-weight:500">${briefDateLabel(d.date)}${old}</span></div>
     <div style="font-size:16px;font-weight:700;line-height:1.55;word-break:keep-all;overflow-wrap:anywhere">${esc(d.headline)}</div>
     <div class="br-list">${d.sections.slice(0, 4).map(s => `<div class="br-row"><span class="br-key">${esc(s.title)}</span><span class="br-val">${esc(s.points[0])}</span></div>`).join('')}</div>
-    <div style="text-align:right;margin-top:10px"><span class="hm-more">전체 보기 &rsaquo;</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px">${d.date < today || d.auto ? '<button class="hm-more" onclick="event.stopPropagation();refreshHelp()">지금 새로 받기</button>' : '<span></span>'}<span class="hm-more">전체 보기 &rsaquo;</span></div>
   </div>`;
 }
 function briefDraw() { const slot = $('#hm-brief'); if (slot) slot.innerHTML = briefCardHTML(); }
@@ -2639,7 +2639,7 @@ window.briefShow = function(i) {
   if (!d) return;
   const sources = (Array.isArray(d.sources) ? d.sources : []).filter(s => s && typeof s.url === 'string' && /^https:\/\//.test(s.url) && typeof s.name === 'string' && s.name.trim()).slice(0, 20);
   const made = (typeof d.made_at === 'string' && !isNaN(new Date(d.made_at).getTime())) ? new Date(d.made_at) : null;
-  const madeText = made ? `${made.getMonth() + 1}/${made.getDate()} ${String(made.getHours()).padStart(2, '0')}:${String(made.getMinutes()).padStart(2, '0')} 정리` : '';
+  const madeText = made ? `${made.getMonth() + 1}/${made.getDate()} ${String(made.getHours()).padStart(2, '0')}:${String(made.getMinutes()).padStart(2, '0')} 정리${d.auto ? ' · 자동으로 만든 간이 정리' : ''}` : '';
   showModal(`
     <div class="modal-header" style="justify-content:flex-start;gap:10px"><button class="btn btn-secondary btn-sm" style="flex-shrink:0" onclick="closeModal()">&larr; 뒤로</button><span class="modal-title" style="flex:1;min-width:0;font-size:16px">아침 시황 · ${briefDateLabel(d.date)}</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
     <div style="max-height:62vh;overflow-y:auto">
@@ -2658,6 +2658,31 @@ window.briefShow = function(i) {
       <button class="btn btn-primary" onclick="closeModal()">닫기</button>
     </div>
   `);
+};
+
+// --- 지금 새로 받기: 맥북의 아침 예약이 돌지 못한 날, GitHub의 예비 실행을 손으로 돌리는 방법을 안내한다 ---
+// 앱에서는 GitHub 실행을 직접 시작할 수 없어(로그인이 필요하다) 실행 화면을 열어 준다.
+const REFRESH_URL = 'https://github.com/chayoungdal/my-life/actions/workflows/briefing-fallback.yml';
+window.refreshHelp = function() {
+  showModal(`
+    <div class="modal-header"><span class="modal-title">지금 새로 받기</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div style="max-height:62vh;overflow-y:auto">
+      <p style="font-size:15px;line-height:1.7">증권 시세를 새로 받고, 오늘 시황이 아직 없으면 숫자와 기사 제목으로 <b>간이 시황</b>을 만듭니다.</p>
+      <ol class="br-ul" style="margin-top:10px">
+        <li>아래 <b>GitHub 실행 화면 열기</b>를 누릅니다. 처음에는 GitHub 로그인이 필요합니다.</li>
+        <li>화면 오른쪽의 <b>Run workflow</b>를 누르고, 초록색 <b>Run workflow</b>를 한 번 더 누릅니다.</li>
+        <li>1~2분 기다린 뒤 이 창으로 돌아와 <b>다시 불러오기</b>를 누릅니다.</li>
+      </ol>
+      <div style="margin-top:14px"><a class="btn btn-primary btn-sm" style="text-decoration:none" href="${REFRESH_URL}" target="_blank" rel="noopener">GitHub 실행 화면 열기 &#8599;</a></div>
+      <p class="item-meta" style="margin-top:14px;line-height:1.6">평일 아침 8시 10분쯤에는 누르지 않아도 자동으로 한 번 돕니다. 해설과 전망이 들어간 정식 시황은 맥북에서만 만들어집니다. 맥북의 Claude 앱 왼쪽 Scheduled에서 "아침 시황 정리"를 골라 지금 실행을 누르면 됩니다.</p>
+    </div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">닫기</button><button class="btn btn-primary" onclick="refreshReload()">다시 불러오기</button></div>`);
+};
+window.refreshReload = function() {
+  briefLoad();
+  stockLoad();
+  if (typeof stockLoadLong === 'function' && stockLongAsked) { stockLongAsked = false; stockLoadLong(); }
+  toast('다시 불러왔습니다. 바뀐 내용이 있으면 곧 화면에 나타납니다');
 };
 
 // === 증권 차트 (일봉 차트 · 기술적 지표 점검표 · 눈에 띄는 변화 · 내 알림 가격) ===
@@ -3022,6 +3047,7 @@ async function renderStocks() {
   const items = stockData.items;
   $('#mainContent').innerHTML = `
     <div class="page-header"><div style="display:flex;align-items:center;gap:10px"><button class="btn btn-secondary btn-sm" onclick="navigateTo('dashboard')">&larr; 홈</button><h2 style="font-size:20px">증권 차트</h2></div><span class="item-meta">${stockUpdatedText()}</span></div>
+    <div style="text-align:right;margin:-10px 0 10px"><button class="hm-more" onclick="refreshHelp()">지금 새로 받기</button></div>
     <div class="hm-card">
       <div class="hm-top"><span class="hm-label">눈에 띄는 변화</span><span class="hm-label" style="font-weight:500">가장 최근 거래일 기준</span></div>
       ${ev.length ? `<div class="br-list" style="margin-top:0">${ev.map(e => `<div class="br-row" style="cursor:pointer" onclick="stockOpen('${esc(e.it.id)}')"><span class="br-key">${esc(e.it.name)}</span><span style="flex:1;min-width:0;${e.mine ? 'color:var(--primary);font-weight:600' : ''}">${stockSigTag(e.sig)}${esc(e.text)}</span></div>`).join('')}</div>` : '<div class="hm-empty">눈에 띄는 변화가 없습니다.</div>'}
